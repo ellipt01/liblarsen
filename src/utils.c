@@ -5,6 +5,7 @@
  *      Author: utsugi
  */
 
+#include "cl_matrix.h"
 #include "larsen.h"
 
 larsen *
@@ -21,7 +22,7 @@ larsen_alloc (double lambda1, double lambda2, const cl_matrix *x, const cl_vecto
 	l->y = y;
 
 	l->scale = 1.;
-	l->do_scaling = (lambda2 > CL_DBL_EPSILON);
+	l->do_scaling = (lambda2 > DBL_EPSILON);
 	if (l->do_scaling) l->scale /= sqrt (1. + lambda2);
 
 	/* correlation */

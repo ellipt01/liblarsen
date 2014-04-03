@@ -5,6 +5,8 @@
  *      Author: utsugi
  */
 
+#include "cl_matrix.h"
+#include "cl_linalg.h"
 #include "larsen.h"
 
 /* return Xa = X(A) */
@@ -15,18 +17,16 @@ extruct_xa (larsen *l)
 	size_t		size1 = l->x->size1;
 	size_t		size2 = l->A->size;
 	cl_matrix	*xa;
-	cl_vector	*col;
 
 	if (size2 <= 0) return NULL;
 
 	xa = cl_matrix_alloc (size1, size2);
-	col = cl_vector_alloc (size1);
 	for (i = 0; i < size2; i++) {
 		int		j = cl_vector_int_get (l->A, i);
-		cl_matrix_get_col (col, l->x, j);
+		cl_vector	*col = cl_matrix_column (l->x, j);
 		cl_matrix_set_col (xa, i, col);
+		cl_vector_free (col);
 	}
-	cl_vector_free (col);
 
 	return xa;
 }
@@ -55,8 +55,7 @@ update_chol (larsen *l, cl_matrix *xa)
 		/*** insert a predictor ***/
 		int			column = l->oper.column;
 		cl_vector	*t;
-		cl_vector	*xi = cl_vector_alloc (l->x->size1);
-		cl_matrix_get_col (xi, l->x, column);
+		cl_vector	*xi = cl_matrix_column (l->x, column);
 
 		t = cl_matrix_transpose_dot_vector (xa, xi);
 		if (l->do_scaling) {
