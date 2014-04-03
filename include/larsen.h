@@ -17,8 +17,8 @@ extern "C" {
 
 typedef enum {
 	ACTIVESET_ACTION_NONE	= -1,
-	ACTIVESET_ACTION_ADD		=  0,
-	ACTIVESET_ACTION_DROP	=  1,
+	ACTIVESET_ACTION_ADD		=  0,	// add new variable to the active set
+	ACTIVESET_ACTION_DROP	=  1,	// remove a variable from the active set
 	NUM_ACTIVESET_ACTION		=  2
 } ActiveSetAction;
 
@@ -32,6 +32,7 @@ typedef struct s_larsen	larsen;
 
 struct s_larsen {
 
+	// if true, loop of larsen regression will be terminated.
 	bool					stop_loop;
 
 	/* threshold for L1 penalty */
@@ -39,45 +40,47 @@ struct s_larsen {
 	/* threshold for L2 penalty */
 	double					lambda2;
 
+	// false: lasso, and true: elastic net estimator.
 	bool					do_scaling;
+	// = 1 / sqrt(1 + lambda2)
 	double					scale;
 
-	const cl_matrix		*x;
-	const cl_vector		*y;
+	const cl_matrix		*x;		// predictors
+	const cl_vector		*y;		// response
 
 	/* correlation */
-	double					sup_c;
-	cl_vector				*c;
+	double					sup_c;	// sup(abs(c))
+	cl_vector				*c;		// colleration: = X' * (y - mu)
 
 	/* active set */
 	activeset_oper		oper;
-	cl_vector_int			*A;
-	cl_vector_int			*Ac;
+	cl_vector_int			*A;		// active set
+	cl_vector_int			*Ac;	// implement of A
 
 	/* equiangular */
 	double					absA;
-	cl_vector				*u;
+	cl_vector				*u;		// equiangular vector
 	cl_vector				*w;
 
 	/* step_size */
-	double					stepsize;
+	double					stepsize;	// step size which beta will be progress.
 
 	/* solution */
-	cl_vector				*beta;
-	cl_vector				*mu;
+	cl_vector				*beta;	// regression coefficients
+	cl_vector				*mu;	// estimated response
 
 	/* backup of solution */
-	cl_vector				*beta_prev;
-	cl_vector				*mu_prev;
+	cl_vector				*beta_prev;	// previous beta
+	cl_vector				*mu_prev;		// previous mu
 
 	/* interpolation */
-	bool					interp;
+	bool					interp;		// interpolation was done or not.
 	double					stepsize_intr;
-	cl_vector				*beta_intr;
-	cl_vector				*mu_intr;
+	cl_vector				*beta_intr;	// interpolated beta
+	cl_vector				*mu_intr;		// interpolated mu
 
 	/* cholesky factorization */
-	cl_matrix				*chol;
+	cl_matrix				*chol;	// = chol(XA' * XA), where XA = X(A).
 
 };
 

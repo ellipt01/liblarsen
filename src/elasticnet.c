@@ -10,6 +10,22 @@
 #define _DUMMY_ -1
 extern double	larsen_get_lambda1 (larsen *l);
 
+/*
+ *  Evaluate lasso (l->lambda2 = 0) or elastic net (l->lambda2 != 0) estimator.
+ *
+ *  <input>
+ *  larsen	*l		:	structure larsen.
+ *  int	maxiter:	tolerance of the number of iteration
+ *
+ *  This function estimates regression coefficients of the system
+ *
+ *  beta = argmin [l->y; 0] = l->scale * [l->x; sqrt(l->lambda2) * E] * beta
+ *  subject to norm1(l->beta) < l->lambda1
+ *
+ *  The optimal beta corresponding to a designed l->lambda1 is stored
+ *  if l->interp == false, in l->beta else, in l->beta_interp.
+ *  Its value (elastic net solution) can be obtained by a function larsen_get_beta (larsen *l).
+ */
 bool
 larsen_elasticnet (larsen *l, int maxiter)
 {
