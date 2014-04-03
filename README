@@ -1,0 +1,5 @@
+liblarsen
+============
+
+A pure C implementation of a library for lasso, elastic net L1 regularized linear regression and variable selection estimator based on LARS-EN algorithm.
+
