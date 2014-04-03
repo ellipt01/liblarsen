@@ -9,12 +9,18 @@
 
 extern void	larsen_awpy (larsen *l, double alpha, cl_vector *w, cl_vector *y);
 
+static double
+posinf (void)
+{
+	return + 1. / 0.;
+}
+
 /* \hat{gamma} */
 static void
 calc_gamma_hat (larsen *l, int *index, double *val)
 {
 	int			minplus_idx = -1;
-	double		minplus = cl_posinf ();
+	double		minplus = posinf ();
 
 	if (l->A->size == l->x->size2) {
 
@@ -35,8 +41,8 @@ calc_gamma_hat (larsen *l, int *index, double *val)
 			e0 = (l->sup_c - cj) / (l->absA - aj);
 			e1 = (l->sup_c + cj) / (l->absA + aj);
 
-			if (e0 <= 0.) e0 = cl_posinf ();
-			if (e1 <= 0.) e1 = cl_posinf ();
+			if (e0 <= 0.) e0 = posinf ();
+			if (e1 <= 0.) e1 = posinf ();
 			min = (e0 <= e1) ? e0 : e1;
 
 			if (min < minplus) {
@@ -56,7 +62,7 @@ static void
 calc_gamma_tilde (larsen *l, int *index, double *val)
 {
 	int		minplus_idx = -1;
-	double	minplus = cl_posinf ();
+	double	minplus = posinf ();
 
 	if (l->A->size > 0) {
 		int		i;
@@ -65,7 +71,7 @@ calc_gamma_tilde (larsen *l, int *index, double *val)
 			double	betaj = cl_vector_get (l->beta, j);
 			double	wi = cl_vector_get (l->w, i);
 			double	e = - betaj / wi;
-			if (e <= 0.) e = cl_posinf ();
+			if (e <= 0.) e = posinf ();
 			if (e < minplus) {
 				minplus_idx = i;
 				minplus = e;
@@ -105,5 +111,5 @@ update_stepsize (larsen *l)
 			if (gamma_tilde_idx >= 0) l->oper.column = cl_vector_int_get (l->A, gamma_tilde_idx);
 		}
 	}
-	return (l->stepsize != cl_posinf ());
+	return (l->stepsize != posinf ());
 }

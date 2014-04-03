@@ -5,8 +5,6 @@
  *      Author: utsugi
  */
 
-#include "cl_matrix.h"
-#include "cl_linalg.h"
 #include "larsen.h"
 
 /* return Xa = X(A) */

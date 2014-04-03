@@ -5,7 +5,6 @@
  *      Author: utsugi
  */
 
-#include "cl_matrix.h"
 #include "larsen.h"
 
 larsen *

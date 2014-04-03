@@ -13,8 +13,9 @@
 extern "C" {
 #endif
 
+#include <stdbool.h>
 //#include <cl_interface.h>
-#include "cl_matrix.h"
+#include "cl_linalg.h"
 
 typedef enum {
 	ACTIVESET_ACTION_NONE	= -1,
