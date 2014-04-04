@@ -4,7 +4,7 @@
 *.orig
 
 # working directries
-bin
+#bin
 work
 share
 Debug
