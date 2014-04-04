@@ -21,6 +21,6 @@ void			output_solutionpath (int iter, larsen *l);
 void			fprintf_beta (FILE *stream, int iter, larsen *l);
 
 /* example_lasso.c */
-void			example_elasticnet (cl_matrix *x0, cl_vector *y0, double start, double dt, double stop, double lambda2, int maxsteps);
+void			example_elasticnet (cl_matrix *x0, cl_vector *y0, double start, double dt, double stop, double lambda2, double gamma, int maxsteps);
 
 #endif /* EXAMPLES_H_ */

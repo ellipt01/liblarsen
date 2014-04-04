@@ -3,24 +3,23 @@
 *.old
 *.orig
 
-# data file
-*.res
-*.data
-*.dat
-
 # working directries
+bin
 work
+share
 Debug
 
 =======
 # Object files
 *.o
+*.lo
 *.ko
 *.obj
 *.elf
 
 # Libraries
 *.lib
+*.la
 *.a
 
 # Shared objects (inc. Windows DLLs)

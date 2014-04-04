@@ -15,15 +15,15 @@ extern double	larsen_get_lambda1 (larsen *l);
  *
  *  <input>
  *  larsen	*l		:	structure larsen.
- *  int	maxiter:	tolerance of the number of iteration
+ *  int	maxiter:	tolerance of the number of iterations for each regression steps
  *
  *  This function estimates regression coefficients of the system
  *
- *  beta = argmin [l->y; 0] = l->scale * [l->x; sqrt(l->lambda2) * E] * beta
- *  subject to norm1(l->beta) < l->lambda1
+ *  beta = argmin | [l->y; 0] - l->scale * [l->x; sqrt(l->lambda2) * E] * beta |^2
+ *  subject to | l->beta | < l->lambda1
  *
  *  The optimal beta corresponding to a designed l->lambda1 is stored
- *  if l->interp == false, in l->beta else, in l->beta_interp.
+ *  if l->interp == false, in l->beta, else in l->beta_interp.
  *  Its value (elastic net solution) can be obtained by a function larsen_get_beta (larsen *l).
  */
 bool

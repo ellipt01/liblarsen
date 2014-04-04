@@ -1,11 +1,7 @@
 ## Process this file with automake to produce Makefile.in
 
-## Created by Anjuta - will be overwritten
-## If you don't want it to overwrite it,
-## 	Please disable it in the Anjuta project configuration
-
 INCLUDES =\
-	 -I../include -I/usr/local/include/clapack_interface -I../include
+	 -I../include -I../clapack_interface
 
 AM_CFLAGS =\
 	 -Wall\
@@ -23,7 +19,7 @@ liblarsen_la_SOURCES = \
 	elasticnet.c\
 	bic.c
 
-liblarsen_la_LDFLAGS = 
+liblarsen_la_LDFLAGS = -L../clapack_interface
 
 liblarsen_la_LIBADD = \
 	 -lclapack_interface

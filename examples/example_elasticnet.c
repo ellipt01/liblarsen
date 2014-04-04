@@ -16,7 +16,7 @@ dummy_ (void)
 }
 
 void
-example_elasticnet (cl_matrix *x, cl_vector *y, double start, double dt, double stop, double lambda2, int maxiter)
+example_elasticnet (cl_matrix *x, cl_vector *y, double start, double dt, double stop, double lambda2, double gamma, int maxiter)
 {
 	int			iter = 0;
 	larsen		*l = larsen_alloc (start, lambda2, x, y);
@@ -24,8 +24,7 @@ example_elasticnet (cl_matrix *x, cl_vector *y, double start, double dt, double 
 	do {
 		if (!larsen_elasticnet (l, maxiter)) break;
 		output_solutionpath (iter++, l);
-//		fprintf (stdout, "%d : lambda1 = %f, bic = %f\n", iter, l->lambda1, larsen_eval_bic (l, 0.));
-		fprintf (stdout, "%d : lambda1 = %f, bic = %f\n", iter, l->lambda1, larsen_eval_bic (l, 0.5));
+		fprintf (stdout, "%d : lambda1 = %f, bic(%.2f) = %f\n", iter, l->lambda1, gamma, larsen_eval_bic (l, gamma));
 		larsen_increment_lambda1 (l, dt);
 		if (l->lambda1 > 2861.) dummy_ ();
 	} while (larsen_loop_continue (l, stop));
