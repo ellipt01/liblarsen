@@ -5,6 +5,8 @@
 
 # working directries
 #bin
+.cproject
+.settings
 work
 share
 Debug
