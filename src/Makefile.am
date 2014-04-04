@@ -19,7 +19,7 @@ liblarsen_la_SOURCES = \
 	elasticnet.c\
 	bic.c
 
-liblarsen_la_LDFLAGS = -L../clapack_interface
+liblarsen_la_LDFLAGS = 
 
 liblarsen_la_LIBADD = \
 	 -lclapack_interface

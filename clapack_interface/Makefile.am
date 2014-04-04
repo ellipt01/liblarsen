@@ -10,9 +10,13 @@ AM_CFLAGS =\
 lib_LTLIBRARIES = libclapack_interface.la
 
 libclapack_interface_include_DATA = \
+	cl_linalg.h\
+	cl_matrix.h\
 	cl_interface.h
 
-libclapack_interface_includedir = .
+EXTRA_DIST = $(liblarsen_include_DATA)
+
+libclapack_interface_includedir = $(pkgincludedir)
 
 libclapack_interface_la_SOURCES = \
 	cl_matrix.c\

@@ -5,10 +5,8 @@
  *      Author: utsugi
  */
 
-#include <stdio.h>
 #include <string.h>
 
-#include "cl_matrix.h"
 #include "larsen.h"
 #include "examples/examples.h"
 

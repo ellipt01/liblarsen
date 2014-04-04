@@ -27,7 +27,7 @@ usage (char *toolname)
 	else p = toolname;
 
 	fprintf (stderr, "\nUSAGE:\n%s -f <input_file>{:skipheaders} -l <lambda2> \n", p);
-	fprintf (stderr, "[optional] { -t <start>:<dt>:<stop> -g <gamma for EBIC: 0 <= gamma <= 1> -m <maxsteps> }\n\n");
+	fprintf (stderr, "[optional] { -t <start>:<dt>:<stop> -g <gamma of EBIC in [0, 1]> -m <maxsteps> }\n\n");
 	exit (1);
 }
 
@@ -89,7 +89,7 @@ read_params (int argc, char **argv)
 		status = false;
 	}
 	if (_gamma < 0. || 1. < _gamma) {
-		fprintf (stderr, "ERROR: gamma (%f) must be 0 <= gamma <= 1.\n", _gamma);
+		fprintf (stderr, "ERROR: gamma (%f) must be [0, 1].\n", _gamma);
 		status = false;
 	}
 
