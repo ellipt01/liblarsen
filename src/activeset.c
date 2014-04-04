@@ -5,7 +5,7 @@
  *      Author: utsugi
  */
 
-#include "larsen.h"
+#include <larsen.h>
 
 /* if item was found in cl_vector_int *v, return true  */
 static bool

@@ -5,7 +5,7 @@
  *      Author: utsugi
  */
 
-#include "larsen.h"
+#include <larsen.h>
 
 extern void	larsen_awpy (larsen *l, double alpha, cl_vector *w, cl_vector *y);
 

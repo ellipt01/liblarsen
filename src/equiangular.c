@@ -5,7 +5,7 @@
  *      Author: utsugi
  */
 
-#include "larsen.h"
+#include <larsen.h>
 
 /* return Xa = X(A) */
 static cl_matrix *

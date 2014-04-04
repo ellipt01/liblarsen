@@ -5,7 +5,7 @@
  *      Author: utsugi
  */
 
-#include "larsen.h"
+#include <larsen.h>
 
 #define _DUMMY_ -1
 extern double	larsen_get_lambda1 (larsen *l);

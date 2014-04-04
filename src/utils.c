@@ -5,7 +5,7 @@
  *      Author: utsugi
  */
 
-#include "larsen.h"
+#include <larsen.h>
 
 larsen *
 larsen_alloc (double lambda1, double lambda2, const cl_matrix *x, const cl_vector *y)

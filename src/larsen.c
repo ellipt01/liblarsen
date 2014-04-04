@@ -5,7 +5,7 @@
  *      Author: utsugi
  */
 
-#include "larsen.h"
+#include <larsen.h>
 
 /* active_set.c */
 extern bool	activeset_add (larsen *l, int j);

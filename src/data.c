@@ -5,7 +5,7 @@
  *      Author: utsugi
  */
 
-#include "larsen.h"
+#include <larsen.h>
 
 /* centering vector i.e., y -> y - mean(y) */
 double
