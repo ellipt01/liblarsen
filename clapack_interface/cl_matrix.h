@@ -92,7 +92,7 @@ void			cl_vector_set_zero (cl_vector *v);
 void			cl_matrix_fprintf (FILE *stream, const cl_matrix *a, const char *format);
 void			cl_vector_fprintf (FILE *stream, const cl_vector *v, const char *format);
 
-/* cl_matrix_ops.c */
+/* cl_matrixops.c */
 void			cl_vector_add_constant (cl_vector *v, const double x);
 double			cl_vector_mean (const cl_vector *v);
 void			cl_vector_sub (cl_vector *y, const cl_vector *x);

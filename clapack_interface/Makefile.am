@@ -20,7 +20,7 @@ libclapack_interface_includedir = $(pkgincludedir)
 
 libclapack_interface_la_SOURCES = \
 	cl_matrix.c\
-	cl_matrix_ops.c\
+	cl_matrixops.c\
 	cl_linalg.c
 
 libclapack_interface_la_LDFLAGS = 

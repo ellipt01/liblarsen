@@ -124,8 +124,8 @@ cl_matrix_is_square (const cl_matrix *a)
 void
 cl_matrix_free (cl_matrix *a)
 {
-	if (a && a->owner) {
-		if (a->data) free (a->data);
+	if (a) {
+		if (a->data && a->owner) free (a->data);
 		free (a);
 	}
 	return;
@@ -134,8 +134,8 @@ cl_matrix_free (cl_matrix *a)
 void
 cl_vector_free (cl_vector *v)
 {
-	if (v && v->owner) {
-		if (v->data) free (v->data);
+	if (v) {
+		if (v->data && v->owner) free (v->data);
 		free (v);
 	}
 	return;
@@ -144,8 +144,8 @@ cl_vector_free (cl_vector *v)
 void
 cl_vector_int_free (cl_vector_int *v)
 {
-	if (v && v->owner) {
-		if (v->data) free (v->data);
+	if (v) {
+		if (v->data && v->owner) free (v->data);
 		free (v);
 	}
 	return;
@@ -189,7 +189,7 @@ void
 cl_vector_int_set (cl_vector_int *v, const int i, int val)
 {
 	int		index = get_index_of_vector_int (v, i);
-	if (index < 0 || v->size * v->stride <= index) cl_error ("cl_vector_set", "index out of range.");
+	if (index < 0 || v->size * v->stride <= index) cl_error ("cl_vector_int_set", "index out of range.");
 	v->data[index] = val;
 	return;
 }
@@ -198,34 +198,8 @@ int
 cl_vector_int_get (const cl_vector_int *v, const int i)
 {
 	int		index = get_index_of_vector_int (v, i);
-	if (index < 0 || v->tsize <= index) cl_error ("cl_vector_get", "index out of range.");
+	if (index < 0 || v->tsize <= index) cl_error ("cl_vector_int_get", "index out of range.");
 	return v->data[index];
-}
-
-cl_matrix *
-cl_matrix_view_array (const size_t size1, const size_t size2, double *data)
-{
-	cl_matrix *a = (cl_matrix *) malloc (sizeof (cl_matrix));
-	a->size1 = size1;
-	a->size2 = size2;
-	a->lda = size1;
-	a->tsize = size1 * size2;
-	a->data = data;
-	a->owner = false;
-	a->allocated = true;
-	return a;
-}
-
-cl_vector *
-cl_vector_view_array (const size_t size, double *data)
-{
-	cl_vector *v = (cl_vector *) malloc (sizeof (cl_vector));
-	v->size = size;
-	v->stride = 1;
-	v->data = data;
-	v->owner = false;
-	v->allocated = true;
-	return v;
 }
 
 void
@@ -234,8 +208,8 @@ cl_matrix_get_col (cl_vector *v, const cl_matrix *a, const size_t index)
 	size_t incv, incm;
 
 	if (cl_vector_is_empty (v)) cl_error ("cl_matrix_get_col", "vector is empty");
-	if (cl_matrix_is_empty (a)) cl_error ("cl_matrix_gset_col", "matrix is empty");
-	if (v->size != a->size1) cl_error ("cl_matrix_get_col", "vector and matrix size not match");
+	if (cl_matrix_is_empty (a)) cl_error ("cl_matrix_get_col", "matrix is empty");
+	if (v->size != a->size1) cl_error ("cl_matrix_get_col", "vector and matrix size are not match");
 	if (index < 0 || index >= a->size2) cl_error ("cl_matrix_get_col", "index must be in [0, a->size2)");
 	incm = 1;
 	incv = v->stride;
@@ -250,7 +224,7 @@ cl_matrix_set_col (cl_matrix *a, const size_t index, const cl_vector *v)
 
 	if (cl_vector_is_empty (v)) cl_error ("cl_matrix_set_col", "vector is empty");
 	if (cl_matrix_is_empty (a)) cl_error ("cl_matrix_set_col", "matrix is empty");
-	if (v->size != a->size1) cl_error ("cl_matrix_set_col", "vector and matrix size not match");
+	if (v->size != a->size1) cl_error ("cl_matrix_set_col", "vector and matrix size are not match");
 	if (index < 0 || index >= a->size2) cl_error ("cl_matrix_set_col", "index must be in [0, a->size2)");
 	incv = v->stride;
 	incm = 1;
@@ -352,7 +326,7 @@ cl_matrix_memcpy (cl_matrix *dest, const cl_matrix *src)
 	cl_vector	*col;
 	if (cl_matrix_is_empty (src)) cl_error ("cl_matrix_memcpy", "first matrix is empty");
 	if (cl_matrix_is_empty (dest)) cl_error ("cl_matrix_memcpy", "second matrix is empty");
-	if (dest->size1 != src->size1 || dest->size2 != src->size2) cl_error ("cl_matrix_memcpy", "matrix size not match");
+	if (dest->size1 != src->size1 || dest->size2 != src->size2) cl_error ("cl_matrix_memcpy", "matrix size are not match");
 	col = cl_vector_alloc (src->size1);
 	for (j = 0; j < src->size2; j++) {
 		cl_matrix_get_col (col, src, j);
@@ -366,8 +340,8 @@ void
 cl_vector_memcpy (cl_vector *dest, const cl_vector *src)
 {
 	if (cl_vector_is_empty (src)) cl_error ("cl_vector_memcpy", "vector is empty");
-	if (cl_vector_is_empty (dest)) cl_error ("cl_vector_memcpy", "vector not allocated");
-	if (dest->size != src->size) cl_error ("cl_vector_memcpy", "vector size not match");
+	if (cl_vector_is_empty (dest)) cl_error ("cl_vector_memcpy", "vector is not allocated");
+	if (dest->size != src->size) cl_error ("cl_vector_memcpy", "vector size are not match");
   	cblas_dcopy (src->size, src->data, src->stride, dest->data, dest->stride);
 	return;
 }
@@ -394,7 +368,7 @@ void
 cl_matrix_fprintf (FILE *stream, const cl_matrix *a, const char *format)
 {
 	int	i, j, k;
-	if (cl_matrix_is_empty (a)) cl_error ("cl_matrix_fprintf2", "matrix is empty");
+	if (cl_matrix_is_empty (a)) cl_error ("cl_matrix_fprintf", "matrix is empty");
 	k = 0;
 	for (i = 0; i < a->size1; i++) {
 		for (j = 0; j < a->size2; j++) {
