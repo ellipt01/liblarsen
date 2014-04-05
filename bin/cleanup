@@ -8,6 +8,9 @@ fi
 echo "rm -rf autom4te.cache"
 rm -rf autom4te.cache
 
+echo "rm -f INSTALL compile"
+rm -r INSTALL compile
+
 echo "rm -f config.h.in install-sh missing depcomp aclocal.m4 acinclude.m4"
 rm -f config.h.in install-sh missing depcomp aclocal.m4 acinclude.m4
 

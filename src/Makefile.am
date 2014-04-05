@@ -22,5 +22,5 @@ liblarsen_la_SOURCES = \
 liblarsen_la_LDFLAGS = 
 
 liblarsen_la_LIBADD = \
-	 -lclapack_interface
+	 -L../clapack_interface -lclapack_interface
 
