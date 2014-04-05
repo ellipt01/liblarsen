@@ -1,5 +1,5 @@
 /*
- * examples.c
+ * example.c
  *
  *  Created on: 2014/03/17
  *      Author: utsugi
@@ -7,8 +7,8 @@
 
 #include <string.h>
 
-#include "larsen.h"
-#include "examples/examples.h"
+#include <larsen.h>
+#include "example.h"
 
 larsen_data *
 larsen_data_alloc (const size_t size1, const size_t size2)

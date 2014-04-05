@@ -22,5 +22,6 @@ AC_PROG_LIBTOOL
 AC_CONFIG_FILES(Makefile
                 clapack_interface/Makefile
                 src/Makefile
+                example/Makefile
                 include/Makefile)
 AC_OUTPUT

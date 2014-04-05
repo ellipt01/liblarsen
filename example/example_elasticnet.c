@@ -5,8 +5,8 @@
  *      Author: utsugi
  */
 
-#include "larsen.h"
-#include "examples/examples.h"
+#include <larsen.h>
+#include "example.h"
 
 void
 example_elasticnet (cl_matrix *x, cl_vector *y, double start, double dt, double stop, double lambda2, double gamma, int maxiter)

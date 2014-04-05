@@ -5,10 +5,12 @@
  *      Author: utsugi
  */
 
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
-#include "larsen.h"
-#include "examples/examples.h"
+#include <larsen.h>
+#include "example.h"
 
 char	fn[80] = "\0";
 size_t	skipheaders = 0;

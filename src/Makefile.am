@@ -1,7 +1,7 @@
 ## Process this file with automake to produce Makefile.in
 
 INCLUDES =\
-	 -I../include -I../clapack_interface
+	 -I$(top_srcdir)/include -I$(top_srcdir)/clapack_interface
 
 AM_CFLAGS =\
 	 -Wall\
@@ -19,8 +19,9 @@ liblarsen_la_SOURCES = \
 	elasticnet.c\
 	bic.c
 
-liblarsen_la_LDFLAGS = 
+liblarsen_la_CPPFLAGS = -I$(top_srcdir)/include
 
-liblarsen_la_LIBADD = \
-	 -L../clapack_interface -lclapack_interface
+liblarsen_la_LDFLAGS = -L$(top_srcdir)/clapack_interface
+
+liblarsen_la_LIBADD = -lclapack_interface
 
