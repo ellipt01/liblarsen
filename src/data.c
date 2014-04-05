@@ -30,13 +30,17 @@ cl_vector *
 larsen_centering_matrix (cl_matrix *x)
 {
 	int			j;
+	cl_vector	*xj = cl_vector_alloc (x->size1);
 	cl_vector	*mean = cl_vector_alloc (x->size2);
 	for (j = 0; j < x->size2; j++) {
-		cl_vector	*xj = cl_matrix_column (x, j);
-		double		meanj = cl_vector_mean (xj);
+		double		meanj;
+		cl_matrix_get_col (xj, x, j);
+		meanj = cl_vector_mean (xj);
 		cl_vector_set (mean, j, meanj);
 		cl_vector_add_constant (xj, - meanj);
+		cl_matrix_set_col (x, j, xj);
 	}
+	cl_vector_free (xj);
 	return mean;
 }
 
@@ -45,12 +49,16 @@ cl_vector *
 larsen_normalizing_matrix (cl_matrix *x)
 {
 	int			j;
+	cl_vector	*xj = cl_vector_alloc (x->size1);
 	cl_vector	*nrm = cl_vector_alloc (x->size2);
 	for (j = 0; j < x->size2; j++) {
-		cl_vector	*xj = cl_matrix_column (x, j);
-		double		nrmj = cl_vector_nrm (xj);
+		double		nrmj;
+		cl_matrix_get_col (xj, x, j);
+		nrmj = cl_vector_nrm (xj);
 		cl_vector_set (nrm, j, nrmj);
 		cl_vector_scale (xj, 1. / nrmj);
+		cl_matrix_set_col (x, j, xj);
 	}
+	cl_vector_free (xj);
 	return nrm;
 }

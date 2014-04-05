@@ -14,17 +14,19 @@ extruct_xa (larsen *l)
 	int			i;
 	size_t		size1 = l->x->size1;
 	size_t		size2 = l->A->size;
+	cl_vector	*xj;
 	cl_matrix	*xa;
 
 	if (size2 <= 0) return NULL;
 
+	xj = cl_vector_alloc (size1);
 	xa = cl_matrix_alloc (size1, size2);
 	for (i = 0; i < size2; i++) {
 		int		j = cl_vector_int_get (l->A, i);
-		cl_vector	*col = cl_matrix_column (l->x, j);
-		cl_matrix_set_col (xa, i, col);
-		cl_vector_free (col);
+		cl_matrix_get_col (xj, l->x, j);
+		cl_matrix_set_col (xa, i, xj);
 	}
+	cl_vector_free (xj);
 
 	return xa;
 }
@@ -53,14 +55,14 @@ update_chol (larsen *l, cl_matrix *xa)
 		/*** insert a predictor ***/
 		int			column = l->oper.column;
 		cl_vector	*t;
-		cl_vector	*xi = cl_matrix_column (l->x, column);
-
+		cl_vector	*xi = cl_vector_alloc (l->x->size1);
+		cl_matrix_get_col (xi, l->x, column);
 		t = cl_matrix_transpose_dot_vector (xa, xi);
+		cl_vector_free (xi);
 		if (l->do_scaling) {
 			cl_vector_scale (t, pow (l->scale, 2.));
 			cl_vector_set (t, index, cl_vector_get (t, index) + l->lambda2 * pow (l->scale, 2.));
 		}
-		cl_vector_free (xi);
 		if (l->A->size == 1 && cl_matrix_is_empty (l->chol)) {
 			l->chol = cl_matrix_alloc (1, 1);
 			cl_matrix_set (l->chol, 0, 0, cl_vector_get (t, 0));

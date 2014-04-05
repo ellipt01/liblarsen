@@ -228,22 +228,19 @@ cl_vector_view_array (const size_t size, double *data)
 	return v;
 }
 
-static cl_vector *
-cl_vector_view_array_with_stride (const size_t size, const size_t stride, double *data)
+void
+cl_matrix_get_col (cl_vector *v, const cl_matrix *a, const size_t index)
 {
-	cl_vector	*v = cl_vector_view_array (size, data);
-	v->stride = stride;
-	return v;
-}
+	size_t incv, incm;
 
-cl_vector *
-cl_matrix_column (const cl_matrix *a, const size_t k)
-{
-	cl_vector	*col;
-	if (cl_matrix_is_empty (a)) cl_error ("cl_matrix_column", "input matrix is empty");
-	if (k < 0 || a->size2 <= k) cl_error ("cl_matrix_column", "k must be 0 <= k < a->size2");
-	col = cl_vector_view_array_with_stride (a->size1, 1, a->data + k * a->lda);
-	return col;
+	if (cl_vector_is_empty (v)) cl_error ("cl_matrix_get_col", "vector is empty");
+	if (cl_matrix_is_empty (a)) cl_error ("cl_matrix_gset_col", "matrix is empty");
+	if (v->size != a->size1) cl_error ("cl_matrix_get_col", "vector and matrix size not match");
+	if (index < 0 || index >= a->size2) cl_error ("cl_matrix_get_col", "index must be in [0, a->size2)");
+	incm = 1;
+	incv = v->stride;
+	cblas_dcopy (a->size1, a->data + a->lda * index, incm, v->data, incv);
+	return;
 }
 
 void
@@ -252,9 +249,9 @@ cl_matrix_set_col (cl_matrix *a, const size_t index, const cl_vector *v)
 	size_t incv, incm;
 
 	if (cl_vector_is_empty (v)) cl_error ("cl_matrix_set_col", "vector is empty");
-	if (cl_matrix_is_empty (a)) cl_error ("cl_matrix_get_col", "matrix is empty");
-	if (v->size != a->size1) cl_error ("cl_matrix_set_col", "vector and matrix size invalid");
-	if (index >= a->size2) cl_error ("cl_matrix_set_col", "specified index out of range");
+	if (cl_matrix_is_empty (a)) cl_error ("cl_matrix_set_col", "matrix is empty");
+	if (v->size != a->size1) cl_error ("cl_matrix_set_col", "vector and matrix size not match");
+	if (index < 0 || index >= a->size2) cl_error ("cl_matrix_set_col", "index must be in [0, a->size2)");
 	incv = v->stride;
 	incm = 1;
 	cblas_dcopy (v->size, v->data, incv, a->data + a->lda * index, incm);
@@ -351,15 +348,17 @@ cl_matrix_remove_col (cl_matrix *a)
 void
 cl_matrix_memcpy (cl_matrix *dest, const cl_matrix *src)
 {
-	int		j;
+	int			j;
+	cl_vector	*col;
 	if (cl_matrix_is_empty (src)) cl_error ("cl_matrix_memcpy", "first matrix is empty");
 	if (cl_matrix_is_empty (dest)) cl_error ("cl_matrix_memcpy", "second matrix is empty");
 	if (dest->size1 != src->size1 || dest->size2 != src->size2) cl_error ("cl_matrix_memcpy", "matrix size not match");
+	col = cl_vector_alloc (src->size1);
 	for (j = 0; j < src->size2; j++) {
-		cl_vector	*col = cl_matrix_column ((cl_matrix *) src, j);
+		cl_matrix_get_col (col, src, j);
 		cl_matrix_set_col (dest, j, col);
-		cl_vector_free (col);
 	}
+	cl_vector_free (col);
 	return;
 }
 

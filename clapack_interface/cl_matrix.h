@@ -15,7 +15,6 @@ extern "C" {
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
-#include <math.h>
 
 #define DBL_EPSILON		2.2204460492503131e-16
 
@@ -76,7 +75,7 @@ double			cl_vector_get (const cl_vector *v, const int i);
 void			cl_vector_int_set (cl_vector_int *v, const int i, int val);
 int				cl_vector_int_get (const cl_vector_int *v, const int i);
 
-cl_vector		*cl_matrix_column (const cl_matrix *a, const size_t k);
+void			cl_matrix_get_col (cl_vector *v, const cl_matrix *a, const size_t index);
 void			cl_matrix_set_col (cl_matrix *a, const size_t index, const cl_vector *v);
 
 void			cl_matrix_add_col (cl_matrix *a);
