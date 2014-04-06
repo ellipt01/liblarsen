@@ -10,26 +10,6 @@
 #include <larsen.h>
 #include "example.h"
 
-larsen_data *
-larsen_data_alloc (const size_t size1, const size_t size2)
-{
-	larsen_data	*data = (larsen_data *) malloc (sizeof (larsen_data));
- 	data->x = cl_matrix_alloc (size1, size2);
-	data->y = cl_vector_alloc (size1);
-	return data;
-}
-
-void
-larsen_data_free (larsen_data *data)
-{
-	if (data) {
-		if (!cl_matrix_is_empty (data->x)) cl_matrix_free (data->x);
-		if (!cl_vector_is_empty (data->y)) cl_vector_free (data->y);
-		free (data);
-	}
-	return;
-}
-
 static void
 count_data (char *fn, int skip_header, size_t *row, size_t *col)
 {
@@ -59,22 +39,25 @@ count_data (char *fn, int skip_header, size_t *row, size_t *col)
 	return;
 }
 
-larsen_data *
-read_data (char *fn, int skip_header)
+void
+read_data (char *fn, int skip_header, cl_vector **y, cl_matrix **x)
 {
 	int			i, j;
 	size_t		size1;
 	size_t		size2;
-	larsen_data	*data = NULL;
 
 	char		buf[100 * BUFSIZ];
 	FILE		*fp;
 
+	cl_vector	*_y;
+	cl_matrix	*_x;
+
 	count_data (fn, skip_header, &size1, &size2);
 
-	data = larsen_data_alloc (size1, size2);
+	_y = cl_vector_alloc (size1);
+	_x = cl_matrix_alloc (size1, size2);
 
-	if ((fp = fopen (fn, "r")) == NULL) return NULL;
+	if ((fp = fopen (fn, "r")) == NULL) return;
 	i = 0;
 	while (fgets (buf, 100 * BUFSIZ, fp) != NULL) {
 		char	*p;
@@ -82,14 +65,18 @@ read_data (char *fn, int skip_header)
 		if (i - skip_header >= 0) {
 			for (j = 0, p = strtok (buf, "\t "); p != NULL; j++, p = strtok (NULL, "\t ")) {
 				double	val = (double) atof (p);
-				if (j >= data->x->size2) cl_vector_set (data->y, i - skip_header, val);
-				else cl_matrix_set (data->x, i - skip_header, j, val);
+				if (j >= _x->size2) cl_vector_set (_y, i - skip_header, val);
+				else cl_matrix_set (_x, i - skip_header, j, val);
 			}
 		}
 		i++;
 	}
 	fclose (fp);
-	return data;
+
+	*x = _x;
+	*y = _y;
+
+	return;
 }
 
 void

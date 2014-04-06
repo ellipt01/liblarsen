@@ -85,6 +85,32 @@ cl_vector_int_alloc (const size_t size)
 	return v;
 }
 
+cl_matrix *
+cl_matrix_view_array (const size_t size1, const size_t size2, const size_t lda, double *data)
+{
+	cl_matrix *a = (cl_matrix *) malloc (sizeof (cl_matrix));
+	a->size1 = size1;
+	a->size2 = size2;
+	a->lda = lda;
+	a->tsize = size1 * size2;
+	a->data = data;
+	a->owner = false;
+	a->allocated = true;
+	return a;
+}
+
+cl_vector *
+cl_vector_view_array (const size_t size, const size_t stride, double *data)
+{
+	cl_vector *v = (cl_vector *) malloc (sizeof (cl_vector));
+	v->size = size;
+	v->stride = stride;
+	v->data = data;
+	v->owner = false;
+	v->allocated = true;
+	return v;
+}
+
 bool
 cl_matrix_is_empty (const cl_matrix *a)
 {

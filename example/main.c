@@ -118,20 +118,24 @@ fprintf_params (void)
 int
 main (int argc, char **argv)
 {
-	larsen_data	*data = NULL;
+//	larsen_data	*data = NULL;
+
+	cl_vector	*y;
+	cl_matrix	*x;
 
 	if (!read_params (argc, argv)) usage (argv[0]);
 	fprintf_params ();
 
-	data = read_data (fn, skipheaders);
+	read_data (fn, skipheaders, &y, &x);
 
-	larsen_centering_vector (data->y);
-	larsen_centering_matrix (data->x);
-	larsen_normalizing_matrix (data->x);
+	larsen_centering_vector (y);
+	larsen_centering_matrix (x);
+	larsen_normalizing_matrix (x);
 
-	example_elasticnet (data->x, data->y, start, dt, stop, lambda2, gamma_bic, maxiter);
+	example_elasticnet (x, y, start, dt, stop, lambda2, gamma_bic, maxiter);
 
-	larsen_data_free (data);
+	cl_vector_free (y);
+	cl_matrix_free (x);
 
 	return EXIT_SUCCESS;
 }

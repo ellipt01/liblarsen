@@ -21,11 +21,7 @@ AC_PROG_LIBTOOL
 AM_INIT_AUTOMAKE
 
 # Checks for libraries.
-# FIXME: Replace `main' with a function in `-lclapack_interface':
-#AC_CHECK_LIB([clapack_interface], [main])
-# FIXME: Replace `main' with a function in `-lm':
-#AC_CHECK_LIB([m], [main])
-# FIXME: Replace `main' with a function in `-lqrupdate':
+AC_CHECK_LIB([m], [floor])
 AC_CHECK_LIB([qrupdate], [dchinx_])
 
 # Checks for header files.
@@ -38,7 +34,9 @@ AC_TYPE_SIZE_T
 # Checks for library functions.
 AC_FUNC_MALLOC
 AC_FUNC_REALLOC
-AC_CHECK_FUNCS([floor pow sqrt strrchr])
+AC_CHECK_FUNCS([floor pow sqrt log strrchr])
+AC_CHECK_FUNCS([dpotrf_ dpotrs_])
+AC_CHECK_FUNCS([dchinx_ dchdex_])
 
 AC_CONFIG_FILES([Makefile
                  clapack_interface/Makefile

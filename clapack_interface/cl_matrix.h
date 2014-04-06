@@ -58,6 +58,9 @@ cl_matrix		*cl_matrix_alloc (const size_t size1, const size_t size2);
 cl_vector		*cl_vector_alloc (const size_t size);
 cl_vector_int	*cl_vector_int_alloc (const size_t size);
 
+cl_matrix		*cl_matrix_view_array (const size_t size1, const size_t size2, const size_t lda, double *data);
+cl_vector		*cl_vector_view_array (const size_t size, const size_t stride, double *data);
+
 bool			cl_matrix_is_empty (const cl_matrix *a);
 bool			cl_vector_is_empty (const cl_vector *a);
 bool			cl_vector_int_is_empty (const cl_vector_int *v);
