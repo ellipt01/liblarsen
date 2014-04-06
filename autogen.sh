@@ -9,7 +9,7 @@ echo
 # configure program
 libtoolize --automake
 aclocal
-#autoheader
+autoheader
 automake --add-missing --gnu --force-missing
 autoconf
 echo "Now use ./configure"
