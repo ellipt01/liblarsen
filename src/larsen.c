@@ -111,7 +111,25 @@ update_stop_loop_flag (larsen *l)
 	return;
 }
 
-/* progress one step of the regression */
+/* Progress one step of the LARS-EN algorithm
+ * add / remove one variable (assigned by l->oper.column)
+ * to / from the active set.
+ *
+ * 1. Update correlation between residualrelevants (y - mu) and variables (X').
+ *    In the case of A = {} (first iteration or restart), a variable
+ *    which has largest correlation is selected (l->column is set to its index in X).
+ *
+ * 2. Add / remove one variable assigned by l->oper.column to / from the active set.
+ *
+ * 3. Update equi-angular vector and its relevant.
+ *
+ * 4. Update step size and l->oper (which specify the next operation to the active set).
+ *    l->oper.action is updated according to whether gamma_hat < gamma_tilde or not.
+ *
+ * 5. Update solutions (beta and mu).
+ *
+ * 6. Update stop_loop flag. if it sets to true, loop of the regression should be terminated.
+ */
 bool
 larsen_regression_step (larsen *l)
 {
@@ -141,7 +159,14 @@ larsen_get_lambda1 (larsen *l)
 	return (l->do_scaling) ? l->lambda1 * l->scale : l->lambda1;
 }
 
-/* interpolation */
+/* Interpolation
+ * In the case of l->lambda1 < | beta | after larsen_regression_step (),
+ * the solution corresponding to a designed lambda1 is obtained by the
+ * following interpolation:
+ * beta_intr = beta_prev + l->stepsize_intr * w
+ * mu_intr = mu_prev + l->stepsize_intr * u
+ * where l->stepsize_intr = l->absA * (l->lambda1 - | beta_prev |)
+ */
 bool
 larsen_interpolate (larsen *l)
 {
@@ -157,7 +182,7 @@ larsen_interpolate (larsen *l)
 	return l->interp;
 }
 
-/* get elastic net solution: beta_navie -> beta_elnet = scale * beta_navie */
+/* return elastic net solution: beta_elnet = scale * l->beta */
 cl_vector *
 larsen_get_beta (larsen *l)
 {
@@ -168,7 +193,7 @@ larsen_get_beta (larsen *l)
 	return beta;
 }
 
-/* get elastic net solution: mu_navie -> mu_elnet = scale^2 * mu_navie */
+/* return elastic net solution: mu_elnet = scale^2 * mu_navie */
 cl_vector *
 larsen_get_mu (larsen *l)
 {
@@ -179,17 +204,9 @@ larsen_get_mu (larsen *l)
 	return mu;
 }
 
-void
+/* increment l->lambda1 */
+double
 larsen_increment_lambda1 (larsen *l, double dt)
 {
-	l->lambda1 += dt;
-	return;
-}
-
-bool
-larsen_loop_continue (larsen *l, double stop)
-{
-	if (stop > 0.) return (l->lambda1 <= stop);
-	if (!l->stop_loop) return true;
-	return false;
+	return (l->lambda1 += dt);
 }

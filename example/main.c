@@ -110,7 +110,7 @@ fprintf_params (void)
 	fprintf (stderr, "read file: \t\"%s\" (skip headers = %d)\n", fn, (int) skipheaders);
 	fprintf (stderr, "lambda1 :\t[%.2f : %.2f : %.2f]\n", start, dt, stop);
 	fprintf (stderr, "lambda2 :\t%.2f\n", lambda2);
-	fprintf (stderr, "maxsteps :\t%d\n", maxiter);
+	fprintf (stderr, "maxiter :\t%d\n", maxiter);
 	fprintf (stderr, "\n###########################################################\n");
 	return;
 }
@@ -118,8 +118,6 @@ fprintf_params (void)
 int
 main (int argc, char **argv)
 {
-//	larsen_data	*data = NULL;
-
 	cl_vector	*y;
 	cl_matrix	*x;
 
