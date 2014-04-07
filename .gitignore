@@ -6,6 +6,7 @@
 # working directries
 #bin
 .cproject
+.autotools
 .settings
 work
 share
