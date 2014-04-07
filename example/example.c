@@ -6,9 +6,7 @@
  */
 
 #include <string.h>
-
 #include <larsen.h>
-#include "example.h"
 
 static void
 count_data (char *fn, int skip_header, size_t *row, size_t *col)
