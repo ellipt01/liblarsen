@@ -19,5 +19,5 @@ liblarsenexample_la_CPPFLAGS = -I$(top_srcdir)/.
 
 liblarsenexample_la_LDFLAGS = -L$(top_srcdir)/c_linalg -L$(top_srcdir)/src
 
-#liblarsenexample_la_LIBADD = -lclinalg -llarsen
+liblarsenexample_la_LIBADD = -lclinalg -llarsen
 
