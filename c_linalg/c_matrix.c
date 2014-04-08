@@ -94,7 +94,7 @@ c_matrix_view_array (const size_t size1, const size_t size2, const size_t lda, d
 	a->size1 = size1;
 	a->size2 = size2;
 	a->lda = lda;
-	a->tsize = size1 * size2;
+	a->tsize = a->lda * size2;
 	a->data = data;
 	a->owner = false;
 	a->allocated = true;
