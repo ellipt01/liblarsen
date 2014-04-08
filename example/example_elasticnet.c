@@ -13,7 +13,7 @@
  * The value of extended BIC (Chen and Chen, 2008) are also calculated for each lambda1.
  */
 void
-example_elasticnet (cl_matrix *x, cl_vector *y, double start, double dt, double stop, double lambda2, double gamma, int maxiter)
+example_elasticnet (c_matrix *x, c_vector *y, double start, double dt, double stop, double lambda2, double gamma, int maxiter)
 {
 	int			iter = 0;
 	larsen		*l = larsen_alloc (start, lambda2, x, y);

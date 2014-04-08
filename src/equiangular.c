@@ -8,69 +8,69 @@
 #include <larsen.h>
 
 /* return Xa = X(A) */
-static cl_matrix *
+static c_matrix *
 extruct_xa (larsen *l)
 {
 	int			i;
 	size_t		size1 = l->x->size1;
 	size_t		size2 = l->A->size;
-	cl_vector	*xj;
-	cl_matrix	*xa;
+	c_vector	*xj;
+	c_matrix	*xa;
 
 	if (size2 <= 0) return NULL;
 
-	xj = cl_vector_alloc (size1);
-	xa = cl_matrix_alloc (size1, size2);
+	xj = c_vector_alloc (size1);
+	xa = c_matrix_alloc (size1, size2);
 	for (i = 0; i < size2; i++) {
-		int		j = cl_vector_int_get (l->A, i);
-		cl_matrix_get_col (xj, l->x, j);
-		cl_matrix_set_col (xa, i, xj);
+		int		j = c_vector_int_get (l->A, i);
+		c_matrix_get_col (xj, l->x, j);
+		c_matrix_set_col (xa, i, xj);
 	}
-	cl_vector_free (xj);
+	c_vector_free (xj);
 
 	return xa;
 }
 
 /* s_i = sign(c_i) */
-static cl_vector *
+static c_vector *
 update_sign (larsen *l)
 {
 	int			i;
-	cl_vector	*s = cl_vector_alloc (l->A->size);
+	c_vector	*s = c_vector_alloc (l->A->size);
 	for (i = 0; i < l->A->size; i++) {
-		int		j = cl_vector_int_get (l->A, i);
-		double	sign = (cl_vector_get (l->c, j) >= 0.) ? 1. : -1.;
-		cl_vector_set (s, i, sign);
+		int		j = c_vector_int_get (l->A, i);
+		double	sign = (c_vector_get (l->c, j) >= 0.) ? 1. : -1.;
+		c_vector_set (s, i, sign);
 	}
 	return s;
 }
 
 /* do cholinsert or choldelete of specified index */
 static void
-update_chol (larsen *l, cl_matrix *xa)
+update_chol (larsen *l, c_matrix *xa)
 {
 	int			index = l->oper.index;
 
 	if (l->oper.action == ACTIVESET_ACTION_ADD) {
 		/*** insert a predictor ***/
 		int			column = l->oper.column;
-		cl_vector	*t;
-		cl_vector	*xi = cl_vector_alloc (l->x->size1);
-		cl_matrix_get_col (xi, l->x, column);
-		t = cl_matrix_transpose_dot_vector (xa, xi);
-		cl_vector_free (xi);
+		c_vector	*t;
+		c_vector	*xi = c_vector_alloc (l->x->size1);
+		c_matrix_get_col (xi, l->x, column);
+		t = c_matrix_transpose_dot_vector (xa, xi);
+		c_vector_free (xi);
 		if (l->do_scaling) {
-			cl_vector_scale (t, pow (l->scale, 2.));
-			cl_vector_set (t, index, cl_vector_get (t, index) + l->lambda2 * pow (l->scale, 2.));
+			c_vector_scale (t, pow (l->scale, 2.));
+			c_vector_set (t, index, c_vector_get (t, index) + l->lambda2 * pow (l->scale, 2.));
 		}
-		if (l->A->size == 1 && cl_matrix_is_empty (l->chol)) {
-			l->chol = cl_matrix_alloc (1, 1);
-			cl_matrix_set (l->chol, 0, 0, cl_vector_get (t, 0));
+		if (l->A->size == 1 && c_matrix_is_empty (l->chol)) {
+			l->chol = c_matrix_alloc (1, 1);
+			c_matrix_set (l->chol, 0, 0, c_vector_get (t, 0));
 			cl_linalg_cholesky_decomp (l->chol);
 		} else {
 			cl_linalg_cholesky_insert (l->chol, index, t);
 		}
-		cl_vector_free (t);
+		c_vector_free (t);
 
 	} else if (l->oper.action == ACTIVESET_ACTION_DROP) {
 		/*** delete a predictor ***/
@@ -84,8 +84,8 @@ update_chol (larsen *l, cl_matrix *xa)
 static bool
 update_equiangular_larsen (larsen *l)
 {
-	cl_matrix	*xa;
-	cl_vector	*s;
+	c_matrix	*xa;
+	c_vector	*s;
 
 	if (l->A->size <= 0) return false;
 
@@ -95,23 +95,23 @@ update_equiangular_larsen (larsen *l)
 
 	s = update_sign (l);
 
-	if (l->w) cl_vector_free (l->w);
-	l->w = cl_vector_alloc (s->size);
-	cl_vector_memcpy (l->w, s);
+	if (l->w) c_vector_free (l->w);
+	l->w = c_vector_alloc (s->size);
+	c_vector_memcpy (l->w, s);
 
 	{
 		int		info = cl_linalg_cholesky_svx (l->chol, l->w);
 		if (info != 0) fprintf (stderr, "WARNING : cholesky_svx info = %d : matrix is not positive definite.\n", info);
 	}
 
-	l->absA = 1. / sqrt (cl_vector_dot_vector (s, l->w));
-	cl_vector_free (s);
-	cl_vector_scale (l->w, l->absA);
+	l->absA = 1. / sqrt (c_vector_dot_vector (s, l->w));
+	c_vector_free (s);
+	c_vector_scale (l->w, l->absA);
 
-	if (l->u) cl_vector_free (l->u);
-	l->u = cl_matrix_dot_vector (xa, l->w);
-	if (l->do_scaling) cl_vector_scale (l->u, l->scale);
-	cl_matrix_free (xa);
+	if (l->u) c_vector_free (l->u);
+	l->u = c_matrix_dot_vector (xa, l->w);
+	if (l->do_scaling) c_vector_scale (l->u, l->scale);
+	c_matrix_free (xa);
 
 	return true;
 }

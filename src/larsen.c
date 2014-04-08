@@ -7,6 +7,8 @@
 
 #include <larsen.h>
 
+#define MIN(a, b)		((a > b) ? b : a)
+
 /* active_set.c */
 extern bool	activeset_add (larsen *l, int j);
 extern bool	activeset_remove (larsen *l, int j);
@@ -19,14 +21,14 @@ extern bool	update_equiangular (larsen *l);
 
 /* y(A) = alpha * w(A) + y(A) */
 void
-larsen_awpy (larsen *l, double alpha, cl_vector *w, cl_vector *y)
+larsen_awpy (larsen *l, double alpha, c_vector *w, c_vector *y)
 {
 	int				i;
 	for (i = 0; i < l->A->size; i++) {
-		int		j = cl_vector_int_get (l->A, i);
-		double	wi = cl_vector_get (w, i);
-		double	yj = cl_vector_get (y, j);
-		cl_vector_set (y, j, yj + alpha * wi);
+		int		j = c_vector_int_get (l->A, i);
+		double	wi = c_vector_get (w, i);
+		double	yj = c_vector_get (y, j);
+		c_vector_set (y, j, yj + alpha * wi);
 	}
 	return;
 }
@@ -35,27 +37,27 @@ larsen_awpy (larsen *l, double alpha, cl_vector *w, cl_vector *y)
 static void
 update_correlations (larsen *l)
 {
-	cl_vector	*r = cl_vector_alloc (l->y->size);
-	cl_vector_memcpy (r, l->y);
-	cl_vector_sub (r, l->mu);
+	c_vector	*r = c_vector_alloc (l->y->size);
+	c_vector_memcpy (r, l->y);
+	c_vector_sub (r, l->mu);
 
 	/*
 	 *  c = Z' * (b - Z * beta),  b = [y; 0], Z = scale * [X; sqrt(lambda2) * E]
 	 *  if lambda2 > 0 (scale != 1),
 	 *  c = scale * (X' * (y - mu) - scale * lambda2 * beta)
 	 */
-	if (l->c) cl_vector_free (l->c);
-	l->c = cl_matrix_transpose_dot_vector (l->x, r);
+	if (l->c) c_vector_free (l->c);
+	l->c = c_matrix_transpose_dot_vector (l->x, r);
 	if (l->do_scaling) {
-		cl_vector_axpy (- l->lambda2 * l->scale, l->beta, l->c);
-		cl_vector_scale (l->c, l->scale);
+		c_vector_axpy (- l->lambda2 * l->scale, l->beta, l->c);
+		c_vector_scale (l->c, l->scale);
 	}
-	cl_vector_free (r);
+	c_vector_free (r);
 
 	{
-		int		maxidx = cl_vector_amax (l->c);
+		int		maxidx = c_vector_amax (l->c);
 		if (l->A->size == 0) l->oper.column = maxidx;
-		l->sup_c = fabs (cl_vector_get (l->c, maxidx));
+		l->sup_c = fabs (c_vector_get (l->c, maxidx));
 	}
 
 	return;
@@ -66,8 +68,8 @@ static void
 update_solutions (larsen *l)
 {
 	double		stepsize = (!l->interp) ? l->stepsize : l->stepsize_intr;
-	cl_vector	*beta = cl_vector_alloc (l->beta->size);
-	cl_vector	*mu = cl_vector_alloc (l->mu->size);
+	c_vector	*beta = c_vector_alloc (l->beta->size);
+	c_vector	*mu = c_vector_alloc (l->mu->size);
 
 	/*
 	 *  in the case of l->interp == true, i.e.,
@@ -76,26 +78,26 @@ update_solutions (larsen *l)
 	 *  mu_intr = mu_prev + stepsize_intr * u
 	 */
 	if (!l->interp) {
-		cl_vector_memcpy (beta, l->beta);
-		cl_vector_memcpy (mu, l->mu);
+		c_vector_memcpy (beta, l->beta);
+		c_vector_memcpy (mu, l->mu);
 	} else {
-		cl_vector_memcpy (beta, l->beta_prev);
-		cl_vector_memcpy (mu, l->mu_prev);
+		c_vector_memcpy (beta, l->beta_prev);
+		c_vector_memcpy (mu, l->mu_prev);
 	}
 	larsen_awpy (l, stepsize, l->w, beta);
-	cl_vector_axpy (stepsize, l->u, mu);
+	c_vector_axpy (stepsize, l->u, mu);
 
 	if (!l->interp) {
-		cl_vector_memcpy (l->beta_prev, l->beta);
-		cl_vector_memcpy (l->mu_prev, l->mu);
-		cl_vector_memcpy (l->beta, beta);
-		cl_vector_memcpy (l->mu, mu);
+		c_vector_memcpy (l->beta_prev, l->beta);
+		c_vector_memcpy (l->mu_prev, l->mu);
+		c_vector_memcpy (l->beta, beta);
+		c_vector_memcpy (l->mu, mu);
 	} else {
-		cl_vector_memcpy (l->beta_intr, beta);
-		cl_vector_memcpy (l->mu_intr, mu);
+		c_vector_memcpy (l->beta_intr, beta);
+		c_vector_memcpy (l->mu_intr, mu);
 	}
-	cl_vector_free (beta);
-	cl_vector_free (mu);
+	c_vector_free (beta);
+	c_vector_free (mu);
 
 	return;
 }
@@ -104,7 +106,7 @@ static void
 update_stop_loop_flag (larsen *l)
 {
 	int		size = l->A->size;
-	int		n = (l->do_scaling) ? l->x->size2 : CL_MIN (l->x->size1 - 1, l->x->size2);
+	int		n = (l->do_scaling) ? l->x->size2 : MIN (l->x->size1 - 1, l->x->size2);
 	if (l->oper.action == ACTIVESET_ACTION_DROP) size--;
 	l->stop_loop = (size >= n) ? true : false;
 	if (!l->stop_loop) l->stop_loop = (l->oper.column == -1);
@@ -171,8 +173,8 @@ bool
 larsen_interpolate (larsen *l)
 {
 	double	lambda1 = larsen_get_lambda1 (l);
-	double	nrm1_prev = cl_vector_asum (l->beta_prev);
-	double	nrm1 = cl_vector_asum (l->beta);
+	double	nrm1_prev = c_vector_asum (l->beta_prev);
+	double	nrm1 = c_vector_asum (l->beta);
 	l->interp = false;
 	if (nrm1_prev <= lambda1 && lambda1 < nrm1) {
 		l->interp = true;
@@ -183,24 +185,24 @@ larsen_interpolate (larsen *l)
 }
 
 /* return elastic net solution: beta_elnet = scale * l->beta */
-cl_vector *
+c_vector *
 larsen_get_beta (larsen *l)
 {
-	cl_vector	*beta = cl_vector_alloc (l->beta->size);
-	if (!l->interp) cl_vector_memcpy (beta, l->beta);
-	else cl_vector_memcpy (beta, l->beta_intr);
-	if (l->do_scaling) cl_vector_scale (beta, 1. / l->scale);
+	c_vector	*beta = c_vector_alloc (l->beta->size);
+	if (!l->interp) c_vector_memcpy (beta, l->beta);
+	else c_vector_memcpy (beta, l->beta_intr);
+	if (l->do_scaling) c_vector_scale (beta, 1. / l->scale);
 	return beta;
 }
 
 /* return elastic net solution: mu_elnet = scale^2 * mu_navie */
-cl_vector *
+c_vector *
 larsen_get_mu (larsen *l)
 {
-	cl_vector	*mu = cl_vector_alloc (l->mu->size);
-	if (!l->interp) cl_vector_memcpy (mu, l->mu);
-	else cl_vector_memcpy (mu, l->mu_intr);
-	if (l->do_scaling) cl_vector_scale (mu, pow (1. / l->scale, 2.));
+	c_vector	*mu = c_vector_alloc (l->mu->size);
+	if (!l->interp) c_vector_memcpy (mu, l->mu);
+	else c_vector_memcpy (mu, l->mu_intr);
+	if (l->do_scaling) c_vector_scale (mu, pow (1. / l->scale, 2.));
 	return mu;
 }
 

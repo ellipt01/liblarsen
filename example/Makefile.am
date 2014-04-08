@@ -1,7 +1,7 @@
 ## Process this file with automake to produce Makefile.in
 
 INCLUDES =\
-	 -I$(top_srcdir)/include -I$(top_srcdir)/clapack_interface -I$(top_srcdir)/.
+	 -I$(top_srcdir)/include -I$(top_srcdir)/c_linalg -I$(top_srcdir)/.
 
 AM_CFLAGS =\
 	 -Wall\
@@ -17,7 +17,7 @@ liblarsenexample_la_SOURCES = \
 
 liblarsenexample_la_CPPFLAGS = -I$(top_srcdir)/.
 
-liblarsenexample_la_LDFLAGS = -L$(top_srcdir)/clapack_interface -L$(top_srcdir)/src
+liblarsenexample_la_LDFLAGS = -L$(top_srcdir)/c_linalg -L$(top_srcdir)/src
 
-#liblarsenexample_la_LIBADD = -lclapack_interface -llarsen
+#liblarsenexample_la_LIBADD = -lclinalg -llarsen
 

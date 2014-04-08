@@ -38,7 +38,7 @@ count_data (char *fn, int skip_header, size_t *row, size_t *col)
 }
 
 void
-read_data (char *fn, int skip_header, cl_vector **y, cl_matrix **x)
+read_data (char *fn, int skip_header, c_vector **y, c_matrix **x)
 {
 	int			i, j;
 	size_t		size1;
@@ -47,13 +47,13 @@ read_data (char *fn, int skip_header, cl_vector **y, cl_matrix **x)
 	char		buf[100 * BUFSIZ];
 	FILE		*fp;
 
-	cl_vector	*_y;
-	cl_matrix	*_x;
+	c_vector	*_y;
+	c_matrix	*_x;
 
 	count_data (fn, skip_header, &size1, &size2);
 
-	_y = cl_vector_alloc (size1);
-	_x = cl_matrix_alloc (size1, size2);
+	_y = c_vector_alloc (size1);
+	_x = c_matrix_alloc (size1, size2);
 
 	if ((fp = fopen (fn, "r")) == NULL) return;
 	i = 0;
@@ -63,8 +63,8 @@ read_data (char *fn, int skip_header, cl_vector **y, cl_matrix **x)
 		if (i - skip_header >= 0) {
 			for (j = 0, p = strtok (buf, "\t "); p != NULL; j++, p = strtok (NULL, "\t ")) {
 				double	val = (double) atof (p);
-				if (j >= _x->size2) cl_vector_set (_y, i - skip_header, val);
-				else cl_matrix_set (_x, i - skip_header, j, val);
+				if (j >= _x->size2) c_vector_set (_y, i - skip_header, val);
+				else c_matrix_set (_x, i - skip_header, j, val);
 			}
 		}
 		i++;
@@ -83,7 +83,7 @@ output_solutionpath (int iter, larsen *l)
 	int			i;
 	char		fn[80];
 	FILE		*fp;
-	cl_vector	*beta = larsen_get_beta (l);
+	c_vector	*beta = larsen_get_beta (l);
 
 	for (i = 0; i < beta->size; i++) {
 
@@ -93,23 +93,23 @@ output_solutionpath (int iter, larsen *l)
 		else fp = fopen (fn, "aw");
 		if (fp == NULL) continue;
 
-		fprintf (fp, "%d\t%.4e\t%.4e\n", iter, l->lambda1, cl_vector_get (beta, i));
+		fprintf (fp, "%d\t%.4e\t%.4e\n", iter, l->lambda1, c_vector_get (beta, i));
 		fclose (fp);
 	}
-	cl_vector_free (beta);
+	c_vector_free (beta);
 	return;
 }
 
 void
 fprintf_beta (FILE *stream, int iter, larsen *l)
 {
-	cl_vector	*beta = larsen_get_beta (l);
+	c_vector	*beta = larsen_get_beta (l);
 
 	fprintf (stream, "beta[%04d, t = %.2f] = \n", iter, l->lambda1);
-	cl_vector_fprintf (stream, beta, "%.4e");
+	c_vector_fprintf (stream, beta, "%.4e");
 	fprintf (stream, "]\n");
 
-	cl_vector_free (beta);
+	c_vector_free (beta);
 
 	return;
 }

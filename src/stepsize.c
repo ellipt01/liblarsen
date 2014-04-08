@@ -7,7 +7,7 @@
 
 #include <larsen.h>
 
-extern void	larsen_awpy (larsen *l, double alpha, cl_vector *w, cl_vector *y);
+extern void	larsen_awpy (larsen *l, double alpha, c_vector *w, c_vector *y);
 
 static double
 posinf (void)
@@ -28,15 +28,15 @@ calc_gamma_hat (larsen *l, int *index, double *val)
 
 	} else if (l->Ac->size > 0) {
 		int			i;
-		cl_vector	*a = cl_matrix_transpose_dot_vector (l->x, l->u);
+		c_vector	*a = c_matrix_transpose_dot_vector (l->x, l->u);
 		if (l->do_scaling) {
 			larsen_awpy (l, l->lambda2 * l->scale, l->w, a);
-			cl_vector_scale (a, l->scale);
+			c_vector_scale (a, l->scale);
 		}
 		for (i = 0; i < l->Ac->size; i++) {
-			int		j = cl_vector_int_get (l->Ac, i);
-			double	cj = cl_vector_get (l->c, j);
-			double	aj = cl_vector_get (a, j);
+			int		j = c_vector_int_get (l->Ac, i);
+			double	cj = c_vector_get (l->c, j);
+			double	aj = c_vector_get (a, j);
 			double	e0, e1, min;
 			e0 = (l->sup_c - cj) / (l->absA - aj);
 			e1 = (l->sup_c + cj) / (l->absA + aj);
@@ -50,7 +50,7 @@ calc_gamma_hat (larsen *l, int *index, double *val)
 				minplus = min;
 			}
 		}
-		cl_vector_free (a);
+		c_vector_free (a);
 	}
 	*index = minplus_idx;
 	*val = minplus;
@@ -67,9 +67,9 @@ calc_gamma_tilde (larsen *l, int *index, double *val)
 	if (l->A->size > 0) {
 		int		i;
 		for (i = 0; i < l->A->size; i++) {
-			int		j = cl_vector_int_get (l->A, i);
-			double	betaj = cl_vector_get (l->beta, j);
-			double	wi = cl_vector_get (l->w, i);
+			int		j = c_vector_int_get (l->A, i);
+			double	betaj = c_vector_get (l->beta, j);
+			double	wi = c_vector_get (l->w, i);
 			double	e = - betaj / wi;
 			if (e <= 0.) e = posinf ();
 			if (e < minplus) {
@@ -104,11 +104,11 @@ update_stepsize (larsen *l)
 		if (gamma_hat < gamma_tilde) {
 			l->oper.action = ACTIVESET_ACTION_ADD;
 			l->stepsize = gamma_hat;
-			if (gamma_hat_idx >= 0) l->oper.column = cl_vector_int_get (l->Ac, gamma_hat_idx);
+			if (gamma_hat_idx >= 0) l->oper.column = c_vector_int_get (l->Ac, gamma_hat_idx);
 		} else {
 			l->oper.action = ACTIVESET_ACTION_DROP;
 			l->stepsize = gamma_tilde;
-			if (gamma_tilde_idx >= 0) l->oper.column = cl_vector_int_get (l->A, gamma_tilde_idx);
+			if (gamma_tilde_idx >= 0) l->oper.column = c_vector_int_get (l->A, gamma_tilde_idx);
 		}
 	}
 	return (l->stepsize != posinf ());

@@ -5,7 +5,7 @@
  *      Author: utsugi
  */
 
-#include "cl_matrix.h"
+#include "c_matrix.h"
 
 extern void	cl_error (const char * function_name, const char *error_msg);
 
@@ -15,15 +15,15 @@ void	dchinx_ (int *n, double *R, int *ldr, int *j, double *u, double *w, int *in
 void	dchdex_ (int *n, double *R, int *ldr, int *j, double *w);
 
 int
-cl_linalg_cholesky_decomp (cl_matrix *a)
+cl_linalg_cholesky_decomp (c_matrix *a)
 {
 	long		info;
 	char		uplo;
 	long		n;
 	long		lda;
 
-	if (cl_matrix_is_empty (a)) cl_error ("cl_linalg_cholesky_decomp", "matrix *a is empty");
-	if (!cl_matrix_is_square (a)) cl_error ("cl_linalg_cholesky_decomp", "matrix *a must be square");
+	if (c_matrix_is_empty (a)) cl_error ("cl_linalg_cholesky_decomp", "matrix *a is empty");
+	if (!c_matrix_is_square (a)) cl_error ("cl_linalg_cholesky_decomp", "matrix *a must be square");
 
 	uplo = 'U';
 	n = (long) a->size2;
@@ -33,7 +33,7 @@ cl_linalg_cholesky_decomp (cl_matrix *a)
 }
 
 int
-cl_linalg_cholesky_svx (cl_matrix *a, cl_vector *b)
+cl_linalg_cholesky_svx (c_matrix *a, c_vector *b)
 {
 	long		info;
 	char		uplo;
@@ -42,9 +42,9 @@ cl_linalg_cholesky_svx (cl_matrix *a, cl_vector *b)
 	long		lda;
 	long		ldb;
 
-	if (cl_matrix_is_empty (a)) cl_error ("cl_linalg_cholesky_svx", "matrix *a is empty");
-	if (cl_vector_is_empty (b)) cl_error ("cl_linalg_cholesky_svx", "vector *b is empty");
-	if (!cl_matrix_is_square (a)) cl_error ("cl_linalg_cholesky_svx", "matrix *a must be square");
+	if (c_matrix_is_empty (a)) cl_error ("cl_linalg_cholesky_svx", "matrix *a is empty");
+	if (c_vector_is_empty (b)) cl_error ("cl_linalg_cholesky_svx", "vector *b is empty");
+	if (!c_matrix_is_square (a)) cl_error ("cl_linalg_cholesky_svx", "matrix *a must be square");
 
 	uplo = 'U';
 	n = (long) a->size1;
@@ -56,7 +56,7 @@ cl_linalg_cholesky_svx (cl_matrix *a, cl_vector *b)
 }
 
 int
-cl_linalg_cholesky_insert (cl_matrix *r, const int index, const cl_vector *u)
+cl_linalg_cholesky_insert (c_matrix *r, const int index, const c_vector *u)
 {
 	int		n;
 	int		ldr;
@@ -64,8 +64,8 @@ cl_linalg_cholesky_insert (cl_matrix *r, const int index, const cl_vector *u)
 	double	*w;
 	int		info;
 
-	if (cl_matrix_is_empty (r)) cl_error ("cl_linalg_cholesky_insert", "matrix *r is empty");
-	if (cl_vector_is_empty (u)) cl_error ("cl_linalg_cholesky_insert", "vector *u is empty");
+	if (c_matrix_is_empty (r)) cl_error ("cl_linalg_cholesky_insert", "matrix *r is empty");
+	if (c_vector_is_empty (u)) cl_error ("cl_linalg_cholesky_insert", "vector *u is empty");
 	if (r->size1 != r->size2) cl_error ("cl_linalg_cholesky_insert", "matrix *r must be square");
 	if (u->size != r->size1 + 1) cl_error ("cl_linalg_cholesky_insert", "size of matrix *r and vector *u are not match");
 	if (index < 0 || r->size1 < index) cl_error ("cl_linalg_cholesky_insert", "index must be in [0, r->size1]");
@@ -74,8 +74,8 @@ cl_linalg_cholesky_insert (cl_matrix *r, const int index, const cl_vector *u)
 
 	n = r->size1;
 
-	cl_matrix_add_col (r);
-	cl_matrix_add_row (r);
+	c_matrix_add_col (r);
+	c_matrix_add_row (r);
 
 	ldr = r->lda;
 	w = (double *) malloc (ldr * sizeof (double));
@@ -86,14 +86,14 @@ cl_linalg_cholesky_insert (cl_matrix *r, const int index, const cl_vector *u)
 }
 
 void
-cl_linalg_cholesky_delete (cl_matrix *r, const int index)
+cl_linalg_cholesky_delete (c_matrix *r, const int index)
 {
 	int		n;
 	int		ldr;
 	int		j;
 	double	*w;
 
-	if (cl_matrix_is_empty (r)) cl_error ("cl_linalg_cholesky_delete", "matrix *r is empty");
+	if (c_matrix_is_empty (r)) cl_error ("cl_linalg_cholesky_delete", "matrix *r is empty");
 	if (r->size1 != r->size2) cl_error ("cl_linalg_cholesky_delete", "matrix *r must be square");
 	if (index < 0 || r->size1 <= index) cl_error ("cl_linalg_cholesky_delete", "index must be in [0, r->size1)");
 
@@ -105,8 +105,8 @@ cl_linalg_cholesky_delete (cl_matrix *r, const int index)
 
 	dchdex_ (&n, r->data, &ldr, &j, w);
 	free (w);
-	cl_matrix_remove_col (r);
-	if (!cl_matrix_is_empty (r)) cl_matrix_remove_row (r);
+	c_matrix_remove_col (r);
+	if (!c_matrix_is_empty (r)) c_matrix_remove_row (r);
 
 	return;
 }

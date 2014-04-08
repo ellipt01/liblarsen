@@ -9,56 +9,56 @@
 
 /* centering vector i.e., y -> y - mean(y) */
 double
-larsen_centering_vector (cl_vector *y)
+larsen_centering_vector (c_vector *y)
 {
-	double	mean = cl_vector_mean (y);
-	cl_vector_add_constant (y, - mean);
+	double	mean = c_vector_mean (y);
+	c_vector_add_constant (y, - mean);
 	return mean;
 }
 
 /* normalizing vector i.e., y -> y / norm(y) */
 double
-larsen_normalizing_vector (cl_vector *y)
+larsen_normalizing_vector (c_vector *y)
 {
-	double	nrm = cl_vector_nrm (y);
-	cl_vector_scale (y, 1. / nrm);
+	double	nrm = c_vector_nrm (y);
+	c_vector_scale (y, 1. / nrm);
 	return nrm;
 }
 
 /* centering each column vector of matrix */
-cl_vector *
-larsen_centering_matrix (cl_matrix *x)
+c_vector *
+larsen_centering_matrix (c_matrix *x)
 {
 	int			j;
-	cl_vector	*xj = cl_vector_alloc (x->size1);
-	cl_vector	*mean = cl_vector_alloc (x->size2);
+	c_vector	*xj = c_vector_alloc (x->size1);
+	c_vector	*mean = c_vector_alloc (x->size2);
 	for (j = 0; j < x->size2; j++) {
 		double		meanj;
-		cl_matrix_get_col (xj, x, j);
-		meanj = cl_vector_mean (xj);
-		cl_vector_set (mean, j, meanj);
-		cl_vector_add_constant (xj, - meanj);
-		cl_matrix_set_col (x, j, xj);
+		c_matrix_get_col (xj, x, j);
+		meanj = c_vector_mean (xj);
+		c_vector_set (mean, j, meanj);
+		c_vector_add_constant (xj, - meanj);
+		c_matrix_set_col (x, j, xj);
 	}
-	cl_vector_free (xj);
+	c_vector_free (xj);
 	return mean;
 }
 
 /* normalizing each column vector of matrix */
-cl_vector *
-larsen_normalizing_matrix (cl_matrix *x)
+c_vector *
+larsen_normalizing_matrix (c_matrix *x)
 {
 	int			j;
-	cl_vector	*xj = cl_vector_alloc (x->size1);
-	cl_vector	*nrm = cl_vector_alloc (x->size2);
+	c_vector	*xj = c_vector_alloc (x->size1);
+	c_vector	*nrm = c_vector_alloc (x->size2);
 	for (j = 0; j < x->size2; j++) {
 		double		nrmj;
-		cl_matrix_get_col (xj, x, j);
-		nrmj = cl_vector_nrm (xj);
-		cl_vector_set (nrm, j, nrmj);
-		cl_vector_scale (xj, 1. / nrmj);
-		cl_matrix_set_col (x, j, xj);
+		c_matrix_get_col (xj, x, j);
+		nrmj = c_vector_nrm (xj);
+		c_vector_set (nrm, j, nrmj);
+		c_vector_scale (xj, 1. / nrmj);
+		c_matrix_set_col (x, j, xj);
 	}
-	cl_vector_free (xj);
+	c_vector_free (xj);
 	return nrm;
 }

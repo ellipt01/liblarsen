@@ -17,7 +17,8 @@ extern "C" {
 #include <stdlib.h>
 #include <stdbool.h>
 #include <math.h>
-#include <cl_interface.h>
+
+#include <c_linalg.h>
 
 typedef enum {
 	ACTIVESET_ACTION_NONE	= -1,
@@ -49,59 +50,59 @@ struct s_larsen {
 	// = 1 / sqrt(1 + lambda2)
 	double					scale;
 
-	const cl_matrix		*x;		// predictors
-	const cl_vector		*y;		// response
+	const c_matrix		*x;		// predictors
+	const c_vector		*y;		// response
 
 	/* correlation */
 	double					sup_c;	// sup(abs(c))
-	cl_vector				*c;		// colleration: = X' * (y - mu)
+	c_vector				*c;		// colleration: = X' * (y - mu)
 
 	/* active set */
 	activeset_oper		oper;
-	cl_vector_int			*A;		// active set
-	cl_vector_int			*Ac;	// implement of A
+	c_vector_int			*A;		// active set
+	c_vector_int			*Ac;	// implement of A
 
 	/* equiangular */
 	double					absA;
-	cl_vector				*u;		// equiangular vector
-	cl_vector				*w;
+	c_vector				*u;		// equiangular vector
+	c_vector				*w;
 
 	/* step_size */
 	double					stepsize;	// step size which beta will be progress.
 
 	/* solution */
-	cl_vector				*beta;	// regression coefficients
-	cl_vector				*mu;	// estimated response
+	c_vector				*beta;	// regression coefficients
+	c_vector				*mu;	// estimated response
 
 	/* backup of solution */
-	cl_vector				*beta_prev;	// previous beta
-	cl_vector				*mu_prev;		// previous mu
+	c_vector				*beta_prev;	// previous beta
+	c_vector				*mu_prev;		// previous mu
 
 	/* interpolation */
 	bool					interp;		// interpolation was done or not.
 	double					stepsize_intr;
-	cl_vector				*beta_intr;	// interpolated beta
-	cl_vector				*mu_intr;		// interpolated mu
+	c_vector				*beta_intr;	// interpolated beta
+	c_vector				*mu_intr;		// interpolated mu
 
 	/* cholesky factorization */
-	cl_matrix				*chol;	// = chol(XA' * XA), where XA = X(A).
+	c_matrix				*chol;	// = chol(XA' * XA), where XA = X(A).
 
 };
 
 /* util.c */
-larsen		*larsen_alloc (double lambda1, double lambda2, const cl_matrix *x, const cl_vector *y);
+larsen		*larsen_alloc (double lambda1, double lambda2, const c_matrix *x, const c_vector *y);
 void		larsen_free (larsen *l);
 
 /* data.c */
-double		larsen_centering_vector (cl_vector *y);
-cl_vector	*larsen_centering_matrix (cl_matrix *x);
-cl_vector	*larsen_normalizing_matrix (cl_matrix *x);
+double		larsen_centering_vector (c_vector *y);
+c_vector	*larsen_centering_matrix (c_matrix *x);
+c_vector	*larsen_normalizing_matrix (c_matrix *x);
 
 /* larsen.c */
 bool		larsen_regression_step (larsen *l);
 bool		larsen_interpolate (larsen *l);
-cl_vector	*larsen_get_beta (larsen *l);
-cl_vector	*larsen_get_mu (larsen *l);
+c_vector	*larsen_get_beta (larsen *l);
+c_vector	*larsen_get_mu (larsen *l);
 double		larsen_increment_lambda1 (larsen *l, double dt);
 
 /* elasticnet.c */

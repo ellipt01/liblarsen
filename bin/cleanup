@@ -8,8 +8,8 @@ fi
 echo "rm -rf autom4te.cache"
 rm -rf autom4te.cache
 
-echo "rm -f INSTALL compile"
-rm -r INSTALL compile
+echo "rm -f INSTALL COPYING compile"
+rm -f INSTALL COPYING compile
 
 echo "rm -f config.h.in install-sh missing depcomp aclocal.m4 acinclude.m4"
 rm -f config.h.in install-sh missing depcomp aclocal.m4 acinclude.m4
@@ -23,7 +23,7 @@ rm -f ltmain.sh stamp-h1 config.log config.h config.sub config.status config.gue
 echo "rm -f configure libtool bin/.dirstamp"
 rm -f configure libtool bin/.dirstamp
 
-for i in . src include clapack_interface example; do
+for i in . src include c_linalg example; do
 
 	echo "rm -f $i/Makefile"
 	rm -f $i/Makefile

@@ -7,43 +7,43 @@
 
 #include <larsen.h>
 
-/* if item was found in cl_vector_int *v, return true  */
+/* if item was found in c_vector_int *v, return true  */
 static bool
-find_item (cl_vector_int *v, int item)
+find_item (c_vector_int *v, int item)
 {
 	int		i;
 	for (i = 0; i < v->size; i++) {
-		int		vi = cl_vector_int_get (v, i);
+		int		vi = c_vector_int_get (v, i);
 		if (vi == item) return true;
 	}
 	return false;
 }
 
-/* append item to cl_vector_int *v, return index of last position on A. */
+/* append item to c_vector_int *v, return index of last position on A. */
 static int
-append_item (cl_vector_int *v, int item)
+append_item (c_vector_int *v, int item)
 {
 	int		index = v->size;
 	v->size++;
-	cl_vector_int_set (v, index, item);
+	c_vector_int_set (v, index, item);
 	return index;
 }
 
-/* remove item from cl_vector_int *v, return index of removed position on A.
+/* remove item from c_vector_int *v, return index of removed position on A.
  * if specified item was not found in *v, return -1 */
 static int
-remove_item (cl_vector_int *v, int item)
+remove_item (c_vector_int *v, int item)
 {
 	int		i, k;
 	int		index = -1;
 	k = 0;
 	for (i = 0; i < v->size; i++) {
-		int		vi = cl_vector_int_get (v, i);
+		int		vi = c_vector_int_get (v, i);
 		if (vi == item) {
 			index = i;
 			continue;
 		}
-		cl_vector_int_set (v, k++, vi);
+		c_vector_int_set (v, k++, vi);
 	}
 	if (index >= 0) v->size--;
 	return index;

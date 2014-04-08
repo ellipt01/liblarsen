@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.63])
-AC_INIT([liblarsen], [0.1_140407])
+AC_INIT([liblarsen], [0.1])
 AC_CONFIG_SRCDIR([example/example.h])
 AC_CONFIG_HEADERS([config.h])
 
@@ -21,11 +21,19 @@ AC_PROG_LIBTOOL
 AM_INIT_AUTOMAKE
 
 # Checks for libraries.
-AC_CHECK_LIB([m], [floor])
-AC_CHECK_LIB([qrupdate], [dchinx_])
+AC_CHECK_LIB([m], [floor],)
+
+for i in dchinx_ dchdex_; do
+	AC_CHECK_LIB([qrupdate],[$i],ac_has_qrupdate=1,ac_has_qrupdate=0)
+	if test $ac_has_qrupdate = 0; then
+		AC_MSG_ERROR("ERROR: cannot find library for -lqrupdate. check LDFLAGS and retry - stop.")
+	fi
+done
 
 # Checks for header files.
-AC_CHECK_HEADERS([stdlib.h string.h])
+AC_CHECK_HEADER([stdlib.h])
+AC_CHECK_HEADER([string.h])
+AC_CHECK_HEADER([cblas.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_HEADER_STDBOOL
@@ -35,11 +43,9 @@ AC_TYPE_SIZE_T
 AC_FUNC_MALLOC
 AC_FUNC_REALLOC
 AC_CHECK_FUNCS([floor pow sqrt log strrchr])
-AC_CHECK_FUNCS([dpotrf_ dpotrs_])
-AC_CHECK_FUNCS([dchinx_ dchdex_])
 
 AC_CONFIG_FILES([Makefile
-                 clapack_interface/Makefile
+                 c_linalg/Makefile
                  example/Makefile
                  include/Makefile
                  src/Makefile])

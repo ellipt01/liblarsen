@@ -18,16 +18,16 @@ static double
 calc_rss (larsen *l)
 {
 	double		rss;
-	cl_vector	*r = cl_vector_alloc (l->y->size);
-	cl_vector	*beta = larsen_get_beta (l);
-	cl_vector	*mu = larsen_get_mu (l);
-	cl_vector_memcpy (r, l->y);
-	cl_vector_sub (r, mu);
-	rss = pow (cl_vector_nrm (r), 2.);
-	if (l->do_scaling) rss += l->lambda2 * pow (cl_vector_nrm (beta), 2.);
-	cl_vector_free (r);
-	cl_vector_free (beta);
-	cl_vector_free (mu);
+	c_vector	*r = c_vector_alloc (l->y->size);
+	c_vector	*beta = larsen_get_beta (l);
+	c_vector	*mu = larsen_get_mu (l);
+	c_vector_memcpy (r, l->y);
+	c_vector_sub (r, mu);
+	rss = pow (c_vector_nrm (r), 2.);
+	if (l->do_scaling) rss += l->lambda2 * pow (c_vector_nrm (beta), 2.);
+	c_vector_free (r);
+	c_vector_free (beta);
+	c_vector_free (mu);
 	return rss;
 }
 

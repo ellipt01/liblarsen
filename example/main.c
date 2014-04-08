@@ -118,8 +118,8 @@ fprintf_params (void)
 int
 main (int argc, char **argv)
 {
-	cl_vector	*y;
-	cl_matrix	*x;
+	c_vector	*y;
+	c_matrix	*x;
 
 	if (!read_params (argc, argv)) usage (argv[0]);
 	fprintf_params ();
@@ -132,8 +132,8 @@ main (int argc, char **argv)
 
 	example_elasticnet (x, y, start, dt, stop, lambda2, gamma_bic, maxiter);
 
-	cl_vector_free (y);
-	cl_matrix_free (x);
+	c_vector_free (y);
+	c_matrix_free (x);
 
 	return EXIT_SUCCESS;
 }
