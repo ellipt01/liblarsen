@@ -19,8 +19,8 @@ calc_rss (larsen *l)
 {
 	double		rss;
 	c_vector	*r = c_vector_alloc (l->y->size);
-	c_vector	*beta = larsen_get_beta (l);
-	c_vector	*mu = larsen_get_mu (l);
+	c_vector	*beta = larsen_get_beta (l);	// scale * beta
+	c_vector	*mu = larsen_get_mu (l);			// scale^2 * mu
 	c_vector_memcpy (r, l->y);
 	c_vector_sub (r, mu);
 	rss = pow (c_vector_nrm (r), 2.);

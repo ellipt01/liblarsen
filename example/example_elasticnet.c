@@ -16,12 +16,15 @@ void
 example_elasticnet (c_matrix *x, c_vector *y, double start, double dt, double stop, double lambda2, double gamma, int maxiter)
 {
 	int			iter = 0;
-	larsen		*l = larsen_alloc (start, lambda2, x, y);
+	double		t = start;
+	larsen		*l = larsen_alloc (t, lambda2, x, y);
 
 	while (larsen_elasticnet (l, maxiter)) {
 		output_solutionpath (iter++, l);
 		fprintf (stdout, "%d : lambda1 = %f, bic(%.2f) = %f\n", iter, l->lambda1, gamma, larsen_eval_bic (l, gamma));
-		if (larsen_increment_lambda1 (l, dt) > stop) break;
+		t += dt;
+		if (t > stop) break;
+		larsen_set_lambda1 (l, t);
 	}
 
 	larsen_free (l);

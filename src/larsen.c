@@ -155,12 +155,6 @@ larsen_regression_step (larsen *l)
 	return true;
 }
 
-double
-larsen_get_lambda1 (larsen *l)
-{
-	return (l->do_scaling) ? l->lambda1 * l->scale : l->lambda1;
-}
-
 /* Interpolation
  * In the case of l->lambda1 < | beta | after larsen_regression_step (),
  * the solution corresponding to a designed lambda1 is obtained by the
@@ -172,7 +166,7 @@ larsen_get_lambda1 (larsen *l)
 bool
 larsen_interpolate (larsen *l)
 {
-	double	lambda1 = larsen_get_lambda1 (l);
+	double	lambda1 = larsen_get_lambda1 (l, true);
 	double	nrm1_prev = c_vector_asum (l->beta_prev);
 	double	nrm1 = c_vector_asum (l->beta);
 	l->interp = false;
@@ -184,7 +178,7 @@ larsen_interpolate (larsen *l)
 	return l->interp;
 }
 
-/* return elastic net solution: beta_elnet = scale * l->beta */
+/* return copy of elastic net solution: beta_elnet = scale * l->beta */
 c_vector *
 larsen_get_beta (larsen *l)
 {
@@ -195,7 +189,7 @@ larsen_get_beta (larsen *l)
 	return beta;
 }
 
-/* return elastic net solution: mu_elnet = scale^2 * mu_navie */
+/* return copy of elastic net solution: mu_elnet = scale^2 * mu_navie */
 c_vector *
 larsen_get_mu (larsen *l)
 {
@@ -207,8 +201,17 @@ larsen_get_mu (larsen *l)
 }
 
 /* increment l->lambda1 */
-double
-larsen_increment_lambda1 (larsen *l, double dt)
+void
+larsen_set_lambda1 (larsen *l, double t)
 {
-	return (l->lambda1 += dt);
+	l->lambda1 = t;
+	return;
+}
+
+/* return l->lambda1, if (scaled && l->do_scaling) return l->lambda1 * l->scale */
+double
+larsen_get_lambda1 (larsen *l, const bool scaled)
+{
+	if (!scaled) return l->lambda1;
+	return (l->do_scaling) ? l->lambda1 * l->scale : l->lambda1;
 }

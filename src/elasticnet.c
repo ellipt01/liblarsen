@@ -7,9 +7,6 @@
 
 #include <larsen.h>
 
-#define _DUMMY_ -1
-extern double	larsen_get_lambda1 (larsen *l);
-
 /*
  *  Evaluate lasso (l->lambda2 = 0) or elastic net (l->lambda2 != 0) estimator.
  *
@@ -30,7 +27,7 @@ bool
 larsen_elasticnet (larsen *l, int maxiter)
 {
 	int		iter = 0;
-	double	lambda1 = larsen_get_lambda1 (l);
+	double	lambda1 = larsen_get_lambda1 (l, true);	// scale * lambda1
 	double	nrm1 = c_vector_asum (l->beta);
 	while (nrm1 <= lambda1 && !l->stop_loop) {
 		if (!larsen_regression_step (l)) return false;
