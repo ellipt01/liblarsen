@@ -23,7 +23,7 @@ void
 c_vector_add_constant (c_vector *v, const double x)
 {
 	int		i;
-	if (c_vector_is_empty (v)) cl_error ("c_vector_add_constant", "vector *v is empty");
+	if (c_vector_is_empty (v)) cl_error ("c_vector_add_constant", "vector is empty");
 	for (i = 0; i < v->size; i++) v->data[get_index_of_vector (v, i)] += x;
 	return;
 }
@@ -33,7 +33,7 @@ c_vector_mean (const c_vector *v)
 {
 	int	i;
 	double	sum;
-	if (c_vector_is_empty (v)) cl_error ("c_vector_mean", "vector *v is empty");
+	if (c_vector_is_empty (v)) cl_error ("c_vector_mean", "vector is empty");
 	/* x = sum x / N */
 	for (i = 0, sum = 0.0; i < v->size; i++) sum += v->data[get_index_of_vector (v, i)];
 	return sum / (double) v->size;
@@ -48,7 +48,7 @@ c_vector_sub (c_vector *y, const c_vector *x)
 	double	alpha = - 1.;
 	if (c_vector_is_empty (y)) cl_error ("c_vector_sub", "first vector is empty");
 	if (c_vector_is_empty (x)) cl_error ("c_vector_sub", "second vector is empty");
-	if (x->size != y->size) cl_error ("c_vector_sub", "vector size are not match");
+	if (x->size != y->size) cl_error ("c_vector_sub", "vector size does not match");
 	/* y = y - x */
 	n = (long) x->size;
 	incx = (long) x->stride;
@@ -113,7 +113,7 @@ c_vector_axpy (double alpha, const c_vector *x, c_vector *y)
 	long	incy;
 	if (c_vector_is_empty (x)) cl_error ("c_vector_axpy", "first vector is empty");
 	if (c_vector_is_empty (y)) cl_error ("c_vector_axpy", "second vector is empty");
-	if (x->size != y->size) cl_error ("c_vector_axpy", "vector size are not match");
+	if (x->size != y->size) cl_error ("c_vector_axpy", "vector size does not match");
 	/* y = y + alpha * x */
 	n = (long) x->size;
 	incx = (long) x->stride;
@@ -130,6 +130,7 @@ c_vector_dot_vector (const c_vector *x, const c_vector *y)
 	long	incy;
 	if (c_vector_is_empty (x)) cl_error ("c_vector_dot_vector", "first vector is empty");
 	if (c_vector_is_empty (y)) cl_error ("c_vector_dot_vector", "second vector is empty");
+	if (x->size != y->size) cl_error ("c_vector_dot_vector", "vector size does not match");
 	n = (long) x->size;
 	incx = (long) x->stride;
 	incy = (long) y->stride;
@@ -150,7 +151,7 @@ c_matrix_dot_vector (const c_matrix *a, const c_vector *x)
 	c_vector	*y;
 	if (c_matrix_is_empty (a)) cl_error ("c_matrix_dot_vector", "matrix is empty");
 	if (c_vector_is_empty (x)) cl_error ("c_matrix_dot_vector", "vector is empty");
-	if (a->size2 != x->size) cl_error ("c_matrix_dot_vector", "vector and matrix size are not match");
+	if (a->size2 != x->size) cl_error ("c_matrix_dot_vector", "vector and matrix size does not match");
 	y = c_vector_alloc (a->size1);
 	n = (long) a->size1;
 	m = (long) a->size2;
@@ -175,7 +176,7 @@ c_matrix_transpose_dot_vector (const c_matrix *a, const c_vector *x)
 	c_vector	*y;
 	if (c_matrix_is_empty (a)) cl_error ("c_matrix_transpose_dot_vector", "matrix is empty");
 	if (c_vector_is_empty (x)) cl_error ("c_matrix_transpose_dot_vector", "vector is empty");
-	if (a->size1 != x->size) cl_error ("c_matrix_transpose_dot_vector", "vector and matrix size are not match");
+	if (a->size1 != x->size) cl_error ("c_matrix_transpose_dot_vector", "vector and matrix size does not match");
 	y = c_vector_alloc (a->size2);
 	n = (long) a->size1;
 	m = (long) a->size2;
