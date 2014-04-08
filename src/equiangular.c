@@ -66,15 +66,15 @@ update_chol (larsen *l, c_matrix *xa)
 		if (l->A->size == 1 && c_matrix_is_empty (l->chol)) {
 			l->chol = c_matrix_alloc (1, 1);
 			c_matrix_set (l->chol, 0, 0, c_vector_get (t, 0));
-			cl_linalg_cholesky_decomp (l->chol);
+			c_linalg_cholesky_decomp (l->chol);
 		} else {
-			cl_linalg_cholesky_insert (l->chol, index, t);
+			c_linalg_cholesky_insert (l->chol, index, t);
 		}
 		c_vector_free (t);
 
 	} else if (l->oper.action == ACTIVESET_ACTION_DROP) {
 		/*** delete a predictor ***/
-		cl_linalg_cholesky_delete (l->chol, index);
+		c_linalg_cholesky_delete (l->chol, index);
 	}
 
 	return;
@@ -100,7 +100,7 @@ update_equiangular_larsen (larsen *l)
 	c_vector_memcpy (l->w, s);
 
 	{
-		int		info = cl_linalg_cholesky_svx (l->chol, l->w);
+		int		info = c_linalg_cholesky_svx (l->chol, l->w);
 		if (info != 0) fprintf (stderr, "WARNING : cholesky_svx info = %d : matrix is not positive definite.\n", info);
 	}
 

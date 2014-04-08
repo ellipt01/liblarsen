@@ -5,8 +5,10 @@
  *      Author: utsugi
  */
 
-#include <cblas.h>
 #include "c_matrix.h"
+
+/* blas */
+extern void	dcopy_ (long *n, double *x, long *incx, double *y, long *incy);
 
 void
 cl_error (const char * function_name, const char *error_msg)
@@ -229,38 +231,45 @@ c_vector_int_get (const c_vector_int *v, const int i)
 }
 
 void
-c_matrix_get_col (c_vector *v, const c_matrix *a, const size_t index)
+c_matrix_get_col (c_vector *y, const c_matrix *a, const size_t index)
 {
-	size_t incv, incm;
-
-	if (c_vector_is_empty (v)) cl_error ("c_matrix_get_col", "vector is empty");
+	long	n;
+	long	incx;
+	long	incy;
+	if (c_vector_is_empty (y)) cl_error ("c_matrix_get_col", "vector is empty");
 	if (c_matrix_is_empty (a)) cl_error ("c_matrix_get_col", "matrix is empty");
-	if (v->size != a->size1) cl_error ("c_matrix_get_col", "vector and matrix size are not match");
+	if (y->size != a->size1) cl_error ("c_matrix_get_col", "vector and matrix size are not match");
 	if (index < 0 || index >= a->size2) cl_error ("c_matrix_get_col", "index must be in [0, a->size2)");
-	incm = 1;
-	incv = v->stride;
-	cblas_dcopy (a->size1, a->data + a->lda * index, incm, v->data, incv);
+	n = (long) a->size1;
+	incx = 1;
+	incy = (long) y->stride;
+	dcopy_ (&n, a->data + a->lda * index, &incx, y->data, &incy);
 	return;
 }
 
 void
-c_matrix_set_col (c_matrix *a, const size_t index, const c_vector *v)
+c_matrix_set_col (c_matrix *a, const size_t index, const c_vector *x)
 {
-	size_t incv, incm;
-
-	if (c_vector_is_empty (v)) cl_error ("c_matrix_set_col", "vector is empty");
+	long	n;
+	long	incx;
+	long	incy;
+	if (c_vector_is_empty (x)) cl_error ("c_matrix_set_col", "vector is empty");
 	if (c_matrix_is_empty (a)) cl_error ("c_matrix_set_col", "matrix is empty");
-	if (v->size != a->size1) cl_error ("c_matrix_set_col", "vector and matrix size are not match");
+	if (x->size != a->size1) cl_error ("c_matrix_set_col", "vector and matrix size are not match");
 	if (index < 0 || index >= a->size2) cl_error ("c_matrix_set_col", "index must be in [0, a->size2)");
-	incv = v->stride;
-	incm = 1;
-	cblas_dcopy (v->size, v->data, incv, a->data + a->lda * index, incm);
+	n = (long) x->size;
+	incx = (long) x->stride;
+	incy = 1;
+	dcopy_ (&n, x->data, &incx, a->data + a->lda * index, &incy);
 	return;
 }
 
 void
 c_matrix_add_row (c_matrix *a)
 {
+	long	n;
+	long	incx = 1;
+	long	incy = 1;
 	size_t	lda;
 
 	if (c_matrix_is_empty (a)) cl_error ("c_matrix_add_row", "matrix *a is empty");
@@ -276,9 +285,10 @@ c_matrix_add_row (c_matrix *a)
 		int			j;
 		c_vector	*col = c_vector_alloc (a->size1);
 
+		n = (long) a->size1;
 		for (j = a->size2 - 1; 0 < j; j--) {
-			cblas_dcopy (col->size, a->data + j * lda, 1, col->data, 1);
-			cblas_dcopy (col->size, col->data, 1, a->data + j * a->lda, 1);
+			dcopy_ (&n, a->data + j * lda, &incx, col->data, &incy);
+			dcopy_ (&n, col->data, &incy, a->data + j * a->lda, &incx);
 		}
 		c_vector_free (col);
 		for (j = 0; j < a->size2; j++) c_matrix_set (a, a->size1 - 1, j, 0.);
@@ -305,6 +315,9 @@ c_matrix_add_col (c_matrix *a)
 void
 c_matrix_remove_row (c_matrix *a)
 {
+	long	n;
+	long	incx = 1;
+	long	incy = 1;
 	size_t	lda;
 
 	if (c_matrix_is_empty (a)) cl_error ("c_matrix_remove_row", "matrix *a is empty");
@@ -315,12 +328,13 @@ c_matrix_remove_row (c_matrix *a)
 	a->lda--;
 	a->tsize = a->lda * a->size2;
 
+	n = (long) a->size2;
 	if (a->size1 > 0) {
 		int			j;
 		c_vector	*col = c_vector_alloc (a->size1);
 		for (j = 1; j < a->size2; j++) {
-			cblas_dcopy (col->size, a->data + j * lda, 1, col->data, 1);
-			cblas_dcopy (col->size, col->data, 1, a->data + j * a->lda, 1);
+			dcopy_ (&n, a->data + j * lda, &incx, col->data, &incy);
+			dcopy_ (&n, col->data, &incx, a->data + j * a->lda, &incx);
 		}
 		c_vector_free (col);
 	}
@@ -365,10 +379,16 @@ c_matrix_memcpy (c_matrix *dest, const c_matrix *src)
 void
 c_vector_memcpy (c_vector *dest, const c_vector *src)
 {
+	long	n;
+	long	incx;
+	long	incy;
 	if (c_vector_is_empty (src)) cl_error ("c_vector_memcpy", "vector is empty");
 	if (c_vector_is_empty (dest)) cl_error ("c_vector_memcpy", "vector is not allocated");
 	if (dest->size != src->size) cl_error ("c_vector_memcpy", "vector size are not match");
-  	cblas_dcopy (src->size, src->data, src->stride, dest->data, dest->stride);
+	n = (long) src->size;
+	incx = (long) src->stride;
+	incy = (long) dest->stride;
+	dcopy_ (&n, src->data, &incx, dest->data, &incy);
 	return;
 }
 

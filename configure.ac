@@ -21,19 +21,21 @@ AC_PROG_LIBTOOL
 AM_INIT_AUTOMAKE
 
 # Checks for libraries.
-AC_CHECK_LIB([m], [floor],)
+AC_CHECK_LIB([m], [floor], [])
+AC_CHECK_LIB([gfortran], [main],[])
 
-for i in dchinx_ dchdex_; do
-	AC_CHECK_LIB([qrupdate],[$i],ac_has_qrupdate=1,ac_has_qrupdate=0)
-	if test $ac_has_qrupdate = 0; then
-		AC_MSG_ERROR("ERROR: cannot find library for -lqrupdate. check LDFLAGS and retry - stop.")
-	fi
-done
+AC_CHECK_LIB(
+	[qrupdate],
+	[dchinx_],
+	[],
+	[AC_MSG_ERROR("ERROR: cannot find library for -lqrupdate. check LDFLAGS and retry - stop.")]
+)
+AC_CHECK_FUNCS([dchinx_ dchdex_])
+
 
 # Checks for header files.
 AC_CHECK_HEADER([stdlib.h])
 AC_CHECK_HEADER([string.h])
-AC_CHECK_HEADER([cblas.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_HEADER_STDBOOL
@@ -43,6 +45,7 @@ AC_TYPE_SIZE_T
 AC_FUNC_MALLOC
 AC_FUNC_REALLOC
 AC_CHECK_FUNCS([floor pow sqrt log strrchr])
+AC_CHECK_FUNCS([dpotrf_ dpotrs_])
 
 AC_CONFIG_FILES([Makefile
                  c_linalg/Makefile

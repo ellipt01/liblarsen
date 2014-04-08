@@ -101,7 +101,7 @@ double			c_vector_asum (const c_vector *v);
 int				c_vector_amax (const c_vector *v);
 void			c_vector_scale (c_vector *v, const double alpha);
 double			c_vector_nrm (const c_vector *v);
-void			c_vector_axpy (const double alpha, const c_vector *x, c_vector *y);
+void			c_vector_axpy (double alpha, const c_vector *x, c_vector *y);
 
 double			c_vector_dot_vector (const c_vector *v1, const c_vector *v2);
 c_vector		*c_matrix_dot_vector (const c_matrix *a, const c_vector *v);
