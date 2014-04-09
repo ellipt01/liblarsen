@@ -21,7 +21,7 @@ int		c_linalg_cholesky_decomp (c_matrix *a);
 int		c_linalg_cholesky_svx (c_matrix *a, c_vector *b);
 
 int		c_linalg_cholesky_insert (c_matrix *r, const int index, const c_vector *u);
-int		c_linalg_cholesky_delete (c_matrix *r, const int index);
+void	c_linalg_cholesky_delete (c_matrix *r, const int index);
 
 #ifdef __cplusplus
 }

@@ -17,8 +17,10 @@ larsen_alloc (double lambda1, double lambda2, const c_matrix *x, const c_vector 
 
 	l->lambda1 = lambda1;
 	l->lambda2 = lambda2;
-	l->x = x;
-	l->y = y;
+
+	/* vector and matrix view of original y and x */
+	l->x = c_matrix_view_array (x->size1, x->size2, x->lda, x->data);
+	l->y = c_vector_view_array (y->size, y->stride, y->data);
 
 	l->scale = 1.;
 	l->do_scaling = (lambda2 > DBL_EPSILON);
@@ -73,8 +75,12 @@ larsen_free (larsen *l)
 	if (l) {
 		if (!c_vector_is_empty (l->c)) c_vector_free (l->c);
 
+
 		if (!c_vector_int_is_empty (l->A)) c_vector_int_free (l->A);
 		if (!c_vector_int_is_empty (l->Ac)) c_vector_int_free (l->Ac);
+
+		if (!c_matrix_is_empty (l->x)) c_matrix_free ((c_matrix *) l->x);
+		if (!c_vector_is_empty (l->y)) c_vector_free ((c_vector *) l->y);
 
 		if (!c_vector_is_empty (l->u)) c_vector_free (l->u);
 		if (!c_vector_is_empty (l->w)) c_vector_free (l->w);

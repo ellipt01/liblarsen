@@ -64,7 +64,7 @@ check_info (const char *func_name, const int info)
 static int
 update_chol (larsen *l, c_matrix *xa)
 {
-	int		info = -1;
+	int		info = 0;
 	int		index = l->oper.index;
 
 	if (l->oper.action == ACTIVESET_ACTION_ADD) {
@@ -90,7 +90,7 @@ update_chol (larsen *l, c_matrix *xa)
 
 	} else if (l->oper.action == ACTIVESET_ACTION_DROP) {
 		/*** delete a predictor ***/
-		info = c_linalg_cholesky_delete (l->chol, index);
+		c_linalg_cholesky_delete (l->chol, index);
 	}
 
 	return info;
@@ -109,17 +109,22 @@ update_equiangular_larsen_cholesky (larsen *l)
 
 	xa = extruct_xa (l);
 	
-	info = update_chol (l, xa);
-	if (!check_info ("update_chol", info)) return false;
-
 	s = update_sign (l);
 
 	if (!c_vector_is_empty (l->w)) c_vector_free (l->w);
 	l->w = c_vector_alloc (s->size);
 	c_vector_memcpy (l->w, s);
 
+	/* cholesky update and solve equiangular equation
+	 * TODO: create new method and move the following lines to it
+	 * to be able to switch some methods
+	 * */
+	info = update_chol (l, xa);
+	if (!check_info ("update_chol", info)) return false;
+
 	info = c_linalg_cholesky_svx (l->chol, l->w);
 	if (!check_info ("cholesky_svx", info)) return false;
+	/* end */
 
 	l->absA = 1. / sqrt (c_vector_dot_vector (s, l->w));
 	c_vector_free (s);

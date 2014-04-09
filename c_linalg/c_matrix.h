@@ -26,7 +26,6 @@ struct s_c_matrix {
 	size_t		lda;
 	size_t		tsize;
 	bool		owner;
-	bool		allocated;
 	double		*data;
 };
 
@@ -37,7 +36,6 @@ struct s_c_vector {
 	size_t		stride;
 	size_t		tsize;
 	bool		owner;
-	bool		allocated;
 	double		*data;
 };
 
@@ -48,7 +46,6 @@ struct s_c_vector_int {
 	size_t		stride;
 	size_t		tsize;
 	bool		owner;
-	bool		allocated;
 	int			*data;
 };
 
