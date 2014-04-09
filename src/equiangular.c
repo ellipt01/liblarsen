@@ -45,11 +45,27 @@ update_sign (larsen *l)
 	return s;
 }
 
+/* check result of cholesky decomp, insert or delete */
+static bool
+check_info (const char *func_name, const int info)
+{
+	bool	is_valid = false;
+
+	if (info == 0) is_valid = true;
+	else if (info < 0) fprintf (stderr, "WARNING: %s : the %d-th argument had an illegal value.\n", func_name, - info - 1);
+	else if (info > 0) {
+		fprintf (stderr, "WARNING: %s : the leading minor of order %d is not positive definite.\n", func_name, info);
+		fprintf (stderr, "         factorization could not be completed.\n");
+	}
+	return is_valid;
+}
+
 /* do cholinsert or choldelete of specified index */
-static void
+static int
 update_chol (larsen *l, c_matrix *xa)
 {
-	int			index = l->oper.index;
+	int		info = -1;
+	int		index = l->oper.index;
 
 	if (l->oper.action == ACTIVESET_ACTION_ADD) {
 		/*** insert a predictor ***/
@@ -66,49 +82,50 @@ update_chol (larsen *l, c_matrix *xa)
 		if (l->A->size == 1 && c_matrix_is_empty (l->chol)) {
 			l->chol = c_matrix_alloc (1, 1);
 			c_matrix_set (l->chol, 0, 0, c_vector_get (t, 0));
-			c_linalg_cholesky_decomp (l->chol);
+			info = c_linalg_cholesky_decomp (l->chol);
 		} else {
-			c_linalg_cholesky_insert (l->chol, index, t);
+			info = c_linalg_cholesky_insert (l->chol, index, t);
 		}
 		c_vector_free (t);
 
 	} else if (l->oper.action == ACTIVESET_ACTION_DROP) {
 		/*** delete a predictor ***/
-		c_linalg_cholesky_delete (l->chol, index);
+		info = c_linalg_cholesky_delete (l->chol, index);
 	}
 
-	return;
+	return info;
 }
 
-/* update equiangular vector l->u, l->w and l->absA for current active set */
+/* update equiangular vector and its relevant (l->u, l->w and l->absA)
+ * for current active set using cholinsert / delete routine */
 static bool
-update_equiangular_larsen (larsen *l)
+update_equiangular_larsen_cholesky (larsen *l)
 {
+	int			info;
 	c_matrix	*xa;
 	c_vector	*s;
 
 	if (l->A->size <= 0) return false;
 
 	xa = extruct_xa (l);
-
-	update_chol (l, xa);
+	
+	info = update_chol (l, xa);
+	if (!check_info ("update_chol", info)) return false;
 
 	s = update_sign (l);
 
-	if (l->w) c_vector_free (l->w);
+	if (!c_vector_is_empty (l->w)) c_vector_free (l->w);
 	l->w = c_vector_alloc (s->size);
 	c_vector_memcpy (l->w, s);
 
-	{
-		int		info = c_linalg_cholesky_svx (l->chol, l->w);
-		if (info != 0) fprintf (stderr, "WARNING : cholesky_svx info = %d : matrix is not positive definite.\n", info);
-	}
+	info = c_linalg_cholesky_svx (l->chol, l->w);
+	if (!check_info ("cholesky_svx", info)) return false;
 
 	l->absA = 1. / sqrt (c_vector_dot_vector (s, l->w));
 	c_vector_free (s);
 	c_vector_scale (l->w, l->absA);
 
-	if (l->u) c_vector_free (l->u);
+	if (!c_vector_is_empty (l->u)) c_vector_free (l->u);
 	l->u = c_matrix_dot_vector (xa, l->w);
 	if (l->do_scaling) c_vector_scale (l->u, l->scale);
 	c_matrix_free (xa);
@@ -116,9 +133,10 @@ update_equiangular_larsen (larsen *l)
 	return true;
 }
 
-/* another routine to calculate equiangular vector is implenented, swicth them */
+/* call equiangular vector updater
+ * if another routine is implenented, swicth them in here */
 bool
 update_equiangular (larsen *l)
 {
-	return update_equiangular_larsen (l);
+	return update_equiangular_larsen_cholesky (l);
 }

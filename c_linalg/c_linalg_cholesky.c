@@ -113,9 +113,10 @@ c_linalg_cholesky_insert (c_matrix *r, const int index, const c_vector *u)
 	return info;
 }
 
-void
+int
 c_linalg_cholesky_delete (c_matrix *r, const int index)
 {
+	int		info = 0;
 	int		n;
 	int		ldr;
 	int		j;
@@ -136,5 +137,5 @@ c_linalg_cholesky_delete (c_matrix *r, const int index)
 	c_matrix_remove_col (r);
 	if (!c_matrix_is_empty (r)) c_matrix_remove_row (r);
 
-	return;
+	return info;
 }

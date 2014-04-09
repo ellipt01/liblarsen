@@ -11,7 +11,7 @@ echo "unset key" >> tmp.gnuplot
 
 echo -n "set title \"Trace Plot of coefficients fit by Lasso, Elastic net" >> tmp.gnuplot
 if [ -n "$2" ]; then
-	echo -n " ({/Symbol l}_1 = $2)"  >> tmp.gnuplot
+	echo -n " ({/Symbol l}_2 = $2)"  >> tmp.gnuplot
 fi
 echo "\""  >> tmp.gnuplot
 
