@@ -13,7 +13,7 @@
 extern bool	activeset_add (larsen *l, int j);
 extern bool	activeset_remove (larsen *l, int j);
 
-/* step_size.c */
+/* stepsize.c */
 extern bool	update_stepsize (larsen *l);
 
 /* equiangular.c */
@@ -47,8 +47,8 @@ update_correlations (larsen *l)
 	 *  c = scale * (X' * (y - mu) - scale * lambda2 * beta)
 	 */
 	if (l->c) c_vector_free (l->c);
-	l->c = c_matrix_transpose_dot_vector (l->x, r);
-	if (l->do_scaling) {
+	l->c = c_matrix_transpose_dot_vector (1., l->x, r, 0.);
+	if (l->is_elnet) {
 		c_vector_axpy (- l->lambda2 * l->scale, l->beta, l->c);
 		c_vector_scale (l->c, l->scale);
 	}
@@ -106,7 +106,7 @@ static void
 update_stop_loop_flag (larsen *l)
 {
 	int		size = l->A->size;
-	int		n = (l->do_scaling) ? l->x->size2 : MIN (l->x->size1 - 1, l->x->size2);
+	int		n = (l->is_elnet) ? l->x->size2 : MIN (l->x->size1 - 1, l->x->size2);
 	if (l->oper.action == ACTIVESET_ACTION_DROP) size--;
 	l->stop_loop = (size >= n) ? true : false;
 	if (!l->stop_loop) l->stop_loop = (l->oper.column == -1);
@@ -185,7 +185,7 @@ larsen_get_beta (larsen *l)
 	c_vector	*beta = c_vector_alloc (l->beta->size);
 	if (!l->interp) c_vector_memcpy (beta, l->beta);
 	else c_vector_memcpy (beta, l->beta_intr);
-	if (l->do_scaling) c_vector_scale (beta, 1. / l->scale);
+	if (l->is_elnet) c_vector_scale (beta, 1. / l->scale);
 	return beta;
 }
 
@@ -196,7 +196,7 @@ larsen_get_mu (larsen *l)
 	c_vector	*mu = c_vector_alloc (l->mu->size);
 	if (!l->interp) c_vector_memcpy (mu, l->mu);
 	else c_vector_memcpy (mu, l->mu_intr);
-	if (l->do_scaling) c_vector_scale (mu, pow (1. / l->scale, 2.));
+	if (l->is_elnet) c_vector_scale (mu, pow (1. / l->scale, 2.));
 	return mu;
 }
 
@@ -208,10 +208,10 @@ larsen_set_lambda1 (larsen *l, double t)
 	return;
 }
 
-/* return l->lambda1, if (scaled && l->do_scaling) return l->lambda1 * l->scale */
+/* return l->lambda1, if (scaled && l->is_elnet) return l->lambda1 * l->scale */
 double
 larsen_get_lambda1 (larsen *l, const bool scaled)
 {
 	if (!scaled) return l->lambda1;
-	return (l->do_scaling) ? l->lambda1 * l->scale : l->lambda1;
+	return (l->is_elnet) ? l->lambda1 * l->scale : l->lambda1;
 }

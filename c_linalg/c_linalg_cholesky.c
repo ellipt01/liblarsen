@@ -7,6 +7,7 @@
 
 #include "c_matrix.h"
 
+/* c_matrix.c */
 extern void	c_error (const char * function_name, const char *error_msg);
 
 /* lapack: cholesky decomposition */

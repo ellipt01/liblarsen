@@ -18,6 +18,9 @@ extern "C" {
 
 #define DBL_EPSILON		2.2204460492503131e-16
 
+#define GET_INDEX_OF_VECTOR(v, i) (i * v->stride)
+#define GET_INDEX_OF_MATRIX(a, i, j) (i + j * a->lda)
+
 typedef struct s_c_matrix	c_matrix;
 
 struct s_c_matrix {
@@ -101,8 +104,8 @@ double			c_vector_nrm (const c_vector *v);
 void			c_vector_axpy (double alpha, const c_vector *x, c_vector *y);
 
 double			c_vector_dot_vector (const c_vector *v1, const c_vector *v2);
-c_vector		*c_matrix_dot_vector (const c_matrix *a, const c_vector *v);
-c_vector		*c_matrix_transpose_dot_vector (const c_matrix *a, const c_vector *v);
+c_vector		*c_matrix_dot_vector (double alpha, const c_matrix *a, const c_vector *v, double beta);
+c_vector		*c_matrix_transpose_dot_vector (double alpha, const c_matrix *a, const c_vector *x, double beta);
 
 #ifdef __cplusplus
 }

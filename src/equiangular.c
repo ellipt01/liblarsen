@@ -7,7 +7,7 @@
 
 #include <larsen.h>
 
-/* return Xa = X(A) */
+/* return XA = X(A) */
 static c_matrix *
 extruct_xa (larsen *l)
 {
@@ -73,9 +73,9 @@ update_chol (larsen *l, c_matrix *xa)
 		c_vector	*t;
 		c_vector	*xi = c_vector_alloc (l->x->size1);
 		c_matrix_get_col (xi, l->x, column);
-		t = c_matrix_transpose_dot_vector (xa, xi);
+		t = c_matrix_transpose_dot_vector (1., xa, xi, 0.);
 		c_vector_free (xi);
-		if (l->do_scaling) {
+		if (l->is_elnet) {
 			c_vector_scale (t, pow (l->scale, 2.));
 			c_vector_set (t, index, c_vector_get (t, index) + l->lambda2 * pow (l->scale, 2.));
 		}
@@ -131,8 +131,10 @@ update_equiangular_larsen_cholesky (larsen *l)
 	c_vector_scale (l->w, l->absA);
 
 	if (!c_vector_is_empty (l->u)) c_vector_free (l->u);
-	l->u = c_matrix_dot_vector (xa, l->w);
-	if (l->do_scaling) c_vector_scale (l->u, l->scale);
+
+	if (l->is_elnet) l->u = c_matrix_dot_vector (l->scale, xa, l->w, 0.);
+	else l->u = c_matrix_dot_vector (1., xa, l->w, 0.);
+
 	c_matrix_free (xa);
 
 	return true;

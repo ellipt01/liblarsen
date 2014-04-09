@@ -7,6 +7,7 @@
 
 #include <larsen.h>
 
+/* larsen.c */
 extern void	larsen_awpy (larsen *l, double alpha, c_vector *w, c_vector *y);
 
 static double
@@ -28,8 +29,8 @@ calc_gamma_hat (larsen *l, int *index, double *val)
 
 	} else if (l->Ac->size > 0) {
 		int			i;
-		c_vector	*a = c_matrix_transpose_dot_vector (l->x, l->u);
-		if (l->do_scaling) {
+		c_vector	*a = c_matrix_transpose_dot_vector (1., l->x, l->u, 0.);
+		if (l->is_elnet) {
 			larsen_awpy (l, l->lambda2 * l->scale, l->w, a);
 			c_vector_scale (a, l->scale);
 		}

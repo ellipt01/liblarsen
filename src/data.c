@@ -7,7 +7,7 @@
 
 #include <larsen.h>
 
-/* centering vector i.e., y -> y - mean(y) */
+/* centering vector: y -> y - mean(y) */
 double
 larsen_centering_vector (c_vector *y)
 {
@@ -16,7 +16,7 @@ larsen_centering_vector (c_vector *y)
 	return mean;
 }
 
-/* normalizing vector i.e., y -> y / norm(y) */
+/* normalizing vector: y -> y / norm(y) */
 double
 larsen_normalizing_vector (c_vector *y)
 {
@@ -25,7 +25,8 @@ larsen_normalizing_vector (c_vector *y)
 	return nrm;
 }
 
-/* centering each column vector of matrix */
+/* centering each column of matrix:
+ * x(:, j) ->  x(:, j) - mean(x(:, j)) */
 c_vector *
 larsen_centering_matrix (c_matrix *x)
 {
@@ -44,7 +45,8 @@ larsen_centering_matrix (c_matrix *x)
 	return mean;
 }
 
-/* normalizing each column vector of matrix */
+/* normalizing each column of matrix:
+ * x(:, j) -> x(:, j) / norm(x(:, j)) */
 c_vector *
 larsen_normalizing_matrix (c_matrix *x)
 {

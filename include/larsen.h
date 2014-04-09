@@ -37,7 +37,7 @@ typedef struct s_larsen	larsen;
 
 struct s_larsen {
 
-	// if true, loop of larsen regression will be terminated.
+	/* if true, loop of lasso or elastic net regression is terminated */
 	bool					stop_loop;
 
 	/* threshold for L1 penalty */
@@ -45,9 +45,9 @@ struct s_larsen {
 	/* threshold for L2 penalty */
 	double					lambda2;
 
-	// false: lasso, and true: elastic net estimator.
-	bool					do_scaling;
-	// = 1 / sqrt(1 + lambda2)
+	/* true: elastic net, false: lasso */
+	bool					is_elnet;
+	/* scale = (is_elnet) ? sqrt(1 + lambda2) : 1 */
 	double					scale;
 
 	const c_matrix		*x;		// predictors
@@ -74,7 +74,7 @@ struct s_larsen {
 	c_vector				*beta;	// regression coefficients
 	c_vector				*mu;	// estimated response
 
-	/* backup of solution */
+	/* previous beta and mu */
 	c_vector				*beta_prev;	// previous beta
 	c_vector				*mu_prev;		// previous mu
 

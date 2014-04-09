@@ -24,7 +24,7 @@ calc_rss (larsen *l)
 	c_vector_memcpy (r, l->y);
 	c_vector_sub (r, mu);
 	rss = pow (c_vector_nrm (r), 2.);
-	if (l->do_scaling) rss += l->lambda2 * pow (c_vector_nrm (beta), 2.);
+	if (l->is_elnet) rss += l->lambda2 * pow (c_vector_nrm (beta), 2.);
 	c_vector_free (r);
 	c_vector_free (beta);
 	c_vector_free (mu);
@@ -56,7 +56,7 @@ larsen_eval_bic (larsen *l, double gamma)
 	double	df = calc_degree_of_freedom (l);
 	double	n = (double) l->y->size;
 	double	p = (double) l->x->size2;
-	if (l->do_scaling) n += p;
+	if (l->is_elnet) n += p;
 
 	return log (rss) + df * (log (n) + 2. * gamma * log (p)) / n;
 }

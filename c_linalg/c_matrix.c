@@ -17,24 +17,6 @@ c_error (const char * function_name, const char *error_msg)
 	exit (1);
 }
 
-int
-get_index_of_matrix (const c_matrix *a, const int i, const int j)
-{
-	return i + j * a->lda;
-}
-
-int
-get_index_of_vector (const c_vector *v, const int i)
-{
-	return i * v->stride;
-}
-
-int
-get_index_of_vector_int (const c_vector_int *v, const int i)
-{
-	return i * v->stride;
-}
-
 static c_matrix *
 _allocate_c_matrix (void)
 {
@@ -245,7 +227,7 @@ c_matrix_set (c_matrix *a, const int i, const int j, double val)
 {
 	int		index;
 	if (c_matrix_is_empty (a)) c_error ("c_matrix_set", "matrix is empty.");
-	index = get_index_of_matrix (a, i, j);
+	index = GET_INDEX_OF_MATRIX (a, i, j);
 	if (index < 0 || a->tsize <= index) c_error ("c_matrix_set", "index out of range.");
 	a->data[index] = val;
 	return;
@@ -256,7 +238,7 @@ c_matrix_get (const c_matrix *a, const int i, const int j)
 {
 	int		index;
 	if (c_matrix_is_empty (a)) c_error ("c_matrix_get", "matrix is empty.");
-	index = get_index_of_matrix (a, i, j);
+	index = GET_INDEX_OF_MATRIX (a, i, j);
 	if (index < 0 || a->tsize <= index) c_error ("c_matrix_get", "index out of range.");
 	return a->data[index];
 }
@@ -266,7 +248,7 @@ c_vector_set (c_vector *v, const int i, double val)
 {
 	int		index;
 	if (c_vector_is_empty (v)) c_error ("c_vector_set", "vector is empty.");
-	index = get_index_of_vector (v, i);
+	index = GET_INDEX_OF_VECTOR (v, i);
 	if (index < 0 || v->size * v->stride <= index) c_error ("c_vector_set", "index out of range.");
 	v->data[index] = val;
 	return;
@@ -277,7 +259,7 @@ c_vector_get (const c_vector *v, const int i)
 {
 	int		index;
 	if (c_vector_is_empty (v)) c_error ("c_vector_get", "vector is empty.");
-	index = get_index_of_vector (v, i);
+	index = GET_INDEX_OF_VECTOR (v, i);
 	if (index < 0 || v->tsize <= index) c_error ("c_vector_get", "index out of range.");
 	return v->data[index];
 }
@@ -287,7 +269,7 @@ c_vector_int_set (c_vector_int *v, const int i, int val)
 {
 	int		index;
 	if (c_vector_int_is_empty (v)) c_error ("c_vector_int_set", "vector is empty.");
-	index = get_index_of_vector_int (v, i);
+	index = GET_INDEX_OF_VECTOR (v, i);
 	if (index < 0 || v->size * v->stride <= index) c_error ("c_vector_int_set", "index out of range.");
 	v->data[index] = val;
 	return;
@@ -298,7 +280,7 @@ c_vector_int_get (const c_vector_int *v, const int i)
 {
 	int		index;
 	if (c_vector_int_is_empty (v)) c_error ("c_vector_int_get", "vector is empty.");
-	index = get_index_of_vector_int (v, i);
+	index = GET_INDEX_OF_VECTOR (v, i);
 	if (index < 0 || v->tsize <= index) c_error ("c_vector_int_get", "index out of range.");
 	return v->data[index];
 }
@@ -474,7 +456,7 @@ c_vector_set_zero (c_vector *v)
 {
 	int		i;
 	if (c_vector_is_empty (v)) c_error ("c_vector_set_zero", "vector is empty.");
-	for (i = 0; i < v->size; i++) v->data[get_index_of_vector (v, i)] = 0.0;
+	for (i = 0; i < v->size; i++) v->data[GET_INDEX_OF_VECTOR (v, i)] = 0.0;
 	return;
 }
 
@@ -501,7 +483,7 @@ c_vector_fprintf (FILE *stream, const c_vector *v, const char *format)
 	int i;
 	if (c_vector_is_empty (v)) c_error ("c_vector_fprintf", "vector is empty.");
 	for (i = 0; i < v->size; i++) {
-		fprintf (stream, format, v->data[get_index_of_vector (v, i)]);
+		fprintf (stream, format, v->data[GET_INDEX_OF_VECTOR (v, i)]);
 		fprintf (stream, "\n");
 	}
 	return;

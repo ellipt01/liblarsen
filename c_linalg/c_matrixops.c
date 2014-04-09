@@ -7,8 +7,8 @@
 
 #include "c_matrix.h"
 
+/* c_matrix.c */
 extern void	c_error (const char * function_name, const char *error_msg);
-extern int		get_index_of_vector (const c_vector *v, const int i);
 
 /* blas */
 extern long	idamax_ (long *n, double *x, long *incx);
@@ -24,7 +24,7 @@ c_vector_add_constant (c_vector *v, const double x)
 {
 	int		i;
 	if (c_vector_is_empty (v)) c_error ("c_vector_add_constant", "vector is empty.");
-	for (i = 0; i < v->size; i++) v->data[get_index_of_vector (v, i)] += x;
+	for (i = 0; i < v->size; i++) v->data[i * v->stride] += x;
 	return;
 }
 
@@ -35,7 +35,7 @@ c_vector_mean (const c_vector *v)
 	double	sum;
 	if (c_vector_is_empty (v)) c_error ("c_vector_mean", "vector is empty.");
 	/* x = sum x / N */
-	for (i = 0, sum = 0.0; i < v->size; i++) sum += v->data[get_index_of_vector (v, i)];
+	for (i = 0, sum = 0.0; i < v->size; i++) sum += v->data[i * v->stride];
 	return sum / (double) v->size;
 }
 
@@ -137,8 +137,9 @@ c_vector_dot_vector (const c_vector *x, const c_vector *y)
 	return ddot_ (&n, x->data, &incx, y->data, &incy);
 }
 
+/* y = alpha * a * x + beta */
 c_vector *
-c_matrix_dot_vector (const c_matrix *a, const c_vector *x)
+c_matrix_dot_vector (double alpha, const c_matrix *a, const c_vector *x, double beta)
 {
 	char		trans = 'N';
 	long		n;
@@ -146,8 +147,6 @@ c_matrix_dot_vector (const c_matrix *a, const c_vector *x)
 	long		lda;
 	long		incx;
 	long		incy;
-	double		alpha = 1.;
-	double		beta = 0.;
 	c_vector	*y;
 	if (c_matrix_is_empty (a)) c_error ("c_matrix_dot_vector", "matrix is empty.");
 	if (c_vector_is_empty (x)) c_error ("c_matrix_dot_vector", "vector is empty.");
@@ -162,8 +161,9 @@ c_matrix_dot_vector (const c_matrix *a, const c_vector *x)
 	return y;
 }
 
+/* y = alpha * a' * x + beta */
 c_vector *
-c_matrix_transpose_dot_vector (const c_matrix *a, const c_vector *x)
+c_matrix_transpose_dot_vector (double alpha, const c_matrix *a, const c_vector *x, double beta)
 {
 	char		trans = 'T';
 	long		n;
@@ -171,8 +171,6 @@ c_matrix_transpose_dot_vector (const c_matrix *a, const c_vector *x)
 	long		lda;
 	long		incx;
 	long		incy;
-	double		alpha = 1.;
-	double		beta = 0.;
 	c_vector	*y;
 	if (c_matrix_is_empty (a)) c_error ("c_matrix_transpose_dot_vector", "matrix is empty.");
 	if (c_vector_is_empty (x)) c_error ("c_matrix_transpose_dot_vector", "vector is empty.");
