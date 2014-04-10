@@ -1,5 +1,5 @@
 /*
- * c_linalg.c
+ * c_linalg_cholesky.c
  *
  *  Created on: 2014/04/03
  *      Author: utsugi
@@ -27,6 +27,7 @@ c_linalg_lapack_dpotrf (char uplo, c_matrix *a)
 
 	if (c_matrix_is_empty (a)) c_error ("c_linalg_lapack_dpotrf", "matrix is empty.");
 	if (!c_matrix_is_square (a)) c_error ("c_linalg_lapack_dpotrf", "matrix must be square.");
+	if (uplo != 'L' && uplo != 'U') c_error ("c_linalg_lapack_dpotrf", "uplo must be 'L' or 'U'.");
 
 	n = (long) a->size1;
 	lda = (long) a->lda;
@@ -48,6 +49,7 @@ c_linalg_lapack_dpotrs (char uplo, c_matrix *a, c_matrix *b)
 	if (c_matrix_is_empty (b)) c_error ("c_linalg_lapack_dpotrs", "second matrix is empty.");
 	if (!c_matrix_is_square (a)) c_error ("c_linalg_lapack_dpotrs", "first matrix must be square.");
 	if (a->size1 != b->size1) c_error ("c_linalg_lapack_dpotrs", "matrix size does not match.");
+	if (uplo != 'L' && uplo != 'U') c_error ("c_linalg_lapack_dpotrs", "uplo must be 'L' or 'U'.");
 
 	n = (long) a->size1;
 	nrhs = (long) b->size2;

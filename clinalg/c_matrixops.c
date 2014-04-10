@@ -1,5 +1,5 @@
 /*
- * c_matrix_linlag.c
+ * c_matrixops.c
  *
  *  Created on: 2014/04/03
  *      Author: utsugi
