@@ -73,12 +73,9 @@ update_chol (larsen *l, c_matrix *xa)
 		c_vector	*t;
 		c_vector	*xi = c_vector_alloc (l->x->size1);
 		c_matrix_get_col (xi, l->x, column);
-		t = c_matrix_transpose_dot_vector (1., xa, xi, 0.);
+		t = c_matrix_transpose_dot_vector (l->scale2, xa, xi, 0.);
 		c_vector_free (xi);
-		if (l->is_elnet) {
-			c_vector_scale (t, pow (l->scale, 2.));
-			c_vector_set (t, index, c_vector_get (t, index) + l->lambda2 * pow (l->scale, 2.));
-		}
+		if (l->is_elnet) c_vector_set (t, index, c_vector_get (t, index) + l->lambda2 * l->scale2);
 		if (l->A->size == 1 && c_matrix_is_empty (l->chol)) {
 			l->chol = c_matrix_alloc (1, 1);
 			c_matrix_set (l->chol, 0, 0, c_vector_get (t, 0));
@@ -132,8 +129,7 @@ update_equiangular_larsen_cholesky (larsen *l)
 
 	if (!c_vector_is_empty (l->u)) c_vector_free (l->u);
 
-	if (l->is_elnet) l->u = c_matrix_dot_vector (l->scale, xa, l->w, 0.);
-	else l->u = c_matrix_dot_vector (1., xa, l->w, 0.);
+	l->u = c_matrix_dot_vector (l->scale, xa, l->w, 0.);
 
 	c_matrix_free (xa);
 

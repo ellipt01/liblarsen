@@ -23,7 +23,8 @@ larsen_alloc (double lambda1, double lambda2, const c_matrix *x, const c_vector 
 	l->y = c_vector_view_array (y->size, y->stride, y->data);
 
 	l->is_elnet = (lambda2 > DBL_EPSILON);
-	l->scale = (l->is_elnet) ? sqrt (1. + lambda2) : 1.;
+	l->scale2 = (l->is_elnet) ? 1. / (1. + lambda2) : 1.;
+	l->scale = (l->is_elnet) ? sqrt (l->scale2) : 1.;
 
 	/* correlation */
 	l->sup_c = 0.;

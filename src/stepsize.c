@@ -29,11 +29,8 @@ calc_gamma_hat (larsen *l, int *index, double *val)
 
 	} else if (l->Ac->size > 0) {
 		int			i;
-		c_vector	*a = c_matrix_transpose_dot_vector (1., l->x, l->u, 0.);
-		if (l->is_elnet) {
-			larsen_awpy (l, l->lambda2 * l->scale, l->w, a);
-			c_vector_scale (a, l->scale);
-		}
+		c_vector	*a = c_matrix_transpose_dot_vector (l->scale, l->x, l->u, 0.);
+		if (l->is_elnet) larsen_awpy (l, l->lambda2 * l->scale2, l->w, a);
 		for (i = 0; i < l->Ac->size; i++) {
 			int		j = c_vector_int_get (l->Ac, i);
 			double	cj = c_vector_get (l->c, j);

@@ -47,11 +47,8 @@ update_correlations (larsen *l)
 	 *  c = scale * (X' * (y - mu) - scale * lambda2 * beta)
 	 */
 	if (l->c) c_vector_free (l->c);
-	l->c = c_matrix_transpose_dot_vector (1., l->x, r, 0.);
-	if (l->is_elnet) {
-		c_vector_axpy (- l->lambda2 * l->scale, l->beta, l->c);
-		c_vector_scale (l->c, l->scale);
-	}
+	l->c = c_matrix_transpose_dot_vector (l->scale, l->x, r, 0.);
+	if (l->is_elnet) c_vector_axpy (- l->lambda2 * l->scale2, l->beta, l->c);
 	c_vector_free (r);
 
 	{
@@ -196,7 +193,7 @@ larsen_get_mu (larsen *l)
 	c_vector	*mu = c_vector_alloc (l->mu->size);
 	if (!l->interp) c_vector_memcpy (mu, l->mu);
 	else c_vector_memcpy (mu, l->mu_intr);
-	if (l->is_elnet) c_vector_scale (mu, pow (1. / l->scale, 2.));
+	if (l->is_elnet) c_vector_scale (mu, 1. / l->scale2);
 	return mu;
 }
 

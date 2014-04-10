@@ -47,8 +47,10 @@ struct s_larsen {
 
 	/* true: elastic net, false: lasso */
 	bool					is_elnet;
-	/* scale = (is_elnet) ? sqrt(1 + lambda2) : 1 */
+	/* scale  = (is_elnet) ? 1 / sqrt(1 + lambda2) : 1
+	 * scale2 = l->scale^2 */
 	double					scale;
+	double					scale2;
 
 	const c_matrix		*x;		// predictors
 	const c_vector		*y;		// response
