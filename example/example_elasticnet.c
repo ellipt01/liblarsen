@@ -19,6 +19,8 @@ example_elasticnet (c_matrix *x, c_vector *y, double start, double dt, double st
 	double		t = start;
 	larsen		*l = larsen_alloc (t, lambda2, x, y);
 
+	if (l == NULL) return;
+
 	while (larsen_elasticnet (l, maxiter)) {
 		output_solutionpath (iter++, l);
 		fprintf (stdout, "%d : lambda1 = %f, bic(%.2f) = %f\n", iter, l->lambda1, gamma, larsen_eval_bic (l, gamma));

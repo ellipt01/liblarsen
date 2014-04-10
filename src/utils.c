@@ -11,7 +11,22 @@ larsen *
 larsen_alloc (double lambda1, double lambda2, const c_matrix *x, const c_vector *y)
 {
 	int		i;
-	larsen	*l = (larsen *) malloc (sizeof (larsen));
+	larsen	*l;
+
+	if (c_vector_is_empty (y)) {
+		fprintf (stderr, "ERROR: input vector *y is empty.\n");
+		return NULL;
+	}
+	if (c_matrix_is_empty (x)) {
+		fprintf (stderr, "ERROR: input matrix *x is empty.\n");
+		return NULL;
+	}
+	if (lambda1 < 0 || lambda2 < 0) {
+		fprintf (stderr, "ERROR: lambda1(= %f), lambda2(= %f) must be >= 0.\n", lambda1, lambda2);
+		return NULL;
+	}
+
+	l = (larsen *) malloc (sizeof (larsen));
 
 	l->stop_loop = false;
 
@@ -21,6 +36,10 @@ larsen_alloc (double lambda1, double lambda2, const c_matrix *x, const c_vector 
 	/* vector and matrix view of original y and x */
 	l->x = c_matrix_view_array (x->size1, x->size2, x->lda, x->data);
 	l->y = c_vector_view_array (y->size, y->stride, y->data);
+	if (c_vector_is_empty (l->y) || c_matrix_is_empty (l->x)) {
+		fprintf (stderr, "ERROR: larsen_alloc: failed to create vector and matrix view.\n");
+		return NULL;
+	}
 
 	l->is_elnet = (lambda2 > DBL_EPSILON);
 	l->scale2 = (l->is_elnet) ? 1. / (1. + lambda2) : 1.;
@@ -74,7 +93,6 @@ larsen_free (larsen *l)
 {
 	if (l) {
 		if (!c_vector_is_empty (l->c)) c_vector_free (l->c);
-
 
 		if (!c_vector_int_is_empty (l->A)) c_vector_int_free (l->A);
 		if (!c_vector_int_is_empty (l->Ac)) c_vector_int_free (l->Ac);

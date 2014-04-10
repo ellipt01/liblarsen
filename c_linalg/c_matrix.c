@@ -31,28 +31,17 @@ _allocate_c_matrix (void)
 	return a;
 }
 
-c_matrix *
-c_matrix_alloc (const size_t size1, const size_t size2)
+static c_vector_int *
+_allocate_c_vector_int (void)
 {
-	c_matrix	*a;
-
-	if (size1 <= 0 || size2 <= 0) c_error ("c_matrix_alloc", "invalid size.");
-
-	a = _allocate_c_matrix ();
-	if (!a) {
-		fprintf (stderr, "WARNING: c_matrix_alloc: fail to allocate memory.\n");
-		return NULL;
-	}
-	a->data = (double *) malloc (size1 * size2 * sizeof (double));
-	if (!a->data) fprintf (stderr, "WARNING: c_matrix_alloc: fail to allocate memory.\n");
-	else {
-		a->size1 = size1;
-		a->size2 = size2;
-		a->lda = size1;
-		a->tsize = a->lda * a->size2;
-		a->owner = true;
-	}
-	return a;
+	c_vector_int	*v = (c_vector_int *) malloc (sizeof (c_vector_int));
+	if (!v) return NULL;
+	v->size = 0;
+	v->stride = 0;
+	v->tsize = 0;
+	v->data = NULL;
+	v->owner = false;
+	return v;
 }
 
 static c_vector *
@@ -68,6 +57,30 @@ _allocate_c_vector (void)
 	return v;
 }
 
+c_matrix *
+c_matrix_alloc (const size_t size1, const size_t size2)
+{
+	c_matrix	*a;
+
+	if (size1 <= 0 || size2 <= 0) c_error ("c_matrix_alloc", "invalid size.");
+
+	a = _allocate_c_matrix ();
+	if (!a) {
+		fprintf (stderr, "WARNING: c_matrix_alloc: failed to allocate memory.\n");
+		return NULL;
+	}
+	a->data = (double *) malloc (size1 * size2 * sizeof (double));
+	if (!a->data) fprintf (stderr, "WARNING: c_matrix_alloc: failed to allocate memory.\n");
+	else {
+		a->size1 = size1;
+		a->size2 = size2;
+		a->lda = size1;
+		a->tsize = a->lda * a->size2;
+		a->owner = true;
+	}
+	return a;
+}
+
 c_vector *
 c_vector_alloc (const size_t size)
 {
@@ -77,30 +90,17 @@ c_vector_alloc (const size_t size)
 
 	v = _allocate_c_vector ();
 	if (!v) {
-		fprintf (stderr, "WARNING: c_vector_alloc: fail to allocate memory.\n");
+		fprintf (stderr, "WARNING: c_vector_alloc: failed to allocate memory.\n");
 		return NULL;
 	}
 	v->data = (double *) malloc (size * sizeof (double));
-	if (!v->data) fprintf (stderr, "WARNING: c_vector_alloc: fail to allocate memory.\n");
+	if (!v->data) fprintf (stderr, "WARNING: c_vector_alloc: failed to allocate memory.\n");
 	else {
 		v->size = size;
 		v->stride = 1;
 		v->tsize = v->stride * v->size;
 		v->owner = true;
 	}
-	return v;
-}
-
-static c_vector_int *
-_allocate_c_vector_int (void)
-{
-	c_vector_int	*v = (c_vector_int *) malloc (sizeof (c_vector_int));
-	if (!v) return NULL;
-	v->size = 0;
-	v->stride = 0;
-	v->tsize = 0;
-	v->data = NULL;
-	v->owner = false;
 	return v;
 }
 
@@ -113,11 +113,11 @@ c_vector_int_alloc (const size_t size)
 
 	v = _allocate_c_vector_int ();
 	if (!v) {
-		fprintf (stderr, "WARNING: c_vector_int_alloc: fail to allocate memory.\n");
+		fprintf (stderr, "WARNING: c_vector_int_alloc: failed to allocate memory.\n");
 		return NULL;
 	}
 	v->data = (int *) malloc (size * sizeof (int));
-	if (!v->data) fprintf (stderr, "WARNING: c_vector_int_alloc: fail to allocate memory.\n");
+	if (!v->data) fprintf (stderr, "WARNING: c_vector_int_alloc: failed to allocate memory.\n");
 	else {
 		v->size = size;
 		v->stride = 1;
