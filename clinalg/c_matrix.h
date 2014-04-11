@@ -42,39 +42,24 @@ struct s_c_vector {
 	double		*data;
 };
 
-typedef struct s_c_vector_int	c_vector_int;
-
-struct s_c_vector_int {
-	size_t		size;
-	size_t		stride;
-	size_t		tsize;
-	bool		owner;
-	int			*data;
-};
-
 c_matrix		*c_matrix_alloc (const size_t size1, const size_t size2);
 c_vector		*c_vector_alloc (const size_t size);
-c_vector_int	*c_vector_int_alloc (const size_t size);
 
 c_matrix		*c_matrix_view_array (const size_t size1, const size_t size2, const size_t lda, double *data);
 c_vector		*c_vector_view_array (const size_t size, const size_t stride, double *data);
 
 bool			c_matrix_is_empty (const c_matrix *a);
 bool			c_vector_is_empty (const c_vector *a);
-bool			c_vector_int_is_empty (const c_vector_int *v);
 
 bool			c_matrix_is_square (const c_matrix *a);
 
 void			c_matrix_free (c_matrix *a);
 void			c_vector_free (c_vector *v);
-void			c_vector_int_free (c_vector_int *v);
 
 void			c_matrix_set (c_matrix *a, const int i, const int j, double val);
 double			c_matrix_get (const c_matrix *a, const int i, const int j);
 void			c_vector_set (c_vector *v, const int i, double val);
 double			c_vector_get (const c_vector *v, const int i);
-void			c_vector_int_set (c_vector_int *v, const int i, int val);
-int				c_vector_int_get (const c_vector_int *v, const int i);
 
 void			c_matrix_get_col (c_vector *v, const c_matrix *a, const size_t index);
 void			c_matrix_set_col (c_matrix *a, const size_t index, const c_vector *v);

@@ -8,17 +8,17 @@
 #include <larsen.h>
 
 larsen *
-larsen_alloc (double lambda1, double lambda2, const c_matrix *x, const c_vector *y)
+larsen_alloc (size_t n, size_t p, const double *y, const double *x, double lambda1, double lambda2)
 {
 	int		i;
 	larsen	*l;
 
-	if (c_vector_is_empty (y)) {
-		fprintf (stderr, "ERROR: input vector *y is empty.\n");
+	if (!y) {
+		fprintf (stderr, "ERROR: vector *y is empty.\n");
 		return NULL;
 	}
-	if (c_matrix_is_empty (x)) {
-		fprintf (stderr, "ERROR: input matrix *x is empty.\n");
+	if (!x) {
+		fprintf (stderr, "ERROR: matrix *x is empty.\n");
 		return NULL;
 	}
 	if (lambda1 < 0 || lambda2 < 0) {
@@ -28,14 +28,17 @@ larsen_alloc (double lambda1, double lambda2, const c_matrix *x, const c_vector 
 
 	l = (larsen *) malloc (sizeof (larsen));
 
+	l->n = n;
+	l->p = p;
+
 	l->stop_loop = false;
 
 	l->lambda1 = lambda1;
 	l->lambda2 = lambda2;
 
 	/* vector and matrix view of original y and x */
-	l->x = c_matrix_view_array (x->size1, x->size2, x->lda, x->data);
-	l->y = c_vector_view_array (y->size, y->stride, y->data);
+	l->x = c_matrix_view_array (n, p, n, (double *) x);
+	l->y = c_vector_view_array (n, 1, (double *) y);
 	if (c_vector_is_empty (l->y) || c_matrix_is_empty (l->x)) {
 		fprintf (stderr, "ERROR: larsen_alloc: failed to create vector and matrix view.\n");
 		return NULL;
@@ -54,10 +57,10 @@ larsen_alloc (double lambda1, double lambda2, const c_matrix *x, const c_vector 
 	l->oper.column = -1;
 	l->oper.index = -1;
 
-	l->A = c_vector_int_alloc (x->size2);
-	l->A->size = 0;
-	l->Ac = c_vector_int_alloc (x->size2);
-	for (i = 0; i < x->size2; i++) c_vector_int_set (l->Ac, i, i);
+	l->sizeA = 0;
+	l->A = (int *) malloc (p * sizeof (int));
+	l->Ac = (int *) malloc (p * sizeof (int));
+	for (i = 0; i < p; i++) l->Ac[i] = i;
 
 	/* active set */
 	l->absA = 0.;
@@ -65,22 +68,20 @@ larsen_alloc (double lambda1, double lambda2, const c_matrix *x, const c_vector 
 	l->w = NULL;
 
 	/* solution */
-	l->beta = c_vector_alloc (x->size2);
-	c_vector_set_zero (l->beta);
-	l->mu = c_vector_alloc (y->size);
-	c_vector_set_zero (l->mu);
+	l->beta = (double *) malloc (p * sizeof (double));
+	l->mu = (double *) malloc (n * sizeof (double));
+	for (i = 0; i < p; i++) l->beta[i] = 0.;
+	for (i = 0; i < n; i++) l->mu[i] = 0.;
 
 	/* backup of solution */
-	l->beta_prev = c_vector_alloc (x->size2);
-	c_vector_set_zero (l->beta_prev);
-	l->mu_prev = c_vector_alloc (y->size);
-	c_vector_set_zero (l->mu_prev);
+	l->beta_prev = (double *) malloc (p * sizeof (double));
+	l->mu_prev = (double *) malloc (n * sizeof (double));
 
 	/* interpolation */
 	l->interp = false;
 	l->stepsize_intr = 0.;
-	l->beta_intr = c_vector_alloc (x->size2);
-	l->mu_intr = c_vector_alloc (y->size);
+	l->beta_intr = (double *) malloc (p * sizeof (double));
+	l->mu_intr = (double *) malloc (n * sizeof (double));
 
 	/* cholesky factorization */
 	l->chol = NULL;
@@ -92,25 +93,25 @@ void
 larsen_free (larsen *l)
 {
 	if (l) {
-		if (!c_vector_is_empty (l->c)) c_vector_free (l->c);
+		if (l->c) free (l->c);
 
-		if (!c_vector_int_is_empty (l->A)) c_vector_int_free (l->A);
-		if (!c_vector_int_is_empty (l->Ac)) c_vector_int_free (l->Ac);
+		if (l->A) free (l->A);
+		if (l->Ac) free (l->Ac);
 
 		if (!c_matrix_is_empty (l->x)) c_matrix_free ((c_matrix *) l->x);
 		if (!c_vector_is_empty (l->y)) c_vector_free ((c_vector *) l->y);
 
-		if (!c_vector_is_empty (l->u)) c_vector_free (l->u);
-		if (!c_vector_is_empty (l->w)) c_vector_free (l->w);
+		if (l->u) free (l->u);
+		if (l->w) free (l->w);
 
-		if (!c_vector_is_empty (l->beta)) c_vector_free (l->beta);
-		if (!c_vector_is_empty (l->mu)) c_vector_free (l->mu);
+		if (l->beta) free (l->beta);
+		if (l->mu) free (l->mu);
 
-		if (!c_vector_is_empty (l->beta_prev)) c_vector_free (l->beta_prev);
-		if (!c_vector_is_empty (l->mu_prev)) c_vector_free (l->mu_prev);
+		if (l->beta_prev) free (l->beta_prev);
+		if (l->mu_prev) free (l->mu_prev);
 
-		if (!c_vector_is_empty (l->beta_intr)) c_vector_free (l->beta_intr);
-		if (!c_vector_is_empty (l->mu_intr)) c_vector_free (l->mu_intr);
+		if (l->beta_intr) free (l->beta_intr);
+		if (l->mu_intr) free (l->mu_intr);
 
 		if (!c_matrix_is_empty (l->chol)) c_matrix_free (l->chol);
 

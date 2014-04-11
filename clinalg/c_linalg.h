@@ -14,8 +14,12 @@
 extern "C" {
 #endif
 
+#include <cblas.h>
+
 #include <c_matrix.h>
 #include <c_linalg_cholesky.h>
+
+#define index_of_matrix(i, j, lda) (i + j * lda)
 
 #ifdef __cplusplus
 }

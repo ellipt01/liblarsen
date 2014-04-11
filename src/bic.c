@@ -18,16 +18,16 @@ static double
 calc_rss (larsen *l)
 {
 	double		rss;
-	c_vector	*r = c_vector_alloc (l->y->size);
-	c_vector	*beta = larsen_get_beta (l);	// scale * beta
-	c_vector	*mu = larsen_get_mu (l);			// scale^2 * mu
-	c_vector_memcpy (r, l->y);
-	c_vector_sub (r, mu);
-	rss = pow (c_vector_nrm (r), 2.);
-	if (l->is_elnet) rss += l->lambda2 * pow (c_vector_nrm (beta), 2.);
-	c_vector_free (r);
-	c_vector_free (beta);
-	c_vector_free (mu);
+	double		*r = (double *) malloc (l->n * sizeof (double));
+	double		*beta = larsen_get_beta (l);	// scale * beta
+	double		*mu = larsen_get_mu (l);			// scale^2 * mu
+	cblas_dcopy (l->n, l->y->data, 1, r, 1);
+	cblas_daxpy (l->n, -1., mu, 1, r, 1);	// r = - mu + r
+	rss = pow (cblas_dnrm2 (l->n, r, 1), 2.);
+	if (l->is_elnet) rss += l->lambda2 * pow (cblas_dnrm2 (l->p, beta, 1), 2.);
+	free (r);
+	free (beta);
+	free (mu);
 	return rss;
 }
 
@@ -36,7 +36,7 @@ calc_rss (larsen *l)
 static double
 calc_degree_of_freedom (larsen *l)
 {
-	return (double) l->A->size;
+	return (double) l->sizeA;
 }
 
 /* Extended Bayesian Information Criterion (Chen and Chen, 2008)

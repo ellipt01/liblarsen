@@ -83,9 +83,9 @@ output_solutionpath (int iter, larsen *l)
 	int			i;
 	char		fn[80];
 	FILE		*fp;
-	c_vector	*beta = larsen_get_beta (l);
+	double		*beta = larsen_get_beta (l);
 
-	for (i = 0; i < beta->size; i++) {
+	for (i = 0; i < l->p; i++) {
 
 		sprintf (fn, "beta%03d.res", i);
 
@@ -93,23 +93,23 @@ output_solutionpath (int iter, larsen *l)
 		else fp = fopen (fn, "aw");
 		if (fp == NULL) continue;
 
-		fprintf (fp, "%d\t%.4e\t%.4e\n", iter, l->lambda1, c_vector_get (beta, i));
+		fprintf (fp, "%d\t%.4e\t%.4e\n", iter, l->lambda1, beta[i]);
 		fclose (fp);
 	}
-	c_vector_free (beta);
+	free (beta);
 	return;
 }
 
 void
 fprintf_beta (FILE *stream, int iter, larsen *l)
 {
-	c_vector	*beta = larsen_get_beta (l);
+	int		i;
+	double	*beta = larsen_get_beta (l);
 
 	fprintf (stream, "beta[%04d, t = %.2f] = \n", iter, l->lambda1);
-	c_vector_fprintf (stream, beta, "%.4e");
+	for (i = 0; i < l->p; i++) fprintf (stream, "%.4e\n", beta[i]);
 	fprintf (stream, "]\n");
-
-	c_vector_free (beta);
+	free (beta);
 
 	return;
 }

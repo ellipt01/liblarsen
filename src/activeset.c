@@ -9,43 +9,41 @@
 
 /* if item was found in c_vector_int *v, return true  */
 static bool
-find_item (c_vector_int *v, int item)
+find_item (size_t size, int *v, int item)
 {
 	int		i;
-	for (i = 0; i < v->size; i++) {
-		int		vi = c_vector_int_get (v, i);
-		if (vi == item) return true;
+	for (i = 0; i < size; i++) {
+		if (v[i] == item) return true;
 	}
 	return false;
 }
 
 /* append item to c_vector_int *v, return index of last position on A. */
 static int
-append_item (c_vector_int *v, int item)
+append_item (size_t size, int *v, int item)
 {
-	int		index = v->size;
-	v->size++;
-	c_vector_int_set (v, index, item);
+	int		index = size;
+//	v->size++;
+	v[index] = item;
 	return index;
 }
 
 /* remove item from c_vector_int *v, return index of removed position on A.
  * if specified item was not found in *v, return -1 */
 static int
-remove_item (c_vector_int *v, int item)
+remove_item (size_t size, int *v, int item)
 {
 	int		i, k;
 	int		index = -1;
 	k = 0;
-	for (i = 0; i < v->size; i++) {
-		int		vi = c_vector_int_get (v, i);
-		if (vi == item) {
+	for (i = 0; i < size; i++) {
+		if (v[i] == item) {
 			index = i;
 			continue;
 		}
-		c_vector_int_set (v, k++, vi);
+		v[k++] = v[i];
 	}
-	if (index >= 0) v->size--;
+//	if (index >= 0) v->size--;
 	return index;
 }
 
@@ -54,14 +52,14 @@ bool
 activeset_add (larsen *l, int item)
 {
 	int		index;
-	if (find_item (l->A, item)) return false;
-	if (!find_item (l->Ac, item)) return false;
+	if (find_item (l->sizeA, l->A, item)) return false;
+	if (!find_item (l->p - l->sizeA, l->Ac, item)) return false;
 
-	if (l->A->size >= l->x->size2) return false;
-	if (l->Ac->size <= 0) return false;
+	if (l->sizeA >= l->p) return false;
 
-	index = append_item (l->A, item);
-	remove_item (l->Ac, item);
+	index = append_item (l->sizeA, l->A, item);
+	remove_item (l->p - l->sizeA, l->Ac, item);
+	l->sizeA++;
 
 	// store the index of item which was added to A
 	l->oper.index = index;
@@ -74,14 +72,14 @@ bool
 activeset_remove (larsen *l, int item)
 {
 	int		index;
-	if (!find_item (l->A, item)) return false;
-	if (find_item (l->Ac, item)) return false;
+	if (!find_item (l->sizeA, l->A, item)) return false;
+	if (find_item (l->p - l->sizeA, l->Ac, item)) return false;
 
-	if (l->A->size <= 0) return false;
-	if (l->Ac->size >= l->x->size2) return false;
+	if (l->sizeA <= 0) return false;
 
-	index = remove_item (l->A, item);
-	append_item (l->Ac, item);
+	index = remove_item (l->sizeA, l->A, item);
+	append_item (l->p - l->sizeA, l->Ac, item);
+	l->sizeA--;
 
 	// store the index of item which was removed from A
 	l->oper.index = index;

@@ -8,7 +8,7 @@
 #include <larsen.h>
 
 /* larsen.c */
-extern void	larsen_awpy (larsen *l, double alpha, c_vector *w, c_vector *y);
+extern void	larsen_awpy (larsen *l, double alpha, double *w, double *y);
 
 static double
 posinf (void)
@@ -23,18 +23,19 @@ calc_gamma_hat (larsen *l, int *index, double *val)
 	int			minplus_idx = -1;
 	double		minplus = posinf ();
 
-	if (l->A->size == l->x->size2) {
+	if (l->sizeA == l->p) {
 
 		minplus = l->sup_c / l->absA;
 
-	} else if (l->Ac->size > 0) {
+	} else if (l->p > l->sizeA) {
 		int			i;
-		c_vector	*a = c_matrix_transpose_dot_vector (l->scale, l->x, l->u, 0.);
+		double		*a = (double *) malloc (l->p * sizeof (double));
+		cblas_dgemv (CblasColMajor, CblasTrans, l->n, l->p, l->scale, l->x->data, l->n, l->u, 1, 0., a, 1);
 		if (l->is_elnet) larsen_awpy (l, l->lambda2 * l->scale2, l->w, a);
-		for (i = 0; i < l->Ac->size; i++) {
-			int		j = c_vector_int_get (l->Ac, i);
-			double	cj = c_vector_get (l->c, j);
-			double	aj = c_vector_get (a, j);
+		for (i = 0; i < l->p - l->sizeA; i++) {
+			int		j = l->Ac[i];
+			double	cj = l->c[j];
+			double	aj = a[j];
 			double	e0, e1, min;
 			e0 = (l->sup_c - cj) / (l->absA - aj);
 			e1 = (l->sup_c + cj) / (l->absA + aj);
@@ -48,7 +49,7 @@ calc_gamma_hat (larsen *l, int *index, double *val)
 				minplus = min;
 			}
 		}
-		c_vector_free (a);
+		free (a);
 	}
 	*index = minplus_idx;
 	*val = minplus;
@@ -62,13 +63,11 @@ calc_gamma_tilde (larsen *l, int *index, double *val)
 	int		minplus_idx = -1;
 	double	minplus = posinf ();
 
-	if (l->A->size > 0) {
+	if (l->sizeA > 0) {
 		int		i;
-		for (i = 0; i < l->A->size; i++) {
-			int		j = c_vector_int_get (l->A, i);
-			double	betaj = c_vector_get (l->beta, j);
-			double	wi = c_vector_get (l->w, i);
-			double	e = - betaj / wi;
+		for (i = 0; i < l->sizeA; i++) {
+			int		j = l->A[i];
+			double	e = - l->beta[j] / l->w[i];
 			if (e <= 0.) e = posinf ();
 			if (e < minplus) {
 				minplus_idx = i;
@@ -102,11 +101,11 @@ update_stepsize (larsen *l)
 		if (gamma_hat < gamma_tilde) {
 			l->oper.action = ACTIVESET_ACTION_ADD;
 			l->stepsize = gamma_hat;
-			if (gamma_hat_idx >= 0) l->oper.column = c_vector_int_get (l->Ac, gamma_hat_idx);
+			if (gamma_hat_idx >= 0) l->oper.column = l->Ac[gamma_hat_idx];
 		} else {
 			l->oper.action = ACTIVESET_ACTION_DROP;
 			l->stepsize = gamma_tilde;
-			if (gamma_tilde_idx >= 0) l->oper.column = c_vector_int_get (l->A, gamma_tilde_idx);
+			if (gamma_tilde_idx >= 0) l->oper.column = l->A[gamma_tilde_idx];
 		}
 	}
 	return (l->stepsize != posinf ());

@@ -17,7 +17,7 @@ example_elasticnet (c_matrix *x, c_vector *y, double start, double dt, double st
 {
 	int			iter = 0;
 	double		t = start;
-	larsen		*l = larsen_alloc (t, lambda2, x, y);
+	larsen		*l = larsen_alloc (y->size, x->size2, y->data, x->data, t, lambda2);
 
 	if (l == NULL) return;
 

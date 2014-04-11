@@ -37,6 +37,9 @@ typedef struct s_larsen	larsen;
 
 struct s_larsen {
 
+	size_t					n;	// number of data
+	size_t					p;	// number of variables
+
 	/* if true, loop of lasso or elastic net regression is terminated */
 	bool					stop_loop;
 
@@ -52,39 +55,40 @@ struct s_larsen {
 	double					scale;
 	double					scale2;
 
-	const c_matrix		*x;		// predictors
-	const c_vector		*y;		// response
+	const c_matrix		*x;		// variables
+	const c_vector		*y;		// data
 
 	/* correlation */
 	double					sup_c;	// sup(abs(c))
-	c_vector				*c;		// colleration: = X' * (y - mu)
+	double					*c;		// colleration: = X' * (y - mu)
 
 	/* active set */
 	activeset_oper		oper;
-	c_vector_int			*A;		// active set
-	c_vector_int			*Ac;	// implement of A
+	size_t					sizeA;
+	int						*A;		// active set
+	int						*Ac;	// implement of A
 
 	/* equiangular */
 	double					absA;
-	c_vector				*u;		// equiangular vector
-	c_vector				*w;
+	double					*u;		// equiangular vector
+	double					*w;
 
 	/* step_size */
 	double					stepsize;	// step size which beta will be progress.
 
 	/* solution */
-	c_vector				*beta;	// regression coefficients
-	c_vector				*mu;	// estimated response
+	double					*beta;	// regression coefficients
+	double					*mu;	// estimated response
 
 	/* previous beta and mu */
-	c_vector				*beta_prev;	// previous beta
-	c_vector				*mu_prev;		// previous mu
+	double					*beta_prev;	// previous beta
+	double					*mu_prev;		// previous mu
 
 	/* interpolation */
 	bool					interp;		// interpolation was done or not.
 	double					stepsize_intr;
-	c_vector				*beta_intr;	// interpolated beta
-	c_vector				*mu_intr;		// interpolated mu
+	double					*beta_intr;	// interpolated beta
+	double					*mu_intr;		// interpolated mu
 
 	/* cholesky factorization */
 	c_matrix				*chol;	// = chol(XA' * XA), where XA = X(A).
@@ -92,7 +96,7 @@ struct s_larsen {
 };
 
 /* util.c */
-larsen		*larsen_alloc (double lambda1, double lambda2, const c_matrix *x, const c_vector *y);
+larsen		*larsen_alloc (size_t n, size_t p, const double *y, const double *x, double lambda1, double lambda2);
 void		larsen_free (larsen *l);
 
 /* data.c */
@@ -103,8 +107,8 @@ c_vector	*larsen_normalizing_matrix (c_matrix *x);
 /* larsen.c */
 bool		larsen_regression_step (larsen *l);
 bool		larsen_interpolate (larsen *l);
-c_vector	*larsen_get_beta (larsen *l);
-c_vector	*larsen_get_mu (larsen *l);
+double		*larsen_get_beta (larsen *l);
+double		*larsen_get_mu (larsen *l);
 void		larsen_set_lambda1 (larsen *l, double t);
 double		larsen_get_lambda1 (larsen *l, const bool scaled);
 
