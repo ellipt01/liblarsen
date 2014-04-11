@@ -19,7 +19,7 @@ extern "C" {
 #include <c_matrix.h>
 #include <c_linalg_cholesky.h>
 
-#define index_of_matrix(i, j, lda) (i + j * lda)
+#define index_of_matrix(i, j, lda) ((i) + (j) * (lda))
 
 #ifdef __cplusplus
 }

@@ -36,7 +36,7 @@ static void
 update_correlations (larsen *l)
 {
 	double	*r = (double *) malloc (l->n * sizeof (double));
-	cblas_dcopy (l->n, l->y->data, 1, r, 1);
+	cblas_dcopy (l->n, l->y, 1, r, 1);
 	cblas_daxpy (l->n, -1., l->mu, 1, r, 1);	// r = - mu + y
 
 	/*
@@ -46,7 +46,7 @@ update_correlations (larsen *l)
 	 */
 	if (l->c) free (l->c);
 	l->c = (double *) malloc (l->p * sizeof (double));
-	cblas_dgemv (CblasColMajor, CblasTrans, l->n, l->p, l->scale, l->x->data, l->n, r, 1, 0., l->c, 1);
+	cblas_dgemv (CblasColMajor, CblasTrans, l->n, l->p, l->scale, l->x, l->n, r, 1, 0., l->c, 1);
 //	l->c = c_matrix_transpose_dot_vector (l->scale, l->x, r, 0.);
 	if (l->is_elnet) cblas_daxpy (l->p, - l->lambda2 * l->scale2, l->beta, 1, l->c, 1);
 	free (r);
@@ -103,7 +103,7 @@ static void
 update_stop_loop_flag (larsen *l)
 {
 	int		size = l->sizeA;
-	int		n = (l->is_elnet) ? l->x->size2 : MIN (l->x->size1 - 1, l->x->size2);
+	int		n = (l->is_elnet) ? l->p : MIN (l->n - 1, l->p);
 	if (l->oper.action == ACTIVESET_ACTION_DROP) size--;
 	l->stop_loop = (size >= n) ? true : false;
 	if (!l->stop_loop) l->stop_loop = (l->oper.column == -1);

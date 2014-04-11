@@ -15,12 +15,15 @@ extern "C" {
 #include <c_matrix.h>
 
 //int		c_linalg_cholesky_decomp (c_matrix *a);
-int		c_linalg_cholesky_decomp (size_t size, double *a);
+int		c_linalg_cholesky_decomp (size_t size, double *a, size_t lda);
 //int		c_linalg_cholesky_svx (c_matrix *a, c_vector *b);
-int		c_linalg_cholesky_svx (size_t size, double *a, double *b);
+int		c_linalg_cholesky_svx (size_t size, double *a, size_t lda, double *b);
 
-int		c_linalg_cholesky_insert (int n, double *r, const int index, double *u);
-void	c_linalg_cholesky_delete (int n, double *r, const int index);
+
+//int		c_linalg_cholesky_insert (c_matrix *r, const int index, double *u);
+int		c_linalg_cholesky_insert (size_t n, double **r, const int index, double *u);
+//void	c_linalg_cholesky_delete (c_matrix *r, const int index);
+void	c_linalg_cholesky_delete (size_t size, double **r, const int index);
 
 #ifdef __cplusplus
 }

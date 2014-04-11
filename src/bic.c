@@ -21,7 +21,7 @@ calc_rss (larsen *l)
 	double		*r = (double *) malloc (l->n * sizeof (double));
 	double		*beta = larsen_get_beta (l);	// scale * beta
 	double		*mu = larsen_get_mu (l);			// scale^2 * mu
-	cblas_dcopy (l->n, l->y->data, 1, r, 1);
+	cblas_dcopy (l->n, l->y, 1, r, 1);
 	cblas_daxpy (l->n, -1., mu, 1, r, 1);	// r = - mu + r
 	rss = pow (cblas_dnrm2 (l->n, r, 1), 2.);
 	if (l->is_elnet) rss += l->lambda2 * pow (cblas_dnrm2 (l->p, beta, 1), 2.);
@@ -54,8 +54,8 @@ larsen_eval_bic (larsen *l, double gamma)
 {
 	double	rss = calc_rss (l);
 	double	df = calc_degree_of_freedom (l);
-	double	n = (double) l->y->size;
-	double	p = (double) l->x->size2;
+	double	n = (double) l->n;
+	double	p = (double) l->p;
 	if (l->is_elnet) n += p;
 
 	return log (rss) + df * (log (n) + 2. * gamma * log (p)) / n;

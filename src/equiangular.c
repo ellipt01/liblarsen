@@ -7,30 +7,6 @@
 
 #include <larsen.h>
 
-/* return XA = X(A) */
-static c_matrix *
-extruct_xa (larsen *l)
-{
-	int			i;
-	size_t		size1 = l->x->size1;
-	size_t		size2 = l->sizeA;
-	c_vector	*xj;
-	c_matrix	*xa;
-
-	if (size2 <= 0) return NULL;
-
-	xj = c_vector_alloc (size1);
-	xa = c_matrix_alloc (size1, size2);
-	for (i = 0; i < size2; i++) {
-		int		j = l->A[i];
-		c_matrix_get_col (xj, l->x, j);
-		c_matrix_set_col (xa, i, xj);
-	}
-	c_vector_free (xj);
-
-	return xa;
-}
-
 /* s_i = sign(c_i) */
 static double *
 update_sign (larsen *l)
@@ -61,43 +37,59 @@ check_info (const char *func_name, const int info)
 
 /* do cholinsert or choldelete of specified index */
 static int
-update_chol (larsen *l, c_matrix *xa)
+update_chol (larsen *l)
 {
 	int		info = 0;
 	int		index = l->oper.index;
 
 	if (l->oper.action == ACTIVESET_ACTION_ADD) {
 		/*** insert a predictor ***/
-		int			column = l->oper.column;
-		c_vector	*t;
-		c_vector	*xi = c_vector_alloc (l->x->size1);
-		c_matrix_get_col (xi, l->x, column);
-		t = c_matrix_transpose_dot_vector (l->scale2, xa, xi, 0.);
-		c_vector_free (xi);
-		if (l->is_elnet) c_vector_set (t, index, c_vector_get (t, index) + l->lambda2 * l->scale2);
-		if (l->sizeA == 1 && c_matrix_is_empty (l->chol)) {
-			l->chol = c_matrix_alloc (1, 1);
-			c_matrix_set (l->chol, 0, 0, c_vector_get (t, 0));
-			info = c_linalg_cholesky_decomp (1, l->chol->data);
+		int				i;
+		int				j = l->oper.column;
+		double			*t = (double *) malloc (l->sizeA * sizeof (double));
+		const double	*xj = l->x + index_of_matrix (0, j, l->n);
+
+		/* t = scale * X(:,A)' * X(:,j) */
+		for (i = 0; i < l->sizeA; i++) {
+			int		k = l->A[i];
+			t[i] = l->scale2 * cblas_ddot (l->n, l->x + index_of_matrix (0, k, l->n), 1, xj, 1);
+		}
+		/* t += lambda2 * scale */
+		if (l->is_elnet) t[index] += l->lambda2 * l->scale2;
+
+		if (l->sizeA == 1 && l->chol == NULL) {
+			l->chol = (double *) malloc (1 * sizeof (double));
+			l->chol[0] = t[0];
+			info = c_linalg_cholesky_decomp (1, l->chol, 1);
 		} else {
-			fprintf (stderr, "l->sizeA = %d\n", (int) l->sizeA);
-			fprintf (stderr, "0: l->chol[%d, %d]\n", (int) l->chol->size1, (int) l->chol->size2);
-			c_matrix_fprintf (stderr, l->chol, "%.3f");
-			info = c_linalg_cholesky_insert (l->sizeA - 1, l->chol->data, index, t->data);
-			fprintf (stderr, "1: l->chol[%d, %d]\n", (int) l->chol->size1, (int) l->chol->size2);
-			l->chol->size1++;
-			l->chol->size2++;
-			fprintf (stderr, "2: l->chol[%d, %d]\n", (int) l->chol->size1, (int) l->chol->size2);
-			c_matrix_fprintf (stderr, l->chol, "%.3f");
-	}
-		c_vector_free (t);
+			info = c_linalg_cholesky_insert (l->sizeA - 1, &l->chol, index, t);
+		}
+		free (t);
 
 	} else if (l->oper.action == ACTIVESET_ACTION_DROP) {
 		/*** delete a predictor ***/
-		c_linalg_cholesky_delete (l->sizeA + 1, l->chol->data, index);
+		c_linalg_cholesky_delete (l->sizeA + 1, &l->chol, index);
 	}
 
 	return info;
+}
+
+/* u = scale * XA * w */
+static double *
+larsen_xa_dot_w (larsen *l, double *w)
+{
+	int		i, j;
+	double	*u = (double *) malloc (l->n * sizeof (double));
+	double	*row = (double *) malloc (l->sizeA * sizeof (double));
+	for (i = 0; i < l->n; i++) {
+		for (j = 0; j < l->sizeA; j++) {
+			int		k = l->A[j];
+			row[j] = l->x[index_of_matrix (i, k, l->n)];
+		}
+		u[i] = l->scale * cblas_ddot (l->sizeA, row, 1, l->w, 1);
+	}
+	free (row);
+	return u;
 }
 
 /* update equiangular vector and its relevant (l->u, l->w and l->absA)
@@ -106,13 +98,10 @@ static bool
 update_equiangular_larsen_cholesky (larsen *l)
 {
 	int			info;
-	c_matrix	*xa;
 	double		*s;
 
 	if (l->sizeA <= 0) return false;
 
-	xa = extruct_xa (l);
-	
 	s = update_sign (l);
 
 	if (l->w) free (l->w);
@@ -123,10 +112,10 @@ update_equiangular_larsen_cholesky (larsen *l)
 	 * TODO: create new method and move the following lines to it
 	 * to be able to switch some methods
 	 * */
-	info = update_chol (l, xa);
+	info = update_chol (l);
 	if (!check_info ("update_chol", info)) return false;
 
-	info = c_linalg_cholesky_svx (l->sizeA, l->chol->data, l->w);
+	info = c_linalg_cholesky_svx (l->sizeA, l->chol, l->sizeA, l->w);
 	if (!check_info ("cholesky_svx", info)) return false;
 	/* end */
 
@@ -134,10 +123,9 @@ update_equiangular_larsen_cholesky (larsen *l)
 	free (s);
 	cblas_dscal (l->sizeA, l->absA, l->w, 1);
 
-	if (!l->u) l->u = (double *) malloc (l->n * sizeof (double));
-	cblas_dgemv (CblasColMajor, CblasNoTrans, l->n, l->sizeA, l->scale, xa->data, l->n, l->w, 1, 0., l->u, 1);
-
-	c_matrix_free (xa);
+	/* u = scale * XA * w */
+	if (l->u) free (l->u);
+	l->u = larsen_xa_dot_w (l, l->w);
 
 	return true;
 }

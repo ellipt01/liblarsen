@@ -308,7 +308,7 @@ c_matrix_remove_row (c_matrix *a)
 	if (a->size1 > 0) {
 		int			j;
 		c_vector	*col = c_vector_alloc (a->size1);
-		for (j = 1; j < a->size2; j++) {
+		for (j = 1; j < n - 1; j++) {
 			dcopy_ (&n, a->data + j * lda, &incx, col->data, &incy);
 			dcopy_ (&n, col->data, &incx, a->data + j * a->lda, &incx);
 		}

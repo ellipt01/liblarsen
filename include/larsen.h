@@ -55,8 +55,8 @@ struct s_larsen {
 	double					scale;
 	double					scale2;
 
-	const c_matrix		*x;		// variables
-	const c_vector		*y;		// data
+	const double			*y;		// data
+	const double			*x;		// variables
 
 	/* correlation */
 	double					sup_c;	// sup(abs(c))
@@ -91,7 +91,7 @@ struct s_larsen {
 	double					*mu_intr;		// interpolated mu
 
 	/* cholesky factorization */
-	c_matrix				*chol;	// = chol(XA' * XA), where XA = X(A).
+	double					*chol;	// = chol(XA' * XA), where XA = X(A).
 
 };
 

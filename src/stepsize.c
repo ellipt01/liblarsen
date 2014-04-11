@@ -24,13 +24,11 @@ calc_gamma_hat (larsen *l, int *index, double *val)
 	double		minplus = posinf ();
 
 	if (l->sizeA == l->p) {
-
 		minplus = l->sup_c / l->absA;
-
 	} else if (l->p > l->sizeA) {
 		int			i;
 		double		*a = (double *) malloc (l->p * sizeof (double));
-		cblas_dgemv (CblasColMajor, CblasTrans, l->n, l->p, l->scale, l->x->data, l->n, l->u, 1, 0., a, 1);
+		cblas_dgemv (CblasColMajor, CblasTrans, l->n, l->p, l->scale, l->x, l->n, l->u, 1, 0., a, 1);
 		if (l->is_elnet) larsen_awpy (l, l->lambda2 * l->scale2, l->w, a);
 		for (i = 0; i < l->p - l->sizeA; i++) {
 			int		j = l->Ac[i];

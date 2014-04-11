@@ -37,12 +37,8 @@ larsen_alloc (size_t n, size_t p, const double *y, const double *x, double lambd
 	l->lambda2 = lambda2;
 
 	/* vector and matrix view of original y and x */
-	l->x = c_matrix_view_array (n, p, n, (double *) x);
-	l->y = c_vector_view_array (n, 1, (double *) y);
-	if (c_vector_is_empty (l->y) || c_matrix_is_empty (l->x)) {
-		fprintf (stderr, "ERROR: larsen_alloc: failed to create vector and matrix view.\n");
-		return NULL;
-	}
+	l->x = x;
+	l->y = y;
 
 	l->is_elnet = (lambda2 > DBL_EPSILON);
 	l->scale2 = (l->is_elnet) ? 1. / (1. + lambda2) : 1.;
@@ -98,9 +94,6 @@ larsen_free (larsen *l)
 		if (l->A) free (l->A);
 		if (l->Ac) free (l->Ac);
 
-		if (!c_matrix_is_empty (l->x)) c_matrix_free ((c_matrix *) l->x);
-		if (!c_vector_is_empty (l->y)) c_vector_free ((c_vector *) l->y);
-
 		if (l->u) free (l->u);
 		if (l->w) free (l->w);
 
@@ -113,7 +106,7 @@ larsen_free (larsen *l)
 		if (l->beta_intr) free (l->beta_intr);
 		if (l->mu_intr) free (l->mu_intr);
 
-		if (!c_matrix_is_empty (l->chol)) c_matrix_free (l->chol);
+		if (l->chol) free (l->chol);
 
 		free (l);
 	}
