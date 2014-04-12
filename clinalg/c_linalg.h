@@ -16,10 +16,13 @@ extern "C" {
 
 #include <cblas.h>
 
-#include <c_matrix.h>
-#include <c_linalg_cholesky.h>
-
 #define index_of_matrix(i, j, lda) ((i) + (j) * (lda))
+
+int		c_linalg_cholesky_decomp (size_t size, double *a, size_t lda);
+int		c_linalg_cholesky_svx (size_t size, double *a, size_t lda, double *b);
+
+int		c_linalg_cholesky_insert (size_t n, double **r, const int index, double *u);
+void	c_linalg_cholesky_delete (size_t size, double **r, const int index);
 
 #ifdef __cplusplus
 }

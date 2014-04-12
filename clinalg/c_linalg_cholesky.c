@@ -5,10 +5,9 @@
  *      Author: utsugi
  */
 
+#include <stdio.h>
+#include <stdlib.h>
 #include <c_linalg.h>
-
-/* c_matrix.c */
-extern void	c_error (const char * function_name, const char *error_msg);
 
 /* lapack: cholesky decomposition */
 extern void	dpotrf_ (char *uplo, long *n, double *a, long *lda, long *info);
@@ -16,6 +15,13 @@ extern void	dpotrs_ (char *uplo, long *n, long *nrhs, double *a, long *lda, doub
 /* qrupdate: cholinsert/delete */
 extern void	dchinx_ (int *n, double *R, int *ldr, int *j, double *u, double *w, int *info);
 extern void	dchdex_ (int *n, double *R, int *ldr, int *j, double *w);
+
+void
+c_error (const char * function_name, const char *error_msg)
+{
+	fprintf (stderr, "ERROR: %s: %s\n", function_name, error_msg);
+	exit (1);
+}
 
 int
 c_linalg_cholesky_decomp (size_t size, double *a, size_t lda)
@@ -80,11 +86,11 @@ matrix_add_row_col (size_t m, size_t n, double *a)
 int
 c_linalg_cholesky_insert (size_t size, double **r, const int index, double *u)
 {
+	int			info;
 	int			n;
 	int			ldr;
 	int			j;
 	double		*w;
-	int			info;
 
 	if (!r) c_error ("c_linalg_cholesky_insert", "matrix is empty.");
 	if (index < 0 || size < index) c_error ("c_linalg_cholesky_insert", "index must be in [0, size].");

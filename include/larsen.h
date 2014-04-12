@@ -14,11 +14,11 @@ extern "C" {
 #endif
 
 #include <stdio.h>
-#include <stdlib.h>
 #include <stdbool.h>
-#include <math.h>
 
 #include <c_linalg.h>
+
+#define DBL_EPSILON		2.2204460492503131e-16
 
 typedef enum {
 	ACTIVESET_ACTION_NONE	= -1,
@@ -100,9 +100,8 @@ larsen		*larsen_alloc (size_t n, size_t p, const double *y, const double *x, dou
 void		larsen_free (larsen *l);
 
 /* data.c */
-double		larsen_centering_vector (c_vector *y);
-c_vector	*larsen_centering_matrix (c_matrix *x);
-c_vector	*larsen_normalizing_matrix (c_matrix *x);
+void		larsen_centering (const size_t size1, const size_t size2, double *x);
+void		larsen_normalizing (const size_t size1, const size_t size2, double *x);
 
 /* larsen.c */
 bool		larsen_regression_step (larsen *l);

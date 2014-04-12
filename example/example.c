@@ -5,6 +5,7 @@
  *      Author: utsugi
  */
 
+#include <stdlib.h>
 #include <string.h>
 #include <larsen.h>
 
@@ -38,7 +39,7 @@ count_data (char *fn, int skip_header, size_t *row, size_t *col)
 }
 
 void
-read_data (char *fn, int skip_header, c_vector **y, c_matrix **x)
+read_data (char *fn, int skip_header, size_t *n, size_t *p, double **y, double **x)
 {
 	int			i, j;
 	size_t		size1;
@@ -47,13 +48,13 @@ read_data (char *fn, int skip_header, c_vector **y, c_matrix **x)
 	char		buf[100 * BUFSIZ];
 	FILE		*fp;
 
-	c_vector	*_y;
-	c_matrix	*_x;
+	double		*_y;
+	double		*_x;
 
 	count_data (fn, skip_header, &size1, &size2);
 
-	_y = c_vector_alloc (size1);
-	_x = c_matrix_alloc (size1, size2);
+	_y = (double *) malloc (size1 * sizeof (double));
+	_x = (double *) malloc (size1 * size2 * sizeof (double));
 
 	if ((fp = fopen (fn, "r")) == NULL) return;
 	i = 0;
@@ -63,14 +64,16 @@ read_data (char *fn, int skip_header, c_vector **y, c_matrix **x)
 		if (i - skip_header >= 0) {
 			for (j = 0, p = strtok (buf, "\t "); p != NULL; j++, p = strtok (NULL, "\t ")) {
 				double	val = (double) atof (p);
-				if (j >= _x->size2) c_vector_set (_y, i - skip_header, val);
-				else c_matrix_set (_x, i - skip_header, j, val);
+				if (j >= size2) _y[i - skip_header] = val;
+				else _x[i - skip_header + j * size1] = val;
 			}
 		}
 		i++;
 	}
 	fclose (fp);
 
+	*n = size1;
+	*p = size2;
 	*x = _x;
 	*y = _y;
 

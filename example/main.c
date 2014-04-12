@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 #include <larsen.h>
 #include "example.h"
@@ -118,22 +119,24 @@ fprintf_params (void)
 int
 main (int argc, char **argv)
 {
-	c_vector	*y;
-	c_matrix	*x;
+	size_t		n;
+	size_t		p;
+	double		*y;
+	double		*x;
 
 	if (!read_params (argc, argv)) usage (argv[0]);
 	fprintf_params ();
 
-	read_data (fn, skipheaders, &y, &x);
+	read_data (fn, skipheaders, &n, &p, &y, &x);
 
-	larsen_centering_vector (y);
-	larsen_centering_matrix (x);
-	larsen_normalizing_matrix (x);
+	larsen_centering (n, 1, y);
+	larsen_centering (n, p, x);
+	larsen_normalizing (n, p, x);
 
-	example_elasticnet (x, y, start, dt, stop, lambda2, gamma_bic, maxiter);
+	example_elasticnet (n, p, x, y, start, dt, stop, lambda2, gamma_bic, maxiter);
 
-	c_vector_free (y);
-	c_matrix_free (x);
+	free (y);
+	free (x);
 
 	return EXIT_SUCCESS;
 }

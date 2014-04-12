@@ -5,6 +5,8 @@
  *      Author: utsugi
  */
 
+#include <stdlib.h>
+#include <math.h>
 #include <larsen.h>
 
 larsen *

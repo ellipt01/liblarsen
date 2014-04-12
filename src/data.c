@@ -8,59 +8,30 @@
 #include <larsen.h>
 
 /* centering vector: y -> y - mean(y) */
-double
-larsen_centering_vector (c_vector *y)
+void
+larsen_centering (const size_t size1, const size_t size2, double *x)
 {
-	double	mean = c_vector_mean (y);
-	c_vector_add_constant (y, - mean);
-	return mean;
-}
-
-/* normalizing vector: y -> y / norm(y) */
-double
-larsen_normalizing_vector (c_vector *y)
-{
-	double	nrm = c_vector_nrm (y);
-	c_vector_scale (y, 1. / nrm);
-	return nrm;
-}
-
-/* centering each column of matrix:
- * x(:, j) ->  x(:, j) - mean(x(:, j)) */
-c_vector *
-larsen_centering_matrix (c_matrix *x)
-{
-	int			j;
-	c_vector	*xj = c_vector_alloc (x->size1);
-	c_vector	*mean = c_vector_alloc (x->size2);
-	for (j = 0; j < x->size2; j++) {
-		double		meanj;
-		c_matrix_get_col (xj, x, j);
-		meanj = c_vector_mean (xj);
-		c_vector_set (mean, j, meanj);
-		c_vector_add_constant (xj, - meanj);
-		c_matrix_set_col (x, j, xj);
+	int		i, j;
+	for (j = 0; j < size2; j++) {
+		double	*xj = x + index_of_matrix (0, j, size1);
+		double	meanj = 0.;
+		for (i = 0; i < size1; i++) meanj += xj[i];
+		meanj /= (double) size1;
+		for (i = 0; i < size1; i++) xj[i] -= meanj;
 	}
-	c_vector_free (xj);
-	return mean;
+	return;
 }
 
 /* normalizing each column of matrix:
  * x(:, j) -> x(:, j) / norm(x(:, j)) */
-c_vector *
-larsen_normalizing_matrix (c_matrix *x)
+void
+larsen_normalizing (const size_t size1, const size_t size2, double *x)
 {
-	int			j;
-	c_vector	*xj = c_vector_alloc (x->size1);
-	c_vector	*nrm = c_vector_alloc (x->size2);
-	for (j = 0; j < x->size2; j++) {
-		double		nrmj;
-		c_matrix_get_col (xj, x, j);
-		nrmj = c_vector_nrm (xj);
-		c_vector_set (nrm, j, nrmj);
-		c_vector_scale (xj, 1. / nrmj);
-		c_matrix_set_col (x, j, xj);
+	int		j;
+	for (j = 0; j < size2; j++) {
+		double	*xj = x + index_of_matrix (0, j, size1);
+		double	nrmj = cblas_dnrm2 (size1, xj, 1);
+		cblas_dscal (size1, 1. / nrmj, xj, 1);
 	}
-	c_vector_free (xj);
-	return nrm;
+	return;
 }
