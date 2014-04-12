@@ -10,14 +10,14 @@ AM_CFLAGS =\
 lib_LTLIBRARIES = libclinalg.la
 
 libclinalg_include_DATA = \
-	c_linalg.h
+	clinalg.h
 
 EXTRA_DIST = $(liblarsen_include_DATA)
 
 libclinalg_includedir = $(pkgincludedir)
 
 libclinalg_la_SOURCES = \
-	c_linalg_cholesky.c
+	clinalg_cholesky.c
 
 libclinalg_la_LDFLAGS = 
 

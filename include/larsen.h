@@ -15,8 +15,7 @@ extern "C" {
 
 #include <stdio.h>
 #include <stdbool.h>
-
-#include <c_linalg.h>
+#include <clinalg.h>
 
 #define DBL_EPSILON		2.2204460492503131e-16
 
