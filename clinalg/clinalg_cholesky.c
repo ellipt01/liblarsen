@@ -66,7 +66,7 @@ matrix_add_row_col (size_t m, size_t n, double **a)
 {
 	int			j;
 	double		*col;
-	if (a == NULL) {
+	if (m == 0 || n == 0) {
 		*a = (double *) malloc (sizeof (double));
 		return;
 	}
@@ -114,6 +114,7 @@ matrix_remove_row_col (size_t m, size_t n, double **a)
 	double		*col;
 	if (m <= 1 || n <= 1) {
 		if (*a) free (*a);
+		*a = NULL;
 		return;
 	}
 	col = (double *) malloc ((m - 1) * sizeof (double));

@@ -69,14 +69,7 @@ update_chol (larsen *l)
 		t = xa_transpose_dot_xj (l, l->scale2, xj);
 		/* t += lambda2 * scale^2 */
 		if (l->is_elnet) t[index] += l->lambda2 * l->scale2;
-
-		if (l->sizeA == 1 && l->chol == NULL) {
-			l->chol = (double *) malloc (1 * sizeof (double));
-			l->chol[0] = t[0];
-			info = clinalg_cholesky_decomp (1, l->chol, 1);
-		} else {
-			info = clinalg_cholesky_insert (l->sizeA - 1, &l->chol, index, t);
-		}
+		info = clinalg_cholesky_insert (l->sizeA - 1, &l->chol, index, t);
 		free (t);
 
 	} else if (l->oper.action == ACTIVESET_ACTION_DROP) {
