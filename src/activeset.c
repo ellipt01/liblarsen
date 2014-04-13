@@ -46,7 +46,7 @@ remove_item (size_t size, int *v, int item)
 }
 
 /* add a new item to the active set. if it was success, return true */
-bool
+static bool
 activeset_add (larsen *l, int item)
 {
 	int		index;
@@ -66,7 +66,7 @@ activeset_add (larsen *l, int item)
 }
 
 /* remove a item from the active set. if it was success, return true */
-bool
+static bool
 activeset_remove (larsen *l, int item)
 {
 	int		index;
@@ -83,4 +83,13 @@ activeset_remove (larsen *l, int item)
 	l->oper.index = index;
 
 	return true;
+}
+
+bool
+update_activeset (larsen *l)
+{
+	bool	status = false;
+	if (l->oper.action == ACTIVESET_ACTION_ADD) status = activeset_add (l, l->oper.column);
+	else if (l->oper.action == ACTIVESET_ACTION_DROP) status = activeset_remove (l, l->oper.column);
+	return status;
 }

@@ -9,11 +9,10 @@
 #include <math.h>
 #include <larsen.h>
 
-#define MIN(a, b)		((a > b) ? b : a)
+#define MIN(a, b)		(((a) > (b)) ? (b) : (a))
 
 /* active_set.c */
-extern bool	activeset_add (larsen *l, int j);
-extern bool	activeset_remove (larsen *l, int j);
+extern bool	update_activeset (larsen *l);
 
 /* stepsize.c */
 extern bool	update_stepsize (larsen *l);
@@ -59,15 +58,6 @@ update_correlations (larsen *l)
 	}
 
 	return;
-}
-
-static bool
-update_activeset (larsen *l)
-{
-	bool	status = false;
-	if (l->oper.action == ACTIVESET_ACTION_ADD) status = activeset_add (l, l->oper.column);
-	else if (l->oper.action == ACTIVESET_ACTION_DROP) status = activeset_remove (l, l->oper.column);
-	return status;
 }
 
 /* update beta and mu. beta += stepsize * w, mu += stepsze * u */

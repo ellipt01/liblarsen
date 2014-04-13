@@ -9,7 +9,7 @@
 #include <math.h>
 #include <larsen.h>
 
-/* s_i = sign(c_i) */
+/* s = sign(c) */
 static double *
 update_sign (larsen *l)
 {
@@ -22,7 +22,7 @@ update_sign (larsen *l)
 	return s;
 }
 
-/* check result of cholesky decomp, insert or delete */
+/* check result of cholesky insert or delete */
 static bool
 check_info (const char *func_name, const int info)
 {
@@ -37,9 +37,9 @@ check_info (const char *func_name, const int info)
 	return is_valid;
 }
 
-/* t = alpha * XA' * x */
+/* t = alpha * XA' * xj */
 static double *
-xa_transpose_dot_xj (larsen *l, double alpha, const double *xj)
+xa_transpose_dot_xj (larsen *l, const double alpha, const double *xj)
 {
 	int		j;
 	double	*t = (double *) malloc (l->sizeA * sizeof (double));
@@ -88,11 +88,12 @@ xa_dot_w (larsen *l, double alpha, double *w)
 	double	*u = (double *) malloc (l->n * sizeof (double));
 	double	*row = (double *) malloc (l->sizeA * sizeof (double));
 	for (i = 0; i < l->n; i++) {
+		/* row = X(i, A) */
 		for (j = 0; j < l->sizeA; j++) {
 			int		k = l->A[j];
 			row[j] = l->x[index_of_matrix (i, k, l->n)];
 		}
-		/* u[i] = alpha * X(:, A) * w */
+		/* u[i] = alpha * X(i, A) * w(A) */
 		u[i] = alpha * cblas_ddot (l->sizeA, row, 1, l->w, 1);
 	}
 	free (row);
