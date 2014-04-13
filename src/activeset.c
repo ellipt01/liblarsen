@@ -23,7 +23,6 @@ static int
 append_item (size_t size, int *v, int item)
 {
 	int		index = size;
-//	v->size++;
 	v[index] = item;
 	return index;
 }
@@ -43,7 +42,6 @@ remove_item (size_t size, int *v, int item)
 		}
 		v[k++] = v[i];
 	}
-//	if (index >= 0) v->size--;
 	return index;
 }
 

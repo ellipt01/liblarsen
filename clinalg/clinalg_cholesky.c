@@ -31,7 +31,7 @@ clinalg_cholesky_decomp (size_t size, double *a, size_t lda)
 	long	n;
 	long	_lda;
 
-	if (!a) clinalg_error ("clinalg_lapack_dpotrf", "matrix is empty.");
+	if (!a) clinalg_error ("clinalg_cholesky_decomp", "matrix is empty.");
 
 	uplo = 'U';
 	n = (long) size;
@@ -49,8 +49,8 @@ clinalg_cholesky_svx (size_t size, double *a, size_t lda, double *b)
 	long		nrhs;
 	long		_lda;
 
-	if (!a) clinalg_error ("clinalg_lapack_dpotrs", "first matrix is empty.");
-	if (!b) clinalg_error ("clinalg_lapack_dpotrs", "second matrix is empty.");
+	if (!a) clinalg_error ("clinalg_cholesky_svx", "first matrix is empty.");
+	if (!b) clinalg_error ("clinalg_cholesky_svx", "second matrix is empty.");
 
 	uplo = 'U';
 	n = (long) size;

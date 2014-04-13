@@ -49,7 +49,6 @@ update_correlations (larsen *l)
 	if (l->c) free (l->c);
 	l->c = (double *) malloc (l->p * sizeof (double));
 	cblas_dgemv (CblasColMajor, CblasTrans, l->n, l->p, l->scale, l->x, l->n, r, 1, 0., l->c, 1);
-//	l->c = c_matrix_transpose_dot_vector (l->scale, l->x, r, 0.);
 	if (l->is_elnet) cblas_daxpy (l->p, - l->lambda2 * l->scale2, l->beta, 1, l->c, 1);
 	free (r);
 
@@ -60,6 +59,15 @@ update_correlations (larsen *l)
 	}
 
 	return;
+}
+
+static bool
+update_activeset (larsen *l)
+{
+	bool	status = false;
+	if (l->oper.action == ACTIVESET_ACTION_ADD) status = activeset_add (l, l->oper.column);
+	else if (l->oper.action == ACTIVESET_ACTION_DROP) status = activeset_remove (l, l->oper.column);
+	return status;
 }
 
 /* update beta and mu. beta += stepsize * w, mu += stepsze * u */
@@ -139,9 +147,7 @@ larsen_regression_step (larsen *l)
 
 	update_correlations (l);
 
-	if (l->oper.action == ACTIVESET_ACTION_ADD) activeset_add (l, l->oper.column);
-	else if (l->oper.action == ACTIVESET_ACTION_DROP) activeset_remove (l, l->oper.column);
-	else return false;
+	if (!update_activeset (l)) return false;
 
 	if (!update_equiangular (l)) return false;
 
