@@ -10,6 +10,8 @@
 
 /* larsen.c */
 extern void	larsen_awpy (larsen *l, double alpha, double *w, double *y);
+/* activeset.c */
+extern int		*complementA (larsen *l);
 
 static double
 posinf (void)
@@ -23,6 +25,7 @@ calc_gamma_hat (larsen *l, int *index, double *val)
 {
 	int			minplus_idx = -1;
 	double		minplus = posinf ();
+	int			*Ac = complementA (l);
 
 	if (l->sizeA == l->p) {
 		minplus = l->sup_c / l->absA;
@@ -32,7 +35,7 @@ calc_gamma_hat (larsen *l, int *index, double *val)
 		cblas_dgemv (CblasColMajor, CblasTrans, l->n, l->p, l->scale, l->x, l->n, l->u, 1, 0., a, 1);
 		if (l->is_elnet) larsen_awpy (l, l->lambda2 * l->scale2, l->w, a);
 		for (i = 0; i < l->p - l->sizeA; i++) {
-			int		j = l->Ac[i];
+			int		j = Ac[i];
 			double	cj = l->c[j];
 			double	aj = a[j];
 			double	e0, e1, min;
@@ -50,8 +53,9 @@ calc_gamma_hat (larsen *l, int *index, double *val)
 		}
 		free (a);
 	}
-	*index = minplus_idx;
+	*index = (minplus_idx >= 0) ? Ac[minplus_idx] : -1;
 	*val = minplus;
+	free (Ac);
 	return;
 }
 
@@ -74,7 +78,7 @@ calc_gamma_tilde (larsen *l, int *index, double *val)
 			}
 		}
 	}
-	*index = minplus_idx;
+	*index = (minplus_idx >= 0) ? l->A[minplus_idx] : -1;
 	*val = minplus;
 	return;
 }
@@ -100,11 +104,11 @@ update_stepsize (larsen *l)
 		if (gamma_hat < gamma_tilde) {
 			l->oper.action = ACTIVESET_ACTION_ADD;
 			l->stepsize = gamma_hat;
-			if (gamma_hat_idx >= 0) l->oper.column = l->Ac[gamma_hat_idx];
+			if (gamma_hat_idx >= 0) l->oper.column = gamma_hat_idx;
 		} else {
 			l->oper.action = ACTIVESET_ACTION_DROP;
 			l->stepsize = gamma_tilde;
-			if (gamma_tilde_idx >= 0) l->oper.column = l->A[gamma_tilde_idx];
+			if (gamma_tilde_idx >= 0) l->oper.column = gamma_tilde_idx;
 		}
 	}
 	return (l->stepsize != posinf ());

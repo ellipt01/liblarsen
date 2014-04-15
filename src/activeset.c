@@ -5,6 +5,7 @@
  *      Author: utsugi
  */
 
+#include <stdlib.h>
 #include <larsen.h>
 
 /* if item was found in c_vector_int *v, return true  */
@@ -32,15 +33,15 @@ append_item (size_t size, int *v, int item)
 static int
 remove_item (size_t size, int *v, int item)
 {
-	int		i, k;
+	int		i;
 	int		index = -1;
-	k = 0;
-	for (i = 0; i < size; i++) {
+	bool	trancate = false;
+	for (i = 0; i < size - 1; i++) {
 		if (v[i] == item) {
 			index = i;
-			continue;
+			trancate = true;
 		}
-		v[k++] = v[i];
+		if (trancate) v[i] = v[i + 1];
 	}
 	return index;
 }
@@ -50,14 +51,12 @@ static bool
 activeset_add (larsen *l, int item)
 {
 	int		index;
-	if (find_item (l->sizeA, l->A, item)) return false;
-	if (!find_item (l->p - l->sizeA, l->Ac, item)) return false;
-
 	if (l->sizeA >= l->p) return false;
+	if (find_item (l->sizeA, l->A, item)) return false;
+
 
 	index = append_item (l->sizeA, l->A, item);
-	remove_item (l->p - l->sizeA, l->Ac, item);
-	l->sizeA++;
+	if (++l->sizeA > l->p) return false;
 
 	// store the index of item which was added to A
 	l->oper.index = index;
@@ -70,19 +69,34 @@ static bool
 activeset_remove (larsen *l, int item)
 {
 	int		index;
-	if (!find_item (l->sizeA, l->A, item)) return false;
-	if (find_item (l->p - l->sizeA, l->Ac, item)) return false;
-
 	if (l->sizeA <= 0) return false;
+	if (!find_item (l->sizeA, l->A, item)) return false;
 
 	index = remove_item (l->sizeA, l->A, item);
-	append_item (l->p - l->sizeA, l->Ac, item);
-	l->sizeA--;
+	if (--l->sizeA < 0) return false;
 
 	// store the index of item which was removed from A
 	l->oper.index = index;
 
 	return true;
+}
+
+/* complement of active set A */
+int *
+complementA (larsen *l)
+{
+	int		i, k;
+	int		n = l->p - l->sizeA;
+	int		*Ac = (int *) malloc (n * sizeof (int));
+
+	k = 0;
+	for (i = 0; i < l->p; i++) {
+		if (!find_item (l->sizeA, l->A, i)) {
+			Ac[k] = i;
+			if (++k >= n) break;
+		}
+	}
+	return Ac;
 }
 
 bool

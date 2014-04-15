@@ -65,7 +65,6 @@ struct s_larsen {
 	activeset_oper		oper;
 	size_t					sizeA;
 	int						*A;		// active set
-	int						*Ac;	// implement of A
 
 	/* equiangular */
 	double					absA;

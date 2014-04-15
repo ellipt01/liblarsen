@@ -57,8 +57,8 @@ larsen_alloc (size_t n, size_t p, const double *y, const double *x, double lambd
 
 	l->sizeA = 0;
 	l->A = (int *) malloc (p * sizeof (int));
-	l->Ac = (int *) malloc (p * sizeof (int));
-	for (i = 0; i < p; i++) l->Ac[i] = i;
+//	l->Ac = (int *) malloc (p * sizeof (int));
+//	for (i = 0; i < p; i++) l->Ac[i] = i;
 
 	/* active set */
 	l->absA = 0.;
@@ -94,7 +94,7 @@ larsen_free (larsen *l)
 		if (l->c) free (l->c);
 
 		if (l->A) free (l->A);
-		if (l->Ac) free (l->Ac);
+//		if (l->Ac) free (l->Ac);
 
 		if (l->u) free (l->u);
 		if (l->w) free (l->w);
