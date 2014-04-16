@@ -53,7 +53,7 @@ update_correlations (larsen *l)
 
 	{
 		int		maxidx = cblas_idamax (l->p, l->c, 1);
-		if (l->sizeA == 0) l->oper.column = maxidx;
+		if (l->sizeA == 0) l->oper.column_of_X = maxidx;
 		l->sup_c = fabs (l->c[maxidx]);
 	}
 
@@ -70,7 +70,7 @@ update_solutions (larsen *l)
 
 	/*
 	 *  in the case of l->interp == true, i.e.,
-	 *  to calcurate interpolated solution,
+	 *  to calculate interpolated solution,
 	 *  beta_intr = beta_prev + stepsize_intr * w,
 	 *  mu_intr = mu_prev + stepsize_intr * u
 	 */
@@ -106,7 +106,7 @@ update_stop_loop_flag (larsen *l)
 	int		n = (l->is_elnet) ? l->p : MIN (l->n - 1, l->p);
 	if (l->oper.action == ACTIVESET_ACTION_DROP) size--;
 	l->stop_loop = (size >= n) ? true : false;
-	if (!l->stop_loop) l->stop_loop = (l->oper.column == -1);
+	if (!l->stop_loop) l->stop_loop = (l->oper.column_of_X == -1);
 	return;
 }
 

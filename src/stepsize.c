@@ -96,15 +96,15 @@ update_stepsize (larsen *l)
 		calc_gamma_hat (l, &gamma_hat_column, &gamma_hat);
 		calc_gamma_tilde (l, &gamma_tilde_column, &gamma_tilde);
 
-		l->oper.column = -1;
+		l->oper.column_of_X = -1;
 		if (gamma_hat < gamma_tilde) {
 			l->oper.action = ACTIVESET_ACTION_ADD;
 			l->stepsize = gamma_hat;
-			if (gamma_hat_column >= 0) l->oper.column = gamma_hat_column;
+			if (gamma_hat_column >= 0) l->oper.column_of_X = gamma_hat_column;
 		} else {	// gamma_tilde <= gamma_hat
 			l->oper.action = ACTIVESET_ACTION_DROP;
 			l->stepsize = gamma_tilde;
-			if (gamma_tilde_column >= 0) l->oper.column = gamma_tilde_column;
+			if (gamma_tilde_column >= 0) l->oper.column_of_X = gamma_tilde_column;
 		}
 	}
 	return (l->stepsize != posinf ());

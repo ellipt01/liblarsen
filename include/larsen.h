@@ -28,9 +28,9 @@ typedef enum {
 
 typedef struct {
 	ActiveSetAction	action;
-	int					column;	// index of operand column of matrix X
-	int					index;		// position of added / removed item in A
-} activeset_oper;
+	int					column_of_X;	// operand column of matrix X
+	int					index_of_A;	// position of A
+} activeset_operation;
 
 typedef struct s_larsen	larsen;
 
@@ -62,7 +62,7 @@ struct s_larsen {
 	double					*c;		// colleration: = X' * (y - mu)
 
 	/* active set */
-	activeset_oper		oper;
+	activeset_operation	oper;
 	size_t					sizeA;
 	int						*A;		// active set
 

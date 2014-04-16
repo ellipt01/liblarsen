@@ -52,8 +52,8 @@ larsen_alloc (size_t n, size_t p, const double *y, const double *x, double lambd
 
 	/* active set */
 	l->oper.action = ACTIVESET_ACTION_ADD;
-	l->oper.column = -1;
-	l->oper.index = -1;
+	l->oper.column_of_X = -1;
+	l->oper.index_of_A = -1;
 
 	l->sizeA = 0;
 	l->A = (int *) malloc (p * sizeof (int));

@@ -53,7 +53,7 @@ activeset_append (larsen *l, int item)
 	l->sizeA++;
 
 	// store the index of item which was added to A
-	l->oper.index = index;
+	l->oper.index_of_A = index;
 
 	return true;
 }
@@ -70,7 +70,7 @@ activeset_remove (larsen *l, int item)
 	l->sizeA--;
 
 	// store the index of item which was removed from A
-	l->oper.index = index;
+	l->oper.index_of_A = index;
 
 	return true;
 }
@@ -94,7 +94,7 @@ bool
 update_activeset (larsen *l)
 {
 	bool	status = false;
-	if (l->oper.action == ACTIVESET_ACTION_ADD) status = activeset_append (l, l->oper.column);
-	else if (l->oper.action == ACTIVESET_ACTION_DROP) status = activeset_remove (l, l->oper.column);
+	if (l->oper.action == ACTIVESET_ACTION_ADD) status = activeset_append (l, l->oper.column_of_X);
+	else if (l->oper.action == ACTIVESET_ACTION_DROP) status = activeset_remove (l, l->oper.column_of_X);
 	return status;
 }

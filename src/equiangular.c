@@ -57,11 +57,11 @@ static int
 update_chol (larsen *l)
 {
 	int		info = 0;
-	int		index = l->oper.index;
+	int		index = l->oper.index_of_A;
 
 	if (l->oper.action == ACTIVESET_ACTION_ADD) {
 		/*** insert a predictor ***/
-		int				j = l->oper.column;
+		int				j = l->oper.column_of_X;
 		double			*t = (double *) malloc (l->sizeA * sizeof (double));
 		const double	*xj = l->x + index_of_matrix (0, j, l->n);
 
@@ -84,19 +84,20 @@ update_chol (larsen *l)
 static double *
 xa_dot_w (larsen *l, double alpha, double *w)
 {
-	int		i, j;
+	int		i;
 	double	*u = (double *) malloc (l->n * sizeof (double));
-	double	*row = (double *) malloc (l->sizeA * sizeof (double));
+	double	*wp = (double *) malloc (l->p * sizeof (double));
+	/* wp(A) = w */
+	for (i = 0; i < l->p; i++) wp[i] = 0.;
+	for (i = 0; i < l->sizeA; i++) wp[l->A[i]] = w[i];
+
 	for (i = 0; i < l->n; i++) {
 		/* row = X(i, A) */
-		for (j = 0; j < l->sizeA; j++) {
-			int		k = l->A[j];
-			row[j] = l->x[index_of_matrix (i, k, l->n)];
-		}
-		/* u[i] = alpha * X(i, A) * w(A) */
-		u[i] = alpha * cblas_ddot (l->sizeA, row, 1, l->w, 1);
+		const double	*xi = l->x + index_of_matrix (i, 0, l->n);
+		/* u = X * wp */
+		u[i] = alpha * cblas_ddot (l->p, xi, l->n, wp, 1);
 	}
-	free (row);
+	free (wp);
 	return u;
 }
 
