@@ -17,7 +17,7 @@ extern int		*complementA (larsen *l);
 
 /* \hat{gamma} */
 static void
-calc_gamma_hat (larsen *l, int *column, double *val)
+calc_gamma_hat (larsen *l, int *index, int *column, double *val)
 {
 	int			minplus_idx = -1;
 	double		minplus = posinf ();
@@ -49,6 +49,7 @@ calc_gamma_hat (larsen *l, int *column, double *val)
 		}
 		free (a);
 	}
+	*index = (minplus_idx >= 0) ? l->sizeA : -1;
 	*column = (minplus_idx >= 0) ? Ac[minplus_idx] : -1;
 	*val = minplus;
 	free (Ac);
@@ -57,7 +58,7 @@ calc_gamma_hat (larsen *l, int *column, double *val)
 
 /* \tilde{gamma} */
 static void
-calc_gamma_tilde (larsen *l, int *column, double *val)
+calc_gamma_tilde (larsen *l, int *index, int *column, double *val)
 {
 	int		minplus_idx = -1;
 	double	minplus = posinf ();
@@ -74,9 +75,16 @@ calc_gamma_tilde (larsen *l, int *column, double *val)
 			}
 		}
 	}
+	*index = (minplus_idx >= 0) ? minplus_idx : -1;
 	*column = (minplus_idx >= 0) ? l->A[minplus_idx] : -1;
 	*val = minplus;
 	return;
+}
+
+static bool
+check_stepsize (double stepsize)
+{
+	return (stepsize != posinf ());
 }
 
 /*
@@ -86,26 +94,31 @@ calc_gamma_tilde (larsen *l, int *column, double *val)
 bool
 update_stepsize (larsen *l)
 {
+	int		gamma_hat_idx;
+	int		gamma_hat_col;
+	double	gamma_hat;
+	int		gamma_tilde_idx;
+	int		gamma_tilde_col;
+	double	gamma_tilde;
+
 	l->oper.action = ACTIVESET_ACTION_NONE;
-	{
-		int		gamma_hat_column;
-		double	gamma_hat;
-		int		gamma_tilde_column;
-		double	gamma_tilde;
 
-		calc_gamma_hat (l, &gamma_hat_column, &gamma_hat);
-		calc_gamma_tilde (l, &gamma_tilde_column, &gamma_tilde);
+	calc_gamma_hat (l, &gamma_hat_idx, &gamma_hat_col, &gamma_hat);
+	calc_gamma_tilde (l, &gamma_tilde_idx, &gamma_tilde_col, &gamma_tilde);
 
-		l->oper.column_of_X = -1;
-		if (gamma_hat < gamma_tilde) {
-			l->oper.action = ACTIVESET_ACTION_ADD;
-			l->stepsize = gamma_hat;
-			if (gamma_hat_column >= 0) l->oper.column_of_X = gamma_hat_column;
-		} else {	// gamma_tilde <= gamma_hat
-			l->oper.action = ACTIVESET_ACTION_DROP;
-			l->stepsize = gamma_tilde;
-			if (gamma_tilde_column >= 0) l->oper.column_of_X = gamma_tilde_column;
-		}
+	l->oper.index_of_A = -1;
+	l->oper.column_of_X = -1;
+	if (gamma_hat < gamma_tilde) {
+		l->oper.action = ACTIVESET_ACTION_ADD;
+		l->stepsize = gamma_hat;
+		if (gamma_hat_idx >= 0) l->oper.index_of_A = gamma_hat_idx;
+		if (gamma_hat_col >= 0) l->oper.column_of_X = gamma_hat_col;
+	} else {	// gamma_tilde <= gamma_hat
+		l->oper.action = ACTIVESET_ACTION_DROP;
+		l->stepsize = gamma_tilde;
+		if (gamma_tilde_idx >= 0) l->oper.index_of_A = gamma_tilde_idx;
+		if (gamma_tilde_col >= 0) l->oper.column_of_X = gamma_tilde_col;
 	}
-	return (l->stepsize != posinf ());
+
+	return check_stepsize (l->stepsize);
 }

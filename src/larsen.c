@@ -53,7 +53,10 @@ update_correlations (larsen *l)
 
 	{
 		int		maxidx = cblas_idamax (l->p, l->c, 1);
-		if (l->sizeA == 0) l->oper.column_of_X = maxidx;
+		if (l->sizeA == 0) {
+			l->oper.index_of_A = 0;
+			l->oper.column_of_X = maxidx;
+		}
 		l->sup_c = fabs (l->c[maxidx]);
 	}
 

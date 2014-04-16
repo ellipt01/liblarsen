@@ -28,8 +28,8 @@ typedef enum {
 
 typedef struct {
 	ActiveSetAction	action;
-	int					column_of_X;	// operand column of matrix X
 	int					index_of_A;	// position of A
+	int					column_of_X;	// operand column of matrix X
 } activeset_operation;
 
 typedef struct s_larsen	larsen;
