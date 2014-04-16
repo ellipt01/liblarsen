@@ -9,23 +9,23 @@
 #include <larsen.h>
 
 /* if item was found in *v, return true  */
-static bool
-find_item (size_t size, int *v, int item, int *index)
+static int
+find_item (size_t size, int *v, int item)
 {
 	int		i;
 	for (i = 0; i < size; i++) {
-		if (v[i] == item) {
-			if (index) *index = i;
-			return true;
-		}
+		if (v[i] == item) return i;
 	}
-	return false;
+	return -1;
 }
 
 /* append item to c_vector_int *v, return index of last position on A. */
 static void
-append_item (size_t size, int *v, int index, int item)
+add_item (size_t size, int *v, int index, int item)
 {
+	int		i;
+	if (index > size) return;
+	for (i = size - 1; index <= i; i--) v[i + 1] = v[i];
 	v[index] = item;
 	return;
 }
@@ -41,15 +41,15 @@ remove_item (size_t size, int *v, int index, int item)
 	return;
 }
 
-/* add a new item to the active set. if it was success, return true */
+/* append a new item to the active set. if it was success, return true */
 static bool
-activeset_add (larsen *l, int item)
+activeset_append (larsen *l, int item)
 {
 	int		index = l->sizeA;
 	if (l->sizeA >= l->p) return false;
-	if (find_item (l->sizeA, l->A, item, NULL)) return false;
+	if (find_item (l->sizeA, l->A, item) >= 0) return false;
 
-	append_item (l->sizeA, l->A, index, item);
+	add_item (l->sizeA, l->A, index, item);
 	l->sizeA++;
 
 	// store the index of item which was added to A
@@ -64,7 +64,7 @@ activeset_remove (larsen *l, int item)
 {
 	int		index;
 	if (l->sizeA <= 0) return false;
-	if (!find_item (l->sizeA, l->A, item, &index)) return false;
+	if ((index = find_item (l->sizeA, l->A, item)) < 0) return false;
 
 	remove_item (l->sizeA, l->A, index, item);
 	l->sizeA--;
@@ -85,7 +85,7 @@ complementA (larsen *l)
 
 	k = 0;
 	for (i = 0; i < l->p && k < n; i++) {
-		if (!find_item (l->sizeA, l->A, i, NULL)) Ac[k++] = i;
+		if (find_item (l->sizeA, l->A, i) < 0) Ac[k++] = i;
 	}
 	return Ac;
 }
@@ -94,7 +94,7 @@ bool
 update_activeset (larsen *l)
 {
 	bool	status = false;
-	if (l->oper.action == ACTIVESET_ACTION_ADD) status = activeset_add (l, l->oper.column);
+	if (l->oper.action == ACTIVESET_ACTION_ADD) status = activeset_append (l, l->oper.column);
 	else if (l->oper.action == ACTIVESET_ACTION_DROP) status = activeset_remove (l, l->oper.column);
 	return status;
 }

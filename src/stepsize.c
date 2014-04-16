@@ -8,20 +8,16 @@
 #include <stdlib.h>
 #include <larsen.h>
 
+#define posinf()	(1. / 0.)	// + infinity
+
 /* larsen.c */
 extern void	larsen_awpy (larsen *l, double alpha, double *w, double *y);
 /* activeset.c */
 extern int		*complementA (larsen *l);
 
-static double
-posinf (void)
-{
-	return + 1. / 0.;
-}
-
 /* \hat{gamma} */
 static void
-calc_gamma_hat (larsen *l, int *index, double *val)
+calc_gamma_hat (larsen *l, int *column, double *val)
 {
 	int			minplus_idx = -1;
 	double		minplus = posinf ();
@@ -53,7 +49,7 @@ calc_gamma_hat (larsen *l, int *index, double *val)
 		}
 		free (a);
 	}
-	*index = (minplus_idx >= 0) ? Ac[minplus_idx] : -1;
+	*column = (minplus_idx >= 0) ? Ac[minplus_idx] : -1;
 	*val = minplus;
 	free (Ac);
 	return;
@@ -61,7 +57,7 @@ calc_gamma_hat (larsen *l, int *index, double *val)
 
 /* \tilde{gamma} */
 static void
-calc_gamma_tilde (larsen *l, int *index, double *val)
+calc_gamma_tilde (larsen *l, int *column, double *val)
 {
 	int		minplus_idx = -1;
 	double	minplus = posinf ();
@@ -78,7 +74,7 @@ calc_gamma_tilde (larsen *l, int *index, double *val)
 			}
 		}
 	}
-	*index = (minplus_idx >= 0) ? l->A[minplus_idx] : -1;
+	*column = (minplus_idx >= 0) ? l->A[minplus_idx] : -1;
 	*val = minplus;
 	return;
 }
@@ -92,23 +88,23 @@ update_stepsize (larsen *l)
 {
 	l->oper.action = ACTIVESET_ACTION_NONE;
 	{
-		int		gamma_hat_idx;
+		int		gamma_hat_column;
 		double	gamma_hat;
-		int		gamma_tilde_idx;
+		int		gamma_tilde_column;
 		double	gamma_tilde;
 
-		calc_gamma_hat (l, &gamma_hat_idx, &gamma_hat);
-		calc_gamma_tilde (l, &gamma_tilde_idx, &gamma_tilde);
+		calc_gamma_hat (l, &gamma_hat_column, &gamma_hat);
+		calc_gamma_tilde (l, &gamma_tilde_column, &gamma_tilde);
 
 		l->oper.column = -1;
 		if (gamma_hat < gamma_tilde) {
 			l->oper.action = ACTIVESET_ACTION_ADD;
 			l->stepsize = gamma_hat;
-			if (gamma_hat_idx >= 0) l->oper.column = gamma_hat_idx;
-		} else {
+			if (gamma_hat_column >= 0) l->oper.column = gamma_hat_column;
+		} else {	// gamma_tilde <= gamma_hat
 			l->oper.action = ACTIVESET_ACTION_DROP;
 			l->stepsize = gamma_tilde;
-			if (gamma_tilde_idx >= 0) l->oper.column = gamma_tilde_idx;
+			if (gamma_tilde_column >= 0) l->oper.column = gamma_tilde_column;
 		}
 	}
 	return (l->stepsize != posinf ());
