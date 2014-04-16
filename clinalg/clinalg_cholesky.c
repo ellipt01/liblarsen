@@ -10,8 +10,8 @@
 #include <clinalg.h>
 
 /* lapack: cholesky decomposition */
-extern void	dpotrf_ (char *uplo, long *n, double *a, long *lda, long *info);
-extern void	dpotrs_ (char *uplo, long *n, long *nrhs, double *a, long *lda, double *b, long *ldb, long *info);
+extern void	dpotrf_ (char *uplo, int *n, double *a, int *lda, int *info);
+extern void	dpotrs_ (char *uplo, int *n, int *nrhs, double *a, int *lda, double *b, int *ldb, int *info);
 /* qrupdate: cholinsert/delete */
 extern void	dchinx_ (int *n, double *R, int *ldr, int *j, double *u, double *w, int *info);
 extern void	dchdex_ (int *n, double *R, int *ldr, int *j, double *w);
@@ -26,16 +26,16 @@ clinalg_error (const char * function_name, const char *error_msg)
 int
 clinalg_cholesky_decomp (size_t size, double *a, size_t lda)
 {
-	long	info;
+	int		info;
 	char	uplo;
-	long	n;
-	long	_lda;
+	int		n;
+	int		_lda;
 
 	if (!a) clinalg_error ("clinalg_cholesky_decomp", "matrix is empty.");
 
 	uplo = 'U';
-	n = (long) size;
-	_lda = (long) lda;
+	n = (int) size;
+	_lda = (int) lda;
 	dpotrf_ (&uplo, &n, a, &_lda, &info);
 	return info;
 }
@@ -43,19 +43,19 @@ clinalg_cholesky_decomp (size_t size, double *a, size_t lda)
 int
 clinalg_cholesky_svx (size_t size, double *a, size_t lda, double *b)
 {
-	long		info;
-	char		uplo;
-	long		n;
-	long		nrhs;
-	long		_lda;
+	int		info;
+	char	uplo;
+	int		n;
+	int		nrhs;
+	int		_lda;
 
 	if (!a) clinalg_error ("clinalg_cholesky_svx", "first matrix is empty.");
 	if (!b) clinalg_error ("clinalg_cholesky_svx", "second matrix is empty.");
 
 	uplo = 'U';
-	n = (long) size;
+	n = (int) size;
 	nrhs = 1;
-	_lda = (long) lda;
+	_lda = (int) lda;
 	dpotrs_ (&uplo, &n, &nrhs, a, &_lda, b, &n, &info);
 
 	return info;
@@ -96,9 +96,9 @@ clinalg_cholesky_insert (size_t size, double **r, const int index, double *u)
 
 	j = index + 1;
 
-	n = size;
-	matrix_add_row_col (n, n, r);
+	matrix_add_row_col (size, size, r);
 
+	n = (int) size;
 	ldr = n + 1;
 	w = (double *) malloc (ldr * sizeof (double));
 	dchinx_ (&n, *r, &ldr, &j, u, w, &info);
@@ -141,14 +141,14 @@ clinalg_cholesky_delete (size_t size, double **r, const int index)
 
 	j = index + 1;
 
-	n = size;
-	ldr = size;
-	w = (double *) malloc (ldr * sizeof (double));
+	w = (double *) malloc (size * sizeof (double));
 
+	n = (int) size;
+	ldr = (int) size;
 	dchdex_ (&n, *r, &ldr, &j, w);
 	free (w);
 
-	matrix_remove_row_col (n, n, r);
+	matrix_remove_row_col (size, size, r);
 
 	return;
 }
