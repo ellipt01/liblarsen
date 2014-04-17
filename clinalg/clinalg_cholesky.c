@@ -24,7 +24,7 @@ clinalg_error (const char * function_name, const char *error_msg)
 }
 
 int
-clinalg_cholesky_decomp (size_t size, double *a, size_t lda)
+clinalg_cholesky_decomp (const size_t size, double *a, const size_t lda)
 {
 	int		info;
 	char	uplo;
@@ -41,7 +41,7 @@ clinalg_cholesky_decomp (size_t size, double *a, size_t lda)
 }
 
 int
-clinalg_cholesky_svx (size_t size, double *a, size_t lda, double *b)
+clinalg_cholesky_svx (const size_t size, double *a, const size_t lda, double *b)
 {
 	int		info;
 	char	uplo;
@@ -62,7 +62,7 @@ clinalg_cholesky_svx (size_t size, double *a, size_t lda, double *b)
 }
 
 static void
-matrix_add_row_col (size_t m, size_t n, double **a)
+matrix_add_row_col (const size_t m, const size_t n, double **a)
 {
 	int			j;
 	double		*col;
@@ -84,7 +84,7 @@ matrix_add_row_col (size_t m, size_t n, double **a)
 }
 
 int
-clinalg_cholesky_insert (size_t size, double **r, const int index, double *u)
+clinalg_cholesky_insert (const size_t size, double **r, const int index, double *u)
 {
 	int			info;
 	int			n;
@@ -108,7 +108,7 @@ clinalg_cholesky_insert (size_t size, double **r, const int index, double *u)
 }
 
 static void
-matrix_remove_row_col (size_t m, size_t n, double **a)
+matrix_remove_row_col (const size_t m, const size_t n, double **a)
 {
 	int			j;
 	double		*col;
@@ -130,7 +130,7 @@ matrix_remove_row_col (size_t m, size_t n, double **a)
 }
 
 void
-clinalg_cholesky_delete (size_t size, double **r, const int index)
+clinalg_cholesky_delete (const size_t size, double **r, const int index)
 {
 	int		n;
 	int		ldr;

@@ -15,7 +15,7 @@ find_item (int item, size_t size, int *v, bool sorted)
 	int		i;
 	for (i = 0; i < size; i++) {
 		if (v[i] == item) return true;
-		if (sorted && v[i] > item) break;
+		if (sorted && item < v[i]) break;
 	}
 	return false;
 }

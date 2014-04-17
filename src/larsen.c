@@ -21,7 +21,7 @@ extern bool	update_stepsize (larsen *l);
 extern bool	update_equiangular (larsen *l);
 
 /* y(A) = alpha * w(A) + y(A) */
-void
+static void
 larsen_awpy (larsen *l, double alpha, double *w, double *y)
 {
 	int		i;

@@ -10,8 +10,6 @@
 
 #define posinf()	(1. / 0.)	// + infinity
 
-/* larsen.c */
-extern void	larsen_awpy (larsen *l, double alpha, double *w, double *y);
 /* activeset.c */
 extern int		*complementA (larsen *l);
 
@@ -29,7 +27,6 @@ calc_gamma_hat (larsen *l, int *index, int *column, double *val)
 		int			i;
 		double		*a = (double *) malloc (l->p * sizeof (double));
 		cblas_dgemv (CblasColMajor, CblasTrans, l->n, l->p, l->scale, l->x, l->n, l->u, 1, 0., a, 1);
-		if (l->is_elnet) larsen_awpy (l, l->lambda2 * l->scale2, l->w, a);
 		for (i = 0; i < l->p - l->sizeA; i++) {
 			int		j = Ac[i];
 			double	cj = l->c[j];

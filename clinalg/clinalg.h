@@ -20,11 +20,11 @@ extern "C" {
 #define index_of_matrix(i, j, lda) ((i) + (j) * (lda))
 #endif
 
-int		clinalg_cholesky_decomp (size_t size, double *a, size_t lda);
-int		clinalg_cholesky_svx (size_t size, double *a, size_t lda, double *b);
+int		clinalg_cholesky_decomp (const size_t size, double *a, const size_t lda);
+int		clinalg_cholesky_svx (const size_t size, double *a, const size_t lda, double *b);
 
-int		clinalg_cholesky_insert (size_t n, double **r, const int index, double *u);
-void	clinalg_cholesky_delete (size_t size, double **r, const int index);
+int		clinalg_cholesky_insert (const size_t n, double **r, const int index, double *u);
+void	clinalg_cholesky_delete (const size_t size, double **r, const int index);
 
 #ifdef __cplusplus
 }
