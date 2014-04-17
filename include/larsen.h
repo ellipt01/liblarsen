@@ -17,7 +17,9 @@ extern "C" {
 #include <stdbool.h>
 #include <clinalg.h>
 
+#ifndef DBL_EPSILON
 #define DBL_EPSILON		2.2204460492503131e-16
+#endif
 
 typedef enum {
 	ACTIVESET_ACTION_NONE	= -1,

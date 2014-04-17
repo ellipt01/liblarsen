@@ -16,7 +16,9 @@ extern "C" {
 
 #include <cblas.h>
 
+#ifndef index_of_matrix
 #define index_of_matrix(i, j, lda) ((i) + (j) * (lda))
+#endif
 
 int		clinalg_cholesky_decomp (size_t size, double *a, size_t lda);
 int		clinalg_cholesky_svx (size_t size, double *a, size_t lda, double *b);
