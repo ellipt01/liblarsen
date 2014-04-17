@@ -10,11 +10,12 @@
 
 /* if item was found in *v, return true  */
 static bool
-find_item (size_t size, int *v, int item)
+find_item (int item, size_t size, int *v, bool sorted)
 {
 	int		i;
 	for (i = 0; i < size; i++) {
 		if (v[i] == item) return true;
+		if (sorted && v[i] > item) break;
 	}
 	return false;
 }
@@ -46,7 +47,7 @@ static bool
 activeset_add (larsen *l, int index, int item)
 {
 	if (l->sizeA >= l->p) return false;
-	if (find_item (l->sizeA, l->A, item)) return false;
+	if (find_item (item, l->sizeA, l->A, false)) return false;
 
 	add_item (l->sizeA, l->A, index, item);
 	l->sizeA++;
@@ -59,7 +60,7 @@ static bool
 activeset_remove (larsen *l, int index, int item)
 {
 	if (l->sizeA <= 0) return false;
-	if (!find_item (l->sizeA, l->A, item)) return false;
+	if (!find_item (item, l->sizeA, l->A, false)) return false;
 
 	remove_item (l->sizeA, l->A, index);
 	l->sizeA--;
@@ -98,7 +99,7 @@ complementA (larsen *l)
 
 	/* Ac : complement of A */
 	for (i = 0, j = 0, k = 0; i < l->p && k < n; i++) {
-		if (find_item (l->sizeA - j, &A[j], i)) j++;
+		if (find_item (i, l->sizeA - j, &A[j], true)) j++;
 		else Ac[k++] = i;
 	}
 	return Ac;
