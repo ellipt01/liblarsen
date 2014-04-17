@@ -37,19 +37,43 @@ check_info (const char *func_name, const int info)
 	return is_valid;
 }
 
-/* t = alpha * XA' * xj */
+/* y = alpha * XA * z */
 static double *
-xa_transpose_dot_xj (larsen *l, const double alpha, const double *xj)
+xa_dot_y (larsen *l, double alpha, double *z)
 {
 	int		j;
-	double	*t = (double *) malloc (l->sizeA * sizeof (double));
+	double	*y = (double *) malloc (l->n * sizeof (double));
+	double	*zp = (double *) malloc (l->p * sizeof (double));
+	/* zp(j) = z(j), j in A, els = 0, j not in A */
+	for (j = 0; j < l->p; j++) zp[j] = 0.;
+	for (j = 0; j < l->sizeA; j++) zp[l->A[j]] = z[j];
+	/* y = X * zp = X(A, :) * z */
+	cblas_dgemv (CblasColMajor, CblasNoTrans, l->n, l->p, alpha, l->x, l->n, zp, 1, 0., y, 1);
+	free (zp);
+
+	return y;
+}
+
+/* y = alpha * XA' * z */
+static double *
+xa_transpose_dot_y (larsen *l, const double alpha, const double *z)
+{
+	int		j;
+	double	*y = (double *) malloc (l->sizeA * sizeof (double));
+
+	/* another version with cblas_dgemv */
+	/*	double	*yp = (double *) malloc (l->p * sizeof (double));
+		cblas_dgemv (CblasColMajor, CblasTrans, l->n, l->p, alpha, l->x, l->n, z, 1, 0., yp, 1);
+		for (j = 0; j < l->sizeA; j++) y[j] = yp[l->A[j]];
+		free (yp); */
+
+	/* The followings are more accurate and fast when l->sizeA is not huge */
 	for (j = 0; j < l->sizeA; j++) {
-		int				k = l->A[j];
-		const double	*xk = l->x + index_of_matrix (0, k, l->n);
-		/* y[j] = alpha * X(:, A[j])' * xj */
-		t[j] = alpha * cblas_ddot (l->n, xk, 1, xj, 1);
+		const double	*xaj = l->x + index_of_matrix (0, l->A[j], l->n);
+		/* y[j] = alpha * X(:, A[j])' * z */
+		y[j] = alpha * cblas_ddot (l->n, xaj, 1, z, 1);
 	}
-	return t;
+	return y;
 }
 
 /* do cholinsert or choldelete of specified index */
@@ -66,7 +90,7 @@ update_chol (larsen *l)
 		const double	*xj = l->x + index_of_matrix (0, j, l->n);
 
 		/* t = scale^2 * X(:,A)' * X(:,j) */
-		t = xa_transpose_dot_xj (l, l->scale2, xj);
+		t = xa_transpose_dot_y (l, l->scale2, xj);
 		/* t += lambda2 * scale^2 */
 		if (l->is_elnet) t[index] += l->lambda2 * l->scale2;
 		info = clinalg_cholesky_insert (l->sizeA - 1, &l->chol, index, t);
@@ -78,27 +102,6 @@ update_chol (larsen *l)
 	}
 
 	return info;
-}
-
-/* u = scale * XA * w */
-static double *
-xa_dot_w (larsen *l, double alpha, double *w)
-{
-	int		i;
-	double	*u = (double *) malloc (l->n * sizeof (double));
-	double	*wp = (double *) malloc (l->p * sizeof (double));
-	/* wp(A) = w */
-	for (i = 0; i < l->p; i++) wp[i] = 0.;
-	for (i = 0; i < l->sizeA; i++) wp[l->A[i]] = w[i];
-
-	for (i = 0; i < l->n; i++) {
-		/* row = X(i, A) */
-		const double	*xi = l->x + index_of_matrix (i, 0, l->n);
-		/* u = X * wp */
-		u[i] = alpha * cblas_ddot (l->p, xi, l->n, wp, 1);
-	}
-	free (wp);
-	return u;
 }
 
 /* update equiangular vector and its relevant (l->u, l->w and l->absA)
@@ -134,7 +137,7 @@ update_equiangular_larsen_cholesky (larsen *l)
 
 	/* u = scale * XA * w */
 	if (l->u) free (l->u);
-	l->u = xa_dot_w (l, l->scale, l->w);
+	l->u = xa_dot_y (l, l->scale, l->w);
 
 	return true;
 }
