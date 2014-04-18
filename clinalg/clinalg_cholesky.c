@@ -9,13 +9,6 @@
 #include <stdlib.h>
 #include <clinalg.h>
 
-/* lapack: cholesky decomposition */
-extern void	dpotrf_ (char *uplo, int *n, double *a, int *lda, int *info);
-extern void	dpotrs_ (char *uplo, int *n, int *nrhs, double *a, int *lda, double *b, int *ldb, int *info);
-/* qrupdate: cholinsert/delete */
-extern void	dchinx_ (int *n, double *R, int *ldr, int *j, double *u, double *w, int *info);
-extern void	dchdex_ (int *n, double *R, int *ldr, int *j, double *w);
-
 void
 clinalg_error (const char * function_name, const char *error_msg)
 {

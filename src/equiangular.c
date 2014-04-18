@@ -67,7 +67,7 @@ xa_transpose_dot_y (larsen *l, const double alpha, const double *z)
 		for (j = 0; j < l->sizeA; j++) y[j] = yp[l->A[j]];
 		free (yp); */
 
-	/* The followings are more fast when l->sizeA is not huge */
+	/* The following is more fast when l->sizeA is not huge */
 	for (j = 0; j < l->sizeA; j++) {
 		const double	*xaj = l->x + index_of_matrix (0, l->A[j], l->n);
 		/* y[j] = alpha * X(:, A[j])' * z */

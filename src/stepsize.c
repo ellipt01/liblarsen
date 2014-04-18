@@ -24,9 +24,9 @@ calc_gamma_hat (larsen *l, int *index, int *column, double *val)
 	if (l->sizeA == l->p) {
 		minplus = l->sup_c / l->absA;
 	} else if (l->p > l->sizeA) {
-		int			i;
-		double		*a = (double *) malloc (l->p * sizeof (double));
+		int			i;		double		*a = (double *) malloc (l->p * sizeof (double));
 		cblas_dgemv (CblasColMajor, CblasTrans, l->n, l->p, l->scale, l->x, l->n, l->u, 1, 0., a, 1);
+		// if (l->is_elnet) a(A) += l->lambda2 * l->scale^2 * w;
 		for (i = 0; i < l->p - l->sizeA; i++) {
 			int		j = Ac[i];
 			double	cj = l->c[j];
@@ -79,9 +79,9 @@ calc_gamma_tilde (larsen *l, int *index, int *column, double *val)
 }
 
 static bool
-check_stepsize (double stepsize)
+check_stepsize (const double stepsize)
 {
-	return (stepsize != posinf ());
+	return (0 < stepsize && stepsize != posinf ());
 }
 
 /*
