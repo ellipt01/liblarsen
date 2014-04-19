@@ -13,7 +13,7 @@ larsen_centering (const size_t size1, const size_t size2, double *x)
 {
 	int		i, j;
 	for (j = 0; j < size2; j++) {
-		double	*xj = x + index_of_matrix (0, j, size1);
+		double	*xj = x + INDEX_OF_MATRIX (0, j, size1);
 		double	meanj = 0.;
 		for (i = 0; i < size1; i++) meanj += xj[i];
 		meanj /= (double) size1;
@@ -29,7 +29,7 @@ larsen_normalizing (const size_t size1, const size_t size2, double *x)
 {
 	int		j;
 	for (j = 0; j < size2; j++) {
-		double	*xj = x + index_of_matrix (0, j, size1);
+		double	*xj = x + INDEX_OF_MATRIX (0, j, size1);
 		double	nrmj = cblas_dnrm2 (size1, xj, 1);
 		cblas_dscal (size1, 1. / nrmj, xj, 1);
 	}

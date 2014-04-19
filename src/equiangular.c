@@ -69,7 +69,7 @@ xa_transpose_dot_y (larsen *l, const double alpha, const double *z)
 
 	/* The following is more fast when l->sizeA is not huge */
 	for (j = 0; j < l->sizeA; j++) {
-		const double	*xaj = l->x + index_of_matrix (0, l->A[j], l->n);
+		const double	*xaj = l->x + INDEX_OF_MATRIX (0, l->A[j], l->n);
 		/* y[j] = alpha * X(:, A[j])' * z */
 		y[j] = alpha * cblas_ddot (l->n, xaj, 1, z, 1);
 	}
@@ -87,7 +87,7 @@ update_chol (larsen *l)
 		/*** insert a predictor ***/
 		int				j = l->oper.column_of_X;
 		double			*t = (double *) malloc (l->sizeA * sizeof (double));
-		const double	*xj = l->x + index_of_matrix (0, j, l->n);
+		const double	*xj = l->x + INDEX_OF_MATRIX (0, j, l->n);
 
 		/* t = scale^2 * X(:,A)' * X(:,j) */
 		t = xa_transpose_dot_y (l, l->scale2, xj);
