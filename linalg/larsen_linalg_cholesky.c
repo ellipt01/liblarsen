@@ -1,5 +1,5 @@
 /*
- * clinalg_cholesky.c
+ * larsen_linalg_cholesky.c
  *
  *  Created on: 2014/04/03
  *      Author: utsugi
@@ -7,24 +7,24 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <clinalg.h>
+#include <larsen_linalg.h>
 
 void
-clinalg_error (const char * function_name, const char *error_msg)
+larsen_linalg_error (const char * function_name, const char *error_msg)
 {
 	fprintf (stderr, "ERROR: %s: %s\n", function_name, error_msg);
 	exit (1);
 }
 
 int
-clinalg_cholesky_decomp (const size_t size, double *a, const size_t lda)
+larsen_linalg_cholesky_decomp (const size_t size, double *a, const size_t lda)
 {
 	int		info;
 	char	uplo;
 	int		n;
 	int		_lda;
 
-	if (!a) clinalg_error ("clinalg_cholesky_decomp", "matrix is empty.");
+	if (!a) larsen_linalg_error ("larsen_linalg_cholesky_decomp", "matrix is empty.");
 
 	uplo = 'U';
 	n = (int) size;
@@ -34,7 +34,7 @@ clinalg_cholesky_decomp (const size_t size, double *a, const size_t lda)
 }
 
 int
-clinalg_cholesky_svx (const size_t size, double *a, const size_t lda, double *b)
+larsen_linalg_cholesky_svx (const size_t size, double *a, const size_t lda, double *b)
 {
 	int		info;
 	char	uplo;
@@ -42,8 +42,8 @@ clinalg_cholesky_svx (const size_t size, double *a, const size_t lda, double *b)
 	int		nrhs;
 	int		_lda;
 
-	if (!a) clinalg_error ("clinalg_cholesky_svx", "first matrix is empty.");
-	if (!b) clinalg_error ("clinalg_cholesky_svx", "second matrix is empty.");
+	if (!a) larsen_linalg_error ("larsen_linalg_cholesky_svx", "first matrix is empty.");
+	if (!b) larsen_linalg_error ("larsen_linalg_cholesky_svx", "second matrix is empty.");
 
 	uplo = 'U';
 	n = (int) size;
@@ -77,7 +77,7 @@ matrix_add_row_col (const size_t m, const size_t n, double **a)
 }
 
 int
-clinalg_cholesky_insert (const size_t size, double **r, const int index, double *u)
+larsen_linalg_cholesky_insert (const size_t size, double **r, const int index, double *u)
 {
 	int			info;
 	int			n;
@@ -85,7 +85,7 @@ clinalg_cholesky_insert (const size_t size, double **r, const int index, double 
 	int			j;
 	double		*w;
 
-	if (index < 0 || size < index) clinalg_error ("clinalg_cholesky_insert", "index must be in [0, size].");
+	if (index < 0 || size < index) larsen_linalg_error ("larsen_linalg_cholesky_insert", "index must be in [0, size].");
 
 	j = index + 1;
 
@@ -123,14 +123,14 @@ matrix_remove_row_col (const size_t m, const size_t n, double **a)
 }
 
 void
-clinalg_cholesky_delete (const size_t size, double **r, const int index)
+larsen_linalg_cholesky_delete (const size_t size, double **r, const int index)
 {
 	int		n;
 	int		ldr;
 	int		j;
 	double	*w;
 
-	if (index < 0 || size <= index) clinalg_error ("clinalg_cholesky_delete", "index must be in [0, size).");
+	if (index < 0 || size <= index) larsen_linalg_error ("larsen_linalg_cholesky_delete", "index must be in [0, size).");
 
 	j = index + 1;
 

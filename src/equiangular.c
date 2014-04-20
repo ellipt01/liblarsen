@@ -93,12 +93,12 @@ update_chol (larsen *l)
 		t = xa_transpose_dot_y (l, l->scale2, xj);
 		/* t += lambda2 * scale^2 */
 		if (l->is_elnet) t[index] += l->lambda2 * l->scale2;
-		info = clinalg_cholesky_insert (l->sizeA - 1, &l->chol, index, t);
+		info = larsen_linalg_cholesky_insert (l->sizeA - 1, &l->chol, index, t);
 		free (t);
 
 	} else if (l->oper.action == ACTIVESET_ACTION_DROP) {
 		/*** delete a predictor ***/
-		clinalg_cholesky_delete (l->sizeA + 1, &l->chol, index);
+		larsen_linalg_cholesky_delete (l->sizeA + 1, &l->chol, index);
 	}
 
 	return info;
@@ -127,7 +127,7 @@ update_equiangular_larsen_cholesky (larsen *l)
 	info = update_chol (l);
 	if (!check_info ("update_chol", info)) return false;
 
-	info = clinalg_cholesky_svx (l->sizeA, l->chol, l->sizeA, l->w);
+	info = larsen_linalg_cholesky_svx (l->sizeA, l->chol, l->sizeA, l->w);
 	if (!check_info ("cholesky_svx", info)) return false;
 	/* end */
 

@@ -1,5 +1,5 @@
 /*
- * clinalg.h
+ * larsen_linalg.h
  *
  *  Wrapper of lapack and qrupdate
  *
@@ -32,11 +32,11 @@ extern void	dchinx_ (int *n, double *R, int *ldr, int *j, double *u, double *w, 
 extern void	dchdex_ (int *n, double *R, int *ldr, int *j, double *w);
 #endif
 
-int		clinalg_cholesky_decomp (const size_t size, double *a, const size_t lda);
-int		clinalg_cholesky_svx (const size_t size, double *a, const size_t lda, double *b);
+int		larsen_linalg_cholesky_decomp (const size_t size, double *a, const size_t lda);
+int		larsen_linalg_cholesky_svx (const size_t size, double *a, const size_t lda, double *b);
 
-int		clinalg_cholesky_insert (const size_t n, double **r, const int index, double *u);
-void	clinalg_cholesky_delete (const size_t size, double **r, const int index);
+int		larsen_linalg_cholesky_insert (const size_t n, double **r, const int index, double *u);
+void	larsen_linalg_cholesky_delete (const size_t size, double **r, const int index);
 
 #ifdef __cplusplus
 }

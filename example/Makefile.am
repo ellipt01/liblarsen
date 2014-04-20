@@ -1,7 +1,7 @@
 ## Process this file with automake to produce Makefile.in
 
 INCLUDES =\
-	 -I$(top_srcdir)/include -I$(top_srcdir)/clinalg -I$(top_srcdir)/.
+	 -I$(top_srcdir)/include -I$(top_srcdir)/linalg -I$(top_srcdir)/.
 
 AM_CFLAGS =\
 	 -Wall\
@@ -17,7 +17,7 @@ liblarsenexample_la_SOURCES = \
 
 liblarsenexample_la_CPPFLAGS = -I$(top_srcdir)/.
 
-liblarsenexample_la_LDFLAGS = -L$(top_srcdir)/clinalg -L$(top_srcdir)/src
+liblarsenexample_la_LDFLAGS = -L$(top_srcdir)/linalg -L$(top_srcdir)/src
 
-liblarsenexample_la_LIBADD = -lclinalg -llarsen
+liblarsenexample_la_LIBADD = -llarsenlinalg -llarsen
 
