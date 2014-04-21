@@ -27,7 +27,7 @@ bool
 larsen_elasticnet (larsen *l, int maxiter)
 {
 	int		iter = 0;
-	double	lambda1 = larsen_get_lambda1 (l, true);	// scale * lambda1
+	double	lambda1 = (l->is_elnet) ? l->scale * l->lambda1 : l->lambda1;	// scale * lambda1
 	double	nrm1 = cblas_dasum (l->p, l->beta, 1);
 
 	/* loop of elastic net regression */

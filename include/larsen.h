@@ -109,7 +109,6 @@ bool		larsen_interpolate (larsen *l);
 double		*larsen_get_beta (larsen *l);
 double		*larsen_get_mu (larsen *l);
 void		larsen_set_lambda1 (larsen *l, double t);
-double		larsen_get_lambda1 (larsen *l, const bool scaled);
 
 /* elasticnet.c */
 bool		larsen_elasticnet (larsen *l, int maxiter);

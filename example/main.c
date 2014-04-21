@@ -123,15 +123,15 @@ main (int argc, char **argv)
 	size_t		p;
 	double		*y;
 	double		*x;
-
+double	*meany, *meanx, *normx;
 	if (!read_params (argc, argv)) usage (argv[0]);
 	fprintf_params ();
 
 	read_data (fn, skipheaders, &n, &p, &y, &x);
 
-	larsen_centering (n, 1, y);
-	larsen_centering (n, p, x);
-	larsen_normalizing (n, p, x);
+	meany = larsen_centering (n, 1, y);
+	meanx = larsen_centering (n, p, x);
+	normx = larsen_normalizing (n, p, x);
 
 	example_elasticnet (n, p, x, y, start, dt, stop, lambda2, gamma_bic, maxiter);
 

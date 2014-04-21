@@ -164,7 +164,7 @@ larsen_regression_step (larsen *l)
 bool
 larsen_interpolate (larsen *l)
 {
-	double	lambda1 = larsen_get_lambda1 (l, true);
+	double	lambda1 = (l->is_elnet) ? l->scale * l->lambda1 : l->lambda1;	// scale * lambda1
 	double	nrm1_prev = cblas_dasum (l->p, l->beta_prev, 1);
 	double	nrm1 = cblas_dasum (l->p, l->beta, 1);
 	l->interp = false;
@@ -204,12 +204,4 @@ larsen_set_lambda1 (larsen *l, double t)
 {
 	l->lambda1 = t;
 	return;
-}
-
-/* return l->lambda1, if (scaled && l->is_elnet) return l->lambda1 * l->scale */
-double
-larsen_get_lambda1 (larsen *l, const bool scaled)
-{
-	if (!scaled) return l->lambda1;
-	return (l->is_elnet) ? l->lambda1 * l->scale : l->lambda1;
 }

@@ -1,0 +1,10 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: @PACKAGE@
+Description: @LIBLARSEN_DESCRIPTION@
+Version: @VERSION@
+Libs: -L${libdir} -llarsen
+Cflags: -I${includedir}/liblarsen
