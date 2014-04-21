@@ -17,6 +17,9 @@ rm -f config.h.in install-sh missing depcomp aclocal.m4 acinclude.m4
 echo "rm -f stamp-h.in"
 rm -f stamp-h.in
 
+echo "rm -f liblarsen.pc"
+rm -f liblarsen.pc
+
 echo "rm -f ltmain.sh stamp-h1 config.log config.h config.sub config.status config.guess"
 rm -f ltmain.sh stamp-h1 config.log config.h config.sub config.status config.guess
 

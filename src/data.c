@@ -5,33 +5,36 @@
  *      Author: utsugi
  */
 
+#include <stdlib.h>
 #include <larsen.h>
 
 /* centering vector: y -> y - mean(y) */
-void
+double *
 larsen_centering (const size_t size1, const size_t size2, double *x)
 {
 	int		i, j;
+	double	*mean = (double *) malloc (size2 * sizeof (double));
 	for (j = 0; j < size2; j++) {
 		double	*xj = x + INDEX_OF_MATRIX (0, j, size1);
-		double	meanj = 0.;
-		for (i = 0; i < size1; i++) meanj += xj[i];
-		meanj /= (double) size1;
-		for (i = 0; i < size1; i++) xj[i] -= meanj;
+		mean[j] = 0.;
+		for (i = 0; i < size1; i++) mean[j] += xj[i];
+		mean[j] /= (double) size1;
+		for (i = 0; i < size1; i++) xj[i] -= mean[j];
 	}
-	return;
+	return mean;
 }
 
 /* normalizing each column of matrix:
  * x(:, j) -> x(:, j) / norm(x(:, j)) */
-void
+double *
 larsen_normalizing (const size_t size1, const size_t size2, double *x)
 {
 	int		j;
+	double	*nrm = (double *) malloc (size2 * sizeof (double));
 	for (j = 0; j < size2; j++) {
 		double	*xj = x + INDEX_OF_MATRIX (0, j, size1);
-		double	nrmj = cblas_dnrm2 (size1, xj, 1);
-		cblas_dscal (size1, 1. / nrmj, xj, 1);
+		nrm[j] = cblas_dnrm2 (size1, xj, 1);
+		cblas_dscal (size1, 1. / nrm[j], xj, 1);
 	}
-	return;
+	return nrm;
 }

@@ -100,8 +100,8 @@ larsen		*larsen_alloc (size_t n, size_t p, const double *y, const double *x, dou
 void		larsen_free (larsen *l);
 
 /* data.c */
-void		larsen_centering (const size_t size1, const size_t size2, double *x);
-void		larsen_normalizing (const size_t size1, const size_t size2, double *x);
+double		*larsen_centering (const size_t size1, const size_t size2, double *x);
+double		*larsen_normalizing (const size_t size1, const size_t size2, double *x);
 
 /* larsen.c */
 bool		larsen_regression_step (larsen *l);
