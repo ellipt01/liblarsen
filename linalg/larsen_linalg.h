@@ -33,7 +33,7 @@ extern void	dchdex_ (int *n, double *R, int *ldr, int *j, double *w);
 #endif
 
 int		larsen_linalg_cholesky_decomp (const size_t size, double *a, const size_t lda);
-int		larsen_linalg_cholesky_svx (const size_t size, double *a, const size_t lda, double *b);
+int		larsen_linalg_cholesky_svx (const size_t size, double *l, const size_t lda, double *b);
 
 int		larsen_linalg_cholesky_insert (const size_t n, double **r, const int index, double *u);
 void	larsen_linalg_cholesky_delete (const size_t size, double **r, const int index);

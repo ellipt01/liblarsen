@@ -34,7 +34,7 @@ larsen_linalg_cholesky_decomp (const size_t size, double *a, const size_t lda)
 }
 
 int
-larsen_linalg_cholesky_svx (const size_t size, double *a, const size_t lda, double *b)
+larsen_linalg_cholesky_svx (const size_t size, double *l, const size_t lda, double *b)
 {
 	int		info;
 	char	uplo;
@@ -42,14 +42,14 @@ larsen_linalg_cholesky_svx (const size_t size, double *a, const size_t lda, doub
 	int		nrhs;
 	int		_lda;
 
-	if (!a) larsen_linalg_error ("larsen_linalg_cholesky_svx", "first matrix is empty.");
+	if (!l) larsen_linalg_error ("larsen_linalg_cholesky_svx", "first matrix is empty.");
 	if (!b) larsen_linalg_error ("larsen_linalg_cholesky_svx", "second matrix is empty.");
 
 	uplo = 'U';
 	n = (int) size;
 	nrhs = 1;
 	_lda = (int) lda;
-	dpotrs_ (&uplo, &n, &nrhs, a, &_lda, b, &n, &info);
+	dpotrs_ (&uplo, &n, &nrhs, l, &_lda, b, &n, &info);
 
 	return info;
 }

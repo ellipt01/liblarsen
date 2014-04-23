@@ -98,6 +98,9 @@ struct s_larsen {
 /* util.c */
 larsen		*larsen_alloc (size_t n, size_t p, const double *y, const double *x, double lambda1, double lambda2);
 void		larsen_free (larsen *l);
+double		*larsen_get_beta (larsen *l);
+double		*larsen_get_mu (larsen *l);
+void		larsen_set_lambda1 (larsen *l, double t);
 
 /* data.c */
 double		*larsen_centering (const size_t size1, const size_t size2, double *x);
@@ -106,9 +109,6 @@ double		*larsen_normalizing (const size_t size1, const size_t size2, double *x);
 /* larsen.c */
 bool		larsen_regression_step (larsen *l);
 bool		larsen_interpolate (larsen *l);
-double		*larsen_get_beta (larsen *l);
-double		*larsen_get_mu (larsen *l);
-void		larsen_set_lambda1 (larsen *l, double t);
 
 /* elasticnet.c */
 bool		larsen_elasticnet (larsen *l, int maxiter);

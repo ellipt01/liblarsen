@@ -112,3 +112,33 @@ larsen_free (larsen *l)
 	}
 	return;
 }
+
+/* return copy of elastic net solution: beta_elnet = scale * l->beta */
+double *
+larsen_get_beta (larsen *l)
+{
+	double	*beta = (double *) malloc (l->p * sizeof (double));
+	if (!l->interp) cblas_dcopy (l->p, l->beta, 1, beta, 1);
+	else cblas_dcopy (l->p, l->beta_intr, 1, beta, 1);
+	if (l->is_elnet) cblas_dscal (l->p, 1. / l->scale, beta, 1);
+	return beta;
+}
+
+/* return copy of elastic net solution: mu_elnet = scale^2 * mu_navie */
+double *
+larsen_get_mu (larsen *l)
+{
+	double	*mu = (double *) malloc (l->n * sizeof (double));
+	if (!l->interp) cblas_dcopy (l->n, l->mu, 1, mu, 1);
+	else cblas_dcopy (l->n, l->mu_intr, 1, mu, 1);
+	if (l->is_elnet) cblas_dscal (l->n, 1. / l->scale2, mu, 1);
+	return mu;
+}
+
+/* increment l->lambda1 */
+void
+larsen_set_lambda1 (larsen *l, double t)
+{
+	l->lambda1 = t;
+	return;
+}
