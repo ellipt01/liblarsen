@@ -98,8 +98,10 @@ struct s_larsen {
 /* util.c */
 larsen		*larsen_alloc (size_t n, size_t p, const double *y, const double *x, double lambda1, double lambda2);
 void		larsen_free (larsen *l);
-double		*larsen_get_beta (larsen *l);
-double		*larsen_get_mu (larsen *l);
+double		*larsen_copy_beta_navie (larsen *l);
+double		*larsen_copy_beta_elasticnet (larsen *l);
+double		*larsen_copy_mu_navie (larsen *l);
+double		*larsen_copy_mu_elasticnet (larsen *l);
 void		larsen_set_lambda1 (larsen *l, double t);
 
 /* data.c */

@@ -21,8 +21,8 @@ calc_rss (larsen *l)
 {
 	double		rss;
 	double		*r = (double *) malloc (l->n * sizeof (double));
-	double		*beta = larsen_get_beta (l);	// scale * beta
-	double		*mu = larsen_get_mu (l);			// scale^2 * mu
+	double		*beta = larsen_copy_beta_elasticnet (l);	// scale * beta
+	double		*mu = larsen_copy_mu_elasticnet (l);			// scale^2 * mu
 	cblas_dcopy (l->n, l->y, 1, r, 1);
 	cblas_daxpy (l->n, -1., mu, 1, r, 1);	// r = - mu + r
 	rss = pow (cblas_dnrm2 (l->n, r, 1), 2.);

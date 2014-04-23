@@ -90,47 +90,55 @@ larsen_free (larsen *l)
 {
 	if (l) {
 		if (l->c) free (l->c);
-
 		if (l->A) free (l->A);
-//		if (l->Ac) free (l->Ac);
-
 		if (l->u) free (l->u);
 		if (l->w) free (l->w);
-
 		if (l->beta) free (l->beta);
 		if (l->mu) free (l->mu);
-
 		if (l->beta_prev) free (l->beta_prev);
 		if (l->mu_prev) free (l->mu_prev);
-
 		if (l->beta_intr) free (l->beta_intr);
 		if (l->mu_intr) free (l->mu_intr);
-
 		if (l->chol) free (l->chol);
-
 		free (l);
 	}
 	return;
 }
 
-/* return copy of elastic net solution: beta_elnet = scale * l->beta */
+/* return copy of navie solution: beta_navie = l->beta */
 double *
-larsen_get_beta (larsen *l)
+larsen_copy_beta_navie (larsen *l)
 {
 	double	*beta = (double *) malloc (l->p * sizeof (double));
 	if (!l->interp) cblas_dcopy (l->p, l->beta, 1, beta, 1);
 	else cblas_dcopy (l->p, l->beta_intr, 1, beta, 1);
+	return beta;
+}
+
+/* return copy of elastic net solution: beta_elnet = beta_navie / scale */
+double *
+larsen_copy_beta_elasticnet (larsen *l)
+{
+	double	*beta = larsen_copy_beta_navie (l);
 	if (l->is_elnet) cblas_dscal (l->p, 1. / l->scale, beta, 1);
 	return beta;
 }
 
-/* return copy of elastic net solution: mu_elnet = scale^2 * mu_navie */
+/* return copy of navie solution: mu_navie = l->mu */
 double *
-larsen_get_mu (larsen *l)
+larsen_copy_mu_navie (larsen *l)
 {
 	double	*mu = (double *) malloc (l->n * sizeof (double));
 	if (!l->interp) cblas_dcopy (l->n, l->mu, 1, mu, 1);
 	else cblas_dcopy (l->n, l->mu_intr, 1, mu, 1);
+	return mu;
+}
+
+/* return copy of elastic net solution: mu_elnet = mu_navie / scale^2 */
+double *
+larsen_copy_mu_elasticnet (larsen *l)
+{
+	double	*mu = larsen_copy_mu_navie (l);
 	if (l->is_elnet) cblas_dscal (l->n, 1. / l->scale2, mu, 1);
 	return mu;
 }
