@@ -26,7 +26,9 @@ calc_gamma_hat (larsen *l, int *index, int *column, double *val)
 	} else if (l->p > l->sizeA) {
 		int			i;		double		*a = (double *) malloc (l->p * sizeof (double));
 		cblas_dgemv (CblasColMajor, CblasTrans, l->n, l->p, l->scale, l->x, l->n, l->u, 1, 0., a, 1);
-		// if (l->is_elnet) a(A) += l->lambda2 * l->scale^2 * w;
+		/* If l->is_elnet == true, a(A) must be a(A) += l->lambda2 * l->scale^2 * w.
+		 * But for the estimation of gamma_hat, the above addition calculation is
+		 * omitted because only a(Ac) are referred. */
 		for (i = 0; i < l->p - l->sizeA; i++) {
 			int		j = Ac[i];
 			double	cj = l->c[j];
