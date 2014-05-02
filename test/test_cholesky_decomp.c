@@ -32,7 +32,7 @@ test_cholesky_decomp (void)
 	larsen_linalg_cholesky_decomp (size, l, size);
 	for (i = 0; i < size; i++) {
 		int		j;
-		for (j = 0; j < i; j++) l[INDEX_OF_MATRIX(i, j, size)] = 0.;
+		for (j = 0; j < i; j++) l[LARSEN_INDEX_OF_MATRIX(i, j, size)] = 0.;
 	}
 
 	/* l^T * l */

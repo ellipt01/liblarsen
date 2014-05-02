@@ -17,8 +17,8 @@ extern "C" {
 #include <stdbool.h>
 #include <larsen_linalg.h>
 
-#ifndef DBL_EPSILON
-#define DBL_EPSILON		2.2204460492503131e-16
+#ifndef LARSEN_DBL_EPSILON
+#define LARSEN_DBL_EPSILON		2.2204460492503131e-16
 #endif
 
 typedef enum {
@@ -92,6 +92,8 @@ struct s_larsen {
 
 	/* cholesky factorization */
 	double					*chol;	// = chol(XA' * XA), where XA = X(A).
+	double					*q;		// = [q, r] = qr(XA' * XA), where XA = X(A).
+	double					*r;		// = chol(XA' * XA), where XA = X(A).
 
 };
 

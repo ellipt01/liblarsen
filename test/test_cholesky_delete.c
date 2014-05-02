@@ -41,7 +41,7 @@ test_cholesky_delete (void)
 			if (i == index) continue;
 			for (j = 0, n = 0; j < size; j++) {
 				if (j == index) continue;
-				a[INDEX_OF_MATRIX (m, n, size - 1)] = b[INDEX_OF_MATRIX (i, j, size)];
+				a[LARSEN_INDEX_OF_MATRIX (m, n, size - 1)] = b[LARSEN_INDEX_OF_MATRIX (i, j, size)];
 				n++;
 			}
 			m++;
@@ -55,14 +55,14 @@ test_cholesky_delete (void)
 	larsen_linalg_cholesky_decomp (size - 1, la, size - 1);
 	for (i = 0; i < size - 1; i++) {
 		int		j;
-		for (j = 0; j < i; j++) la[INDEX_OF_MATRIX(i, j, size - 1)] = 0.;
+		for (j = 0; j < i; j++) la[LARSEN_INDEX_OF_MATRIX(i, j, size - 1)] = 0.;
 	}
 	free (a);
 
 	larsen_linalg_cholesky_delete (size, &lb, index);
 	for (i = 0; i < size - 1; i++) {
 		int		j;
-		for (j = 0; j < i; j++) lb[INDEX_OF_MATRIX(i, j, size - 1)] = 0.;
+		for (j = 0; j < i; j++) lb[LARSEN_INDEX_OF_MATRIX(i, j, size - 1)] = 0.;
 	}
 
 	/* la = - lb + la */

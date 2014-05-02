@@ -36,7 +36,7 @@ test_cholesky_insert (void)
 	larsen_linalg_cholesky_decomp (size, la, size);
 	for (i = 0; i < size; i++) {
 		int		j;
-		for (j = 0; j < i; j++) la[INDEX_OF_MATRIX(i, j, size)] = 0.;
+		for (j = 0; j < i; j++) la[LARSEN_INDEX_OF_MATRIX(i, j, size)] = 0.;
 	}
 
 	/* b = a(1:end-1, 1:end-1), u = a(:, index) */
@@ -46,10 +46,10 @@ test_cholesky_insert (void)
 		int		i, j;
 		for (i = 0; i < size - 1; i++) {
 			for (j = 0; j < size - 1; j++) {
-				b[INDEX_OF_MATRIX (i, j, size - 1)] = a[INDEX_OF_MATRIX (i, j, size)];
+				b[LARSEN_INDEX_OF_MATRIX (i, j, size - 1)] = a[LARSEN_INDEX_OF_MATRIX (i, j, size)];
 			}
 		}
-		for (i = 0; i < size; i++) u[i] = a[INDEX_OF_MATRIX (i, index, size)];
+		for (i = 0; i < size; i++) u[i] = a[LARSEN_INDEX_OF_MATRIX (i, index, size)];
 	}
 	free (a);
 
@@ -63,7 +63,7 @@ test_cholesky_insert (void)
 	free (u);
 	for (i = 0; i < size; i++) {
 		int		j;
-		for (j = 0; j < i; j++) lb[INDEX_OF_MATRIX(i, j, size)] = 0.;
+		for (j = 0; j < i; j++) lb[LARSEN_INDEX_OF_MATRIX(i, j, size)] = 0.;
 	}
 
 	/* la = - lb + la */

@@ -16,8 +16,8 @@ extern "C" {
 
 #include <cblas.h>
 
-#ifndef INDEX_OF_MATRIX
-#define INDEX_OF_MATRIX(i, j, lda) ((i) + (j) * (lda))
+#ifndef LARSEN_INDEX_OF_MATRIX
+#define LARSEN_INDEX_OF_MATRIX(i, j, lda) ((i) + (j) * (lda))
 #endif
 
 /* lapack: cholesky decomposition */

@@ -42,7 +42,7 @@ larsen_alloc (size_t n, size_t p, const double *y, const double *x, double lambd
 	l->x = x;
 	l->y = y;
 
-	l->is_elnet = (lambda2 > DBL_EPSILON);
+	l->is_elnet = (lambda2 > LARSEN_DBL_EPSILON);
 	l->scale2 = (l->is_elnet) ? 1. / (1. + lambda2) : 1.;
 	l->scale = (l->is_elnet) ? sqrt (l->scale2) : 1.;
 

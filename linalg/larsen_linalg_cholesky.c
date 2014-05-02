@@ -68,8 +68,8 @@ matrix_add_row_col (const size_t m, const size_t n, double **a)
 
 	col = (double *) malloc (m * sizeof (double));
 	for (j = n; 0 < j; j--) {
-		cblas_dcopy (m, *a + INDEX_OF_MATRIX (0, j, m), 1, col, 1);
-		cblas_dcopy (m, col, 1, *a + INDEX_OF_MATRIX (0, j, m + 1), 1);
+		cblas_dcopy (m, *a + LARSEN_INDEX_OF_MATRIX (0, j, m), 1, col, 1);
+		cblas_dcopy (m, col, 1, *a + LARSEN_INDEX_OF_MATRIX (0, j, m + 1), 1);
 	}
 	free (col);
 
@@ -112,8 +112,8 @@ matrix_remove_row_col (const size_t m, const size_t n, double **a)
 	}
 	col = (double *) malloc ((m - 1) * sizeof (double));
 	for (j = 1; j < n - 1; j++) {
-		cblas_dcopy (m - 1, *a + INDEX_OF_MATRIX (0, j, m), 1, col, 1);
-		cblas_dcopy (m - 1, col, 1, *a + INDEX_OF_MATRIX (0, j, m - 1), 1);
+		cblas_dcopy (m - 1, *a + LARSEN_INDEX_OF_MATRIX (0, j, m), 1, col, 1);
+		cblas_dcopy (m - 1, col, 1, *a + LARSEN_INDEX_OF_MATRIX (0, j, m - 1), 1);
 	}
 	free (col);
 
