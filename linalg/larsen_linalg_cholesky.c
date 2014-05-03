@@ -5,16 +5,13 @@
  *      Author: utsugi
  */
 
-#include <stdio.h>
+//#include <stdio.h>
 #include <stdlib.h>
 #include <larsen_linalg.h>
 
-void
-larsen_linalg_error (const char * function_name, const char *error_msg)
-{
-	fprintf (stderr, "ERROR: %s: %s\n", function_name, error_msg);
-	exit (1);
-}
+extern void	larsen_linalg_error (const char * function_name, const char *error_msg);
+extern void	matrix_add_rowcols (const size_t m, const size_t n, double **a, const size_t dm, const size_t dn);
+extern void	matrix_remove_rowcols (const size_t m, const size_t n, double **a, const size_t dm, const size_t dn);
 
 int
 larsen_linalg_cholesky_decomp (const size_t size, double *a, const size_t lda)
@@ -54,28 +51,6 @@ larsen_linalg_cholesky_svx (const size_t size, double *l, const size_t lda, doub
 	return info;
 }
 
-static void
-matrix_add_row_col (const size_t m, const size_t n, double **a)
-{
-	int			j;
-	double		*col;
-	if (m == 0 || n == 0) {
-		*a = (double *) malloc (sizeof (double));
-		return;
-	}
-
-	*a = (double *) realloc (*a, (m + 1) * (n + 1) * sizeof (double));
-
-	col = (double *) malloc (m * sizeof (double));
-	for (j = n; 0 < j; j--) {
-		cblas_dcopy (m, *a + LARSEN_INDEX_OF_MATRIX (0, j, m), 1, col, 1);
-		cblas_dcopy (m, col, 1, *a + LARSEN_INDEX_OF_MATRIX (0, j, m + 1), 1);
-	}
-	free (col);
-
-	return;
-}
-
 int
 larsen_linalg_cholesky_insert (const size_t size, double **r, const int index, double *u)
 {
@@ -89,7 +64,7 @@ larsen_linalg_cholesky_insert (const size_t size, double **r, const int index, d
 
 	j = index + 1;
 
-	matrix_add_row_col (size, size, r);
+	matrix_add_rowcols (size, size, r, 1, 1);
 
 	n = (int) size;
 	ldr = n + 1;
@@ -98,28 +73,6 @@ larsen_linalg_cholesky_insert (const size_t size, double **r, const int index, d
 	free (w);
 
 	return info;
-}
-
-static void
-matrix_remove_row_col (const size_t m, const size_t n, double **a)
-{
-	int			j;
-	double		*col;
-	if (m <= 1 || n <= 1) {
-		if (*a) free (*a);
-		*a = NULL;
-		return;
-	}
-	col = (double *) malloc ((m - 1) * sizeof (double));
-	for (j = 1; j < n - 1; j++) {
-		cblas_dcopy (m - 1, *a + LARSEN_INDEX_OF_MATRIX (0, j, m), 1, col, 1);
-		cblas_dcopy (m - 1, col, 1, *a + LARSEN_INDEX_OF_MATRIX (0, j, m - 1), 1);
-	}
-	free (col);
-
-	*a = (double *) realloc (*a, (m - 1) * (n - 1) * sizeof (double));
-
-	return;
 }
 
 void
@@ -141,7 +94,7 @@ larsen_linalg_cholesky_delete (const size_t size, double **r, const int index)
 	dchdex_ (&n, *r, &ldr, &j, w);
 	free (w);
 
-	matrix_remove_row_col (size, size, r);
+	matrix_remove_rowcols (size, size, r, 1, 1);
 
 	return;
 }

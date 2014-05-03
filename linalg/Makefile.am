@@ -17,6 +17,7 @@ EXTRA_DIST = $(liblarsen_include_DATA)
 liblarsenlinalg_includedir = $(pkgincludedir)
 
 liblarsenlinalg_la_SOURCES = \
+	larsen_linalg.c\
 	larsen_linalg_cholesky.c
 
 liblarsenlinalg_la_LDFLAGS = 
