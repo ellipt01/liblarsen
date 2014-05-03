@@ -8,6 +8,27 @@
 #include <stdlib.h>
 #include <larsen.h>
 
+#ifndef HAVE_LAPACK_H
+extern void	dpotrf_ (char *uplo, const int *n, double *a, int *lda, int *info);
+#endif
+
+int
+test_linalg_cholesky_decomp (const size_t size, double *a, const size_t lda)
+{
+	int		info;
+	char	uplo;
+	int		n;
+	int		_lda;
+
+	if (!a) larsen_linalg_error ("larsen_linalg_cholesky_decomp", "matrix is empty.");
+
+	uplo = 'U';
+	n = (int) size;
+	_lda = (int) lda;
+	dpotrf_ (&uplo, &n, a, &_lda, &info);
+	return info;
+}
+
 double *
 random_uniform_array (const size_t size1, const size_t size2)
 {

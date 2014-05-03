@@ -5,30 +5,12 @@
  *      Author: utsugi
  */
 
-//#include <stdio.h>
 #include <stdlib.h>
 #include <larsen_linalg.h>
 
 extern void	larsen_linalg_error (const char * function_name, const char *error_msg);
 extern void	matrix_add_rowcols (const size_t m, const size_t n, double **a, const size_t dm, const size_t dn);
 extern void	matrix_remove_rowcols (const size_t m, const size_t n, double **a, const size_t dm, const size_t dn);
-
-int
-larsen_linalg_cholesky_decomp (const size_t size, double *a, const size_t lda)
-{
-	int		info;
-	char	uplo;
-	int		n;
-	int		_lda;
-
-	if (!a) larsen_linalg_error ("larsen_linalg_cholesky_decomp", "matrix is empty.");
-
-	uplo = 'U';
-	n = (int) size;
-	_lda = (int) lda;
-	dpotrf_ (&uplo, &n, a, &_lda, &info);
-	return info;
-}
 
 int
 larsen_linalg_cholesky_svx (const size_t size, double *l, const size_t lda, double *b)

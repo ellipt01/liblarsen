@@ -11,6 +11,8 @@
 
 #include "test_larsen.h"
 
+extern int		test_linalg_cholesky_decomp (const size_t size, double *a, const size_t lda);
+
 bool
 test_cholesky_delete (void)
 {
@@ -32,7 +34,7 @@ test_cholesky_delete (void)
 	/* cholesky decomposition of matrix a */
 	lb = (double *) malloc (size * size * sizeof (double));
 	cblas_dcopy (size * size, b, 1, lb, 1);
-	larsen_linalg_cholesky_decomp (size, lb, size);
+	test_linalg_cholesky_decomp (size, lb, size);
 
 	a = (double *) malloc ((size - 1) * (size - 1) * sizeof (double));
 	{
@@ -52,7 +54,7 @@ test_cholesky_delete (void)
 	/* cholesky decomposition */
 	la = (double *) malloc ((size - 1) * (size - 1) * sizeof (double));
 	cblas_dcopy ((size - 1) * (size - 1), a, 1, la, 1);
-	larsen_linalg_cholesky_decomp (size - 1, la, size - 1);
+	test_linalg_cholesky_decomp (size - 1, la, size - 1);
 	for (i = 0; i < size - 1; i++) {
 		int		j;
 		for (j = 0; j < i; j++) la[LARSEN_INDEX_OF_MATRIX(i, j, size - 1)] = 0.;

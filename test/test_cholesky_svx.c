@@ -11,6 +11,8 @@
 
 #include "test_larsen.h"
 
+extern int		test_linalg_cholesky_decomp (const size_t size, double *a, const size_t lda);
+
 bool
 test_cholesky_svx (void)
 {
@@ -36,7 +38,7 @@ test_cholesky_svx (void)
 	/* cholesky decomposition */
 	l = (double *) malloc (size * size * sizeof (double));
 	cblas_dcopy (size * size, a, 1, l, 1);
-	larsen_linalg_cholesky_decomp (size, l, size);
+	test_linalg_cholesky_decomp (size, l, size);
 
 	/* x1 = a^-1 * y */
 	x = (double *) malloc (size * sizeof (double));

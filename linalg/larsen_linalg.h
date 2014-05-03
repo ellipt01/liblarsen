@@ -22,19 +22,16 @@ extern "C" {
 
 /* lapack: cholesky decomposition */
 #ifndef HAVE_LAPACK_H
-extern void	dpotrf_ (char *uplo, int *n, double *a, int *lda, int *info);
 extern void	dpotrs_ (char *uplo, int *n, int *nrhs, double *a, int *lda, double *b, int *ldb, int *info);
 #endif
 
-/* qrupdate: cholinsert/delete */
+/* qrupdate: choesky linsert/delete */
 #ifndef HAVE_QRUPDATE_H
-extern void	dchinx_ (int *n, double *R, int *ldr, int *j, double *u, double *w, int *info);
-extern void	dchdex_ (int *n, double *R, int *ldr, int *j, double *w);
+extern void	dchinx_ (const int *n, double *R, const int *ldr, const int *j, const double *u, double *w, int *info);
+extern void	dchdex_ (const int *n, double *R, const int *ldr, const int *j, double *w);
 #endif
 
-int		larsen_linalg_cholesky_decomp (const size_t size, double *a, const size_t lda);
 int		larsen_linalg_cholesky_svx (const size_t size, double *l, const size_t lda, double *b);
-
 int		larsen_linalg_cholesky_insert (const size_t n, double **r, const int index, double *u);
 void	larsen_linalg_cholesky_delete (const size_t size, double **r, const int index);
 
