@@ -92,8 +92,6 @@ struct s_larsen {
 
 	/* cholesky factorization */
 	double					*chol;	// = chol(XA' * XA), where XA = X(A).
-	double					*q;		// = [q, r] = qr(XA' * XA), where XA = X(A).
-	double					*r;		// = chol(XA' * XA), where XA = X(A).
 
 };
 

@@ -13,14 +13,14 @@
 #include <larsen.h>
 #include "example.h"
 
-char	fn[80] = "\0";
-size_t	skipheaders = 0;
-double	lambda2 = 0.;
-double	start = 0.;
-double	stop = 100.;
-double	dt = 0.1;
-double	gamma_bic = 0.;	// traditional BIC
-int		maxiter = 100;
+char		fn[80] = "\0";
+size_t		skipheaders = 0;
+double		lambda2 = 0.;
+double		start = 0.;
+double		stop = 100.;
+double		dt = 0.1;
+double		gamma_bic = 0.;	// traditional BIC
+int			maxiter = 100;
 
 void
 usage (char *toolname)
@@ -123,15 +123,15 @@ main (int argc, char **argv)
 	size_t		p;
 	double		*y;
 	double		*x;
-double	*meany, *meanx, *normx;
+
 	if (!read_params (argc, argv)) usage (argv[0]);
 	fprintf_params ();
 
 	read_data (fn, skipheaders, &n, &p, &y, &x);
 
-	meany = larsen_centering (n, 1, y);
-	meanx = larsen_centering (n, p, x);
-	normx = larsen_normalizing (n, p, x);
+	larsen_centering (n, 1, y);
+	larsen_centering (n, p, x);
+	larsen_normalizing (n, p, x);
 
 	example_elasticnet (n, p, x, y, start, dt, stop, lambda2, gamma_bic, maxiter);
 
