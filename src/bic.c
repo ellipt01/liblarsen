@@ -17,12 +17,12 @@
 
 /* residual sum of squares | b - Z * beta |^2 */
 static double
-calc_rss (larsen *l)
+calc_rss (const larsen *l)
 {
 	double		rss;
 	double		*r = (double *) malloc (l->n * sizeof (double));
 	double		*beta = larsen_copy_beta_elasticnet (l);	// scale * beta
-	double		*mu = larsen_copy_mu_elasticnet (l);			// scale^2 * mu
+	double		*mu = larsen_copy_mu_elasticnet (l);		// scale^2 * mu
 	cblas_dcopy (l->n, l->y, 1, r, 1);
 	cblas_daxpy (l->n, -1., mu, 1, r, 1);	// r = - mu + r
 	rss = pow (cblas_dnrm2 (l->n, r, 1), 2.);
@@ -36,7 +36,7 @@ calc_rss (larsen *l)
 /* degree of freedom
  * it is equal to #{j ; j \in A i.e., beta_j != 0} (Efron et al., 2004) */
 static double
-calc_degree_of_freedom (larsen *l)
+calc_degree_of_freedom (const larsen *l)
 {
 	return (double) l->sizeA;
 }
@@ -52,7 +52,7 @@ calc_degree_of_freedom (larsen *l)
  * 	if gamma = 0, eBIC is identical with the classical BIC
 */
 double
-larsen_eval_bic (larsen *l, double gamma)
+larsen_eval_bic (const larsen *l, double gamma)
 {
 	double	rss = calc_rss (l);
 	double	df = calc_degree_of_freedom (l);

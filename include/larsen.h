@@ -17,10 +17,6 @@ extern "C" {
 #include <stdbool.h>
 #include <larsen_linalg.h>
 
-#ifndef LARSEN_DBL_EPSILON
-#define LARSEN_DBL_EPSILON		2.2204460492503131e-16
-#endif
-
 typedef enum {
 	ACTIVESET_ACTION_NONE	= -1,
 	ACTIVESET_ACTION_ADD		=  0,	// add new variable to the active set
@@ -51,6 +47,7 @@ struct s_larsen {
 
 	/* true: elastic net, false: lasso */
 	bool					is_elnet;
+
 	/* scale  = (is_elnet) ? 1 / sqrt(1 + lambda2) : 1
 	 * scale2 = l->scale^2 */
 	double					scale;
@@ -74,7 +71,7 @@ struct s_larsen {
 	double					*w;
 
 	/* step_size */
-	double					stepsize;	// step size which beta will be progress.
+	double					stepsize;	// step size which beta will be progress
 
 	/* solution */
 	double					*beta;	// regression coefficients
@@ -85,23 +82,23 @@ struct s_larsen {
 	double					*mu_prev;		// previous mu
 
 	/* interpolation */
-	bool					interp;		// interpolation was done or not.
+	bool					interp;		// interpolation was done or not
 	double					stepsize_intr;
 	double					*beta_intr;	// interpolated beta
 	double					*mu_intr;		// interpolated mu
 
 	/* cholesky factorization */
-	double					*chol;	// = chol(XA' * XA), where XA = X(A).
+	double					*chol;	// = chol(XA' * XA), where XA = X(A)
 
 };
 
 /* util.c */
-larsen		*larsen_alloc (size_t n, size_t p, const double *y, const double *x, double lambda1, double lambda2);
+larsen		*larsen_alloc (const size_t n, const size_t p, const double *y, const double *x, const double lambda1, const double lambda2);
 void		larsen_free (larsen *l);
-double		*larsen_copy_beta_navie (larsen *l);
-double		*larsen_copy_beta_elasticnet (larsen *l);
-double		*larsen_copy_mu_navie (larsen *l);
-double		*larsen_copy_mu_elasticnet (larsen *l);
+double		*larsen_copy_beta_navie (const larsen *l);
+double		*larsen_copy_beta_elasticnet (const larsen *l);
+double		*larsen_copy_mu_navie (const larsen *l);
+double		*larsen_copy_mu_elasticnet (const larsen *l);
 void		larsen_set_lambda1 (larsen *l, double t);
 
 /* data.c */
@@ -116,7 +113,7 @@ bool		larsen_interpolate (larsen *l);
 bool		larsen_elasticnet (larsen *l, int maxiter);
 
 /* bic.c */
-double		larsen_eval_bic (larsen *l, double gamma);
+double		larsen_eval_bic (const larsen *l, double gamma);
 
 #ifdef __cplusplus
 }

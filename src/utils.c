@@ -9,10 +9,27 @@
 #include <math.h>
 #include <larsen.h>
 
-larsen *
-larsen_alloc (size_t n, size_t p, const double *y, const double *x, double lambda1, double lambda2)
+#ifndef HAVE_LAPACK_H
+extern double	dlamch_ (char *cmach);
+#endif
+
+static double
+larsen_double_eps (void)
+{
+	char	cmach = 'e';
+	return dlamch_ (&cmach);
+}
+
+void
+larsen_array_set_all (const size_t size, double *x, double val)
 {
 	int		i;
+	for (i = 0; i < size; i++) x[i] = val;
+}
+
+larsen *
+larsen_alloc (const size_t n, const size_t p, const double *y, const double *x, const double lambda1, const double lambda2)
+{
 	larsen	*l;
 
 	if (!y) {
@@ -42,7 +59,7 @@ larsen_alloc (size_t n, size_t p, const double *y, const double *x, double lambd
 	l->x = x;
 	l->y = y;
 
-	l->is_elnet = (lambda2 > LARSEN_DBL_EPSILON);
+	l->is_elnet = (lambda2 > larsen_double_eps ());
 	l->scale2 = (l->is_elnet) ? 1. / (1. + lambda2) : 1.;
 	l->scale = (l->is_elnet) ? sqrt (l->scale2) : 1.;
 
@@ -56,7 +73,7 @@ larsen_alloc (size_t n, size_t p, const double *y, const double *x, double lambd
 	l->oper.column_of_X = -1;
 
 	l->sizeA = 0;
-	l->A = (int *) malloc (p * sizeof (int));
+	l->A = (int *) malloc (l->p * sizeof (int));
 
 	/* active set */
 	l->absA = 0.;
@@ -64,20 +81,20 @@ larsen_alloc (size_t n, size_t p, const double *y, const double *x, double lambd
 	l->w = NULL;
 
 	/* solution */
-	l->beta = (double *) malloc (p * sizeof (double));
-	l->mu = (double *) malloc (n * sizeof (double));
-	for (i = 0; i < p; i++) l->beta[i] = 0.;
-	for (i = 0; i < n; i++) l->mu[i] = 0.;
+	l->beta = (double *) malloc (l->p * sizeof (double));
+	larsen_array_set_all (l->p, l->beta, 0.);
+	l->mu = (double *) malloc (l->n * sizeof (double));
+	larsen_array_set_all (l->n, l->mu, 0.);
 
 	/* backup of solution */
-	l->beta_prev = (double *) malloc (p * sizeof (double));
-	l->mu_prev = (double *) malloc (n * sizeof (double));
+	l->beta_prev = (double *) malloc (l->p * sizeof (double));
+	l->mu_prev = (double *) malloc (l->n * sizeof (double));
 
 	/* interpolation */
 	l->interp = false;
 	l->stepsize_intr = 0.;
-	l->beta_intr = (double *) malloc (p * sizeof (double));
-	l->mu_intr = (double *) malloc (n * sizeof (double));
+	l->beta_intr = (double *) malloc (l->p * sizeof (double));
+	l->mu_intr = (double *) malloc (l->n * sizeof (double));
 
 	/* cholesky factorization */
 	l->chol = NULL;
@@ -107,7 +124,7 @@ larsen_free (larsen *l)
 
 /* return copy of navie solution: beta_navie = l->beta */
 double *
-larsen_copy_beta_navie (larsen *l)
+larsen_copy_beta_navie (const larsen *l)
 {
 	double	*beta = (double *) malloc (l->p * sizeof (double));
 	if (!l->interp) cblas_dcopy (l->p, l->beta, 1, beta, 1);
@@ -117,7 +134,7 @@ larsen_copy_beta_navie (larsen *l)
 
 /* return copy of elastic net solution: beta_elnet = beta_navie / scale */
 double *
-larsen_copy_beta_elasticnet (larsen *l)
+larsen_copy_beta_elasticnet (const larsen *l)
 {
 	double	*beta = larsen_copy_beta_navie (l);
 	if (l->is_elnet) cblas_dscal (l->p, 1. / l->scale, beta, 1);
@@ -126,7 +143,7 @@ larsen_copy_beta_elasticnet (larsen *l)
 
 /* return copy of navie solution: mu_navie = l->mu */
 double *
-larsen_copy_mu_navie (larsen *l)
+larsen_copy_mu_navie (const larsen *l)
 {
 	double	*mu = (double *) malloc (l->n * sizeof (double));
 	if (!l->interp) cblas_dcopy (l->n, l->mu, 1, mu, 1);
@@ -136,7 +153,7 @@ larsen_copy_mu_navie (larsen *l)
 
 /* return copy of elastic net solution: mu_elnet = mu_navie / scale^2 */
 double *
-larsen_copy_mu_elasticnet (larsen *l)
+larsen_copy_mu_elasticnet (const larsen *l)
 {
 	double	*mu = larsen_copy_mu_navie (l);
 	if (l->is_elnet) cblas_dscal (l->n, 1. / l->scale2, mu, 1);
