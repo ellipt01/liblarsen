@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <larsen.h>
 
-#define posinf()	(1. / 0.)	// + infinity
+#include "larsen_private.h"
 
 /* activeset.c */
 extern int		*complementA (larsen *l);
@@ -18,14 +18,14 @@ static void
 calc_gamma_hat (larsen *l, int *index, int *column, double *val)
 {
 	int			minplus_idx = -1;
-	double		minplus = posinf ();
+	double		minplus = LARSEN_POSINF;
 	int			*Ac = complementA (l);
 
 	if (l->sizeA == l->p) {
 		minplus = l->sup_c / l->absA;
 	} else if (l->p > l->sizeA) {
 		int			i;		double		*a = (double *) malloc (l->p * sizeof (double));
-		cblas_dgemv (CblasColMajor, CblasTrans, l->n, l->p, l->scale, l->x, l->n, l->u, 1, 0., a, 1);
+		dgemv_ ("T", CINTP (l->n), CINTP (l->p), &l->scale, l->x, CINTP (l->n), l->u, &ione, &dzero, a, &ione);
 		/* If l->is_elnet == true, a(A) must be a(A) += l->lambda2 * l->scale^2 * w.
 		 * But for the estimation of gamma_hat, the above addition calculation is
 		 * omitted because only a(Ac) are referred. */
@@ -37,8 +37,8 @@ calc_gamma_hat (larsen *l, int *index, int *column, double *val)
 			e0 = (l->sup_c - cj) / (l->absA - aj);
 			e1 = (l->sup_c + cj) / (l->absA + aj);
 
-			if (e0 <= 0.) e0 = posinf ();
-			if (e1 <= 0.) e1 = posinf ();
+			if (e0 <= 0.) e0 = LARSEN_POSINF;
+			if (e1 <= 0.) e1 = LARSEN_POSINF;
 			min = (e0 <= e1) ? e0 : e1;
 
 			if (min < minplus) {
@@ -60,14 +60,14 @@ static void
 calc_gamma_tilde (larsen *l, int *index, int *column, double *val)
 {
 	int		minplus_idx = -1;
-	double	minplus = posinf ();
+	double	minplus = LARSEN_POSINF;
 
 	if (l->sizeA > 0) {
 		int		i;
 		for (i = 0; i < l->sizeA; i++) {
 			int		j = l->A[i];
 			double	e = - l->beta[j] / l->w[i];
-			if (e <= 0.) e = posinf ();
+			if (e <= 0.) e = LARSEN_POSINF;
 			if (e < minplus) {
 				minplus_idx = i;
 				minplus = e;
@@ -83,7 +83,7 @@ calc_gamma_tilde (larsen *l, int *index, int *column, double *val)
 static bool
 check_stepsize (const double stepsize)
 {
-	return (0 < stepsize && stepsize != posinf ());
+	return (0 < stepsize && stepsize != LARSEN_POSINF);
 }
 
 /*

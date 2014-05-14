@@ -8,6 +8,16 @@
 #include <stdlib.h>
 #include <larsen.h>
 
+#include "test_larsen.h"
+
+const double	done = 1.;
+
+#ifndef HAVE_BLAS_H
+extern void	dgemm_ (const char *transa, const char *transb, const int *m, const int *n, const int *k,
+		const double *alpha, const double *a, const int *lda, const double *b, const int *ldb,
+		const double *beta, double *c, const int *ldc);
+#endif
+
 #ifndef HAVE_LAPACK_H
 extern void	dpotrf_ (char *uplo, const int *n, double *a, int *lda, int *info);
 #endif
@@ -45,9 +55,10 @@ double *
 posdef_symmetry_random_matrix (const size_t size)
 {
 	int		i;
+	int		n = (int) size;
 	double	*x = (double *) malloc (size * size * sizeof (double));
 	double	*x0 = random_uniform_array (size, size);
-	cblas_dgemm (CblasColMajor, CblasTrans, CblasNoTrans, size, size, size, 1., x0, size, x0, size, 0., x, size);
+	dgemm_ ("T", "N", &n, &n, &n, &done, x0, &n, x0, &n, &dzero, x, &n);
 	free (x0);
 	for (i = 0; i < size; i++) x[i + i * size] += 1.;
 	return x;

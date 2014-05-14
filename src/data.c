@@ -8,6 +8,8 @@
 #include <stdlib.h>
 #include <larsen.h>
 
+#include "larsen_private.h"
+
 /* centering vector: y -> y - mean(y) */
 double *
 larsen_centering (const size_t size1, const size_t size2, double *x)
@@ -32,9 +34,11 @@ larsen_normalizing (const size_t size1, const size_t size2, double *x)
 	int		j;
 	double	*nrm = (double *) malloc (size2 * sizeof (double));
 	for (j = 0; j < size2; j++) {
+		double	alpha;
 		double	*xj = x + LARSEN_INDEX_OF_MATRIX (0, j, size1);
-		nrm[j] = cblas_dnrm2 (size1, xj, 1);
-		cblas_dscal (size1, 1. / nrm[j], xj, 1);
+		nrm[j] = dnrm2_ (CINTP (size1), xj, &ione);
+		alpha = 1. / nrm[j];
+		dscal_ (CINTP (size1), &alpha, xj, &ione);
 	}
 	return nrm;
 }

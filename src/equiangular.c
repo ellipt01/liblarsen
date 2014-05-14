@@ -9,6 +9,8 @@
 #include <math.h>
 #include <larsen.h>
 
+#include "larsen_private.h"
+
 /* s = sign(c) */
 static double *
 update_sign (larsen *l)
@@ -48,7 +50,7 @@ xa_dot_y (larsen *l, double alpha, double *z)
 	for (j = 0; j < l->p; j++) zp[j] = 0.;
 	for (j = 0; j < l->sizeA; j++) zp[l->A[j]] = z[j];
 	/* y = X * zp = X(A, :) * z */
-	cblas_dgemv (CblasColMajor, CblasNoTrans, l->n, l->p, alpha, l->x, l->n, zp, 1, 0., y, 1);
+	dgemv_ ("N", CINTP (l->n), CINTP (l->p), &alpha, l->x, CINTP (l->n), zp, &ione, &dzero, y, &ione);
 	free (zp);
 
 	return y;
@@ -62,10 +64,10 @@ xa_transpose_dot_y (larsen *l, const double alpha, const double *z)
 	double	*y = (double *) malloc (l->sizeA * sizeof (double));
 
 	/* eval X(A)^T * y */
-	/* another version with cblas_dgemv
+	/* another version with dgemv_
 	 *
 	 *   double	*yp = (double *) malloc (l->p * sizeof (double));
-	 *   cblas_dgemv (CblasColMajor, CblasTrans, l->n, l->p, alpha, l->x, l->n, z, 1, 0., yp, 1);
+	 *   dgemv_ ("T", CINTP (l->n), CINTP (l->p), &alpha, l->x, CINTP (l->n), z, &ione, &dzero, yp, &ione);
 	 *   for (j = 0; j < l->sizeA; j++) y[j] = yp[l->A[j]];
 	 *   free (yp);
 	 *
@@ -74,7 +76,7 @@ xa_transpose_dot_y (larsen *l, const double alpha, const double *z)
 	for (j = 0; j < l->sizeA; j++) {
 		const double	*xaj = l->x + LARSEN_INDEX_OF_MATRIX (0, l->A[j], l->n);
 		/* y[j] = alpha * X(:, A[j])' * z */
-		y[j] = alpha * cblas_ddot (l->n, xaj, 1, z, 1);
+		y[j] = alpha * ddot_ (CINTP (l->n), xaj, &ione, z, &ione);
 	}
 	return y;
 }
@@ -136,7 +138,7 @@ update_equiangular_larsen_cholesky (larsen *l)
 
 	if (l->w) free (l->w);
 	l->w = (double *) malloc (l->sizeA * sizeof (double));
-	cblas_dcopy (l->sizeA, s, 1, l->w, 1);
+	dcopy_ (CINTP (l->sizeA), s, &ione, l->w, &ione);
 
 	/* cholesky update and solve equiangular equation
 	 * TODO: create new methods to solve equiangular equation (using QR, SVD etc.)
@@ -149,9 +151,9 @@ update_equiangular_larsen_cholesky (larsen *l)
 	if (!check_info ("cholesky_svx", info)) return false;
 	/* end */
 
-	l->absA = 1. / sqrt (cblas_ddot (l->sizeA, s, 1, l->w, 1));
+	l->absA = 1. / sqrt (ddot_ (CINTP (l->sizeA), s, &ione, l->w, &ione));
 	free (s);
-	cblas_dscal (l->sizeA, l->absA, l->w, 1);
+	dscal_ (CINTP (l->sizeA), &l->absA, l->w, &ione);
 
 	/* u = scale * XA * w */
 	if (l->u) free (l->u);

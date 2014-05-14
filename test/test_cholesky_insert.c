@@ -27,6 +27,9 @@ test_cholesky_insert (void)
 	double *la;
 	double *lb;
 
+	int		n = (int) size;
+	int		nn = n * n;
+	int		mm = (int) (size - 1) * (size - 1);
 	double	nrm;
 
 	/* posdef symmetry matrix */
@@ -34,7 +37,7 @@ test_cholesky_insert (void)
 
 	/* cholesky decomposition of matrix a */
 	la = (double *) malloc (size * size * sizeof (double));
-	cblas_dcopy (size * size, a, 1, la, 1);
+	dcopy_ (&nn, a, &ione, la, &ione);
 	test_linalg_cholesky_decomp (size, la, size);
 	for (i = 0; i < size; i++) {
 		int		j;
@@ -57,7 +60,7 @@ test_cholesky_insert (void)
 
 	/* cholesky decomposition */
 	lb = (double *) malloc ((size - 1) * (size - 1) * sizeof (double));
-	cblas_dcopy ((size - 1) * (size - 1), b, 1, lb, 1);
+	dcopy_ (&mm, b, &ione, lb, &ione);
 	test_linalg_cholesky_decomp (size - 1, lb, size - 1);
 	free (b);
 
@@ -69,9 +72,9 @@ test_cholesky_insert (void)
 	}
 
 	/* la = - lb + la */
-	cblas_daxpy (size * size, -1., lb, 1, la, 1);
+	daxpy_ (&nn, &dmone, lb, &ione, la, &ione);
 	free (lb);
-	nrm = cblas_dnrm2 (size * size, la, 1);
+	nrm = dnrm2_ (&nn, la, &ione);
 	free (la);
 
 	return (nrm < 1.e-8);

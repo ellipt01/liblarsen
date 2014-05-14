@@ -24,6 +24,8 @@ test_cholesky_svx (void)
 	double *y;
 	double *b;
 
+	int		n = (int) size;
+	int		nn = n * n;
 	double	nrm;
 
 	/* posdef symmetry matrix */
@@ -32,30 +34,30 @@ test_cholesky_svx (void)
 	/* y = a * x */
 	x = random_uniform_array (size, 1);
 	y = (double *) malloc (size * sizeof (double));
-	cblas_dgemv (CblasColMajor, CblasNoTrans, size, size, 1, a, size, x, 1, 0., y, 1);
+	dgemv_ ("N", &n, &n, &done, a, &n, x, &ione, &dzero, y, &ione);
 	free (x);
 
 	/* cholesky decomposition */
 	l = (double *) malloc (size * size * sizeof (double));
-	cblas_dcopy (size * size, a, 1, l, 1);
+	dcopy_ (&nn, a, &ione, l, &ione);
 	test_linalg_cholesky_decomp (size, l, size);
 
 	/* x1 = a^-1 * y */
 	x = (double *) malloc (size * sizeof (double));
-	cblas_dcopy (size, y, 1, x, 1);
+	dcopy_ (&n, y, &ione, x, &ione);
 	larsen_linalg_cholesky_svx (size, l, size, x);
 	free (l);
 
 	/* b = a * x1 */
 	b = (double *) malloc (size * sizeof (double));
-	cblas_dgemv (CblasColMajor, CblasNoTrans, size, size, 1, a, size, x, 1, 0., b, 1);
+	dgemv_ ("N", &n, &n, &done, a, &n, x, &ione, &dzero, b, &ione);
 	free (x);
 	free (a);
 
 	/* y = - b + y */
-	cblas_daxpy (size, -1., b, 1, y, 1);
+	daxpy_ (&n, &dmone, b, &ione, y, &ione);
 	free (b);
-	nrm = cblas_dnrm2 (size, y, 1);
+	nrm = dnrm2_ (&n, y, &ione);
 	free (y);
 
 	return (nrm < 1.e-8);

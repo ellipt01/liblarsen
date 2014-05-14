@@ -9,6 +9,12 @@
 #include <stdlib.h>
 #include <larsen_linalg.h>
 
+#include "larsen_private.h"
+
+const int		ione  =  1;
+const double	dzero =  0.;
+const double	dmone = -1.;
+
 void
 larsen_linalg_error (const char * function_name, const char *error_msg)
 {
@@ -31,8 +37,8 @@ matrix_add_rowcols (const size_t m, const size_t n, double **a, const size_t dm,
 	if (dm > 0) {
 		double	*col = (double *) malloc (m * sizeof (double));
 		for (j = n; 0 < j; j--) {
-			cblas_dcopy (m, *a + LARSEN_INDEX_OF_MATRIX (0, j, m), 1, col, 1);
-			cblas_dcopy (m, col, 1, *a + LARSEN_INDEX_OF_MATRIX (0, j, m + dm), 1);
+			dcopy_ (CINTP (m), *a + LARSEN_INDEX_OF_MATRIX (0, j, m), &ione, col, &ione);
+			dcopy_ (CINTP (m), col, &ione, *a + LARSEN_INDEX_OF_MATRIX (0, j, m + dm), &ione);
 		}
 		free (col);
 	}
@@ -52,8 +58,9 @@ matrix_remove_rowcols (const size_t m, const size_t n, double **a, const size_t 
 	if (dm > 0) {
 		double	*col = (double *) malloc ((m - dm) * sizeof (double));
 		for (j = 1; j < n - dn; j++) {
-			cblas_dcopy (m - dm, *a + LARSEN_INDEX_OF_MATRIX (0, j, m), 1, col, 1);
-			cblas_dcopy (m - dm, col, 1, *a + LARSEN_INDEX_OF_MATRIX (0, j, m - dm), 1);
+			int		mm = (int) (m - dm);
+			dcopy_ (CINTP (mm), *a + LARSEN_INDEX_OF_MATRIX (0, j, m), &ione, col, &ione);
+			dcopy_ (CINTP (mm), col, &ione, *a + LARSEN_INDEX_OF_MATRIX (0, j, m - dm), &ione);
 		}
 		free (col);
 	}

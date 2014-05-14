@@ -9,6 +9,8 @@
 #include <math.h>
 #include <larsen.h>
 
+#include "larsen_private.h"
+
 /*
  *   Bayesian Information Criterion for L2 reguralized
  *   linear regression model b = Z * beta
@@ -23,10 +25,10 @@ calc_rss (const larsen *l)
 	double		*r = (double *) malloc (l->n * sizeof (double));
 	double		*beta = larsen_copy_beta_elasticnet (l);	// scale * beta
 	double		*mu = larsen_copy_mu_elasticnet (l);		// scale^2 * mu
-	cblas_dcopy (l->n, l->y, 1, r, 1);
-	cblas_daxpy (l->n, -1., mu, 1, r, 1);	// r = - mu + r
-	rss = pow (cblas_dnrm2 (l->n, r, 1), 2.);
-	if (l->is_elnet) rss += l->lambda2 * pow (cblas_dnrm2 (l->p, beta, 1), 2.);
+	dcopy_ (CINTP (l->n), l->y, &ione, r, &ione);
+	daxpy_ (CINTP (l->n), &dmone, mu, &ione, r, &ione);	// r = - mu + r
+	rss = pow (dnrm2_ (CINTP (l->n), r, &ione), 2.);
+	if (l->is_elnet) rss += l->lambda2 * pow (dnrm2_ (CINTP (l->p), beta, &ione), 2.);
 	free (r);
 	free (beta);
 	free (mu);

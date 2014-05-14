@@ -9,9 +9,7 @@
 #include <math.h>
 #include <larsen.h>
 
-#ifndef HAVE_LAPACK_H
-extern double	dlamch_ (char *cmach);
-#endif
+#include "larsen_private.h"
 
 static double
 larsen_double_eps (void)
@@ -127,8 +125,8 @@ double *
 larsen_copy_beta_navie (const larsen *l)
 {
 	double	*beta = (double *) malloc (l->p * sizeof (double));
-	if (!l->interp) cblas_dcopy (l->p, l->beta, 1, beta, 1);
-	else cblas_dcopy (l->p, l->beta_intr, 1, beta, 1);
+	if (!l->interp) dcopy_ (CINTP (l->p), l->beta, &ione, beta, &ione);
+	else dcopy_ (CINTP (l->p), l->beta_intr, &ione, beta, &ione);
 	return beta;
 }
 
@@ -137,7 +135,10 @@ double *
 larsen_copy_beta_elasticnet (const larsen *l)
 {
 	double	*beta = larsen_copy_beta_navie (l);
-	if (l->is_elnet) cblas_dscal (l->p, 1. / l->scale, beta, 1);
+	if (l->is_elnet) {
+		double	alpha = 1. / l->scale;
+		dscal_ (CINTP (l->p), &alpha, beta, &ione);
+	}
 	return beta;
 }
 
@@ -146,8 +147,8 @@ double *
 larsen_copy_mu_navie (const larsen *l)
 {
 	double	*mu = (double *) malloc (l->n * sizeof (double));
-	if (!l->interp) cblas_dcopy (l->n, l->mu, 1, mu, 1);
-	else cblas_dcopy (l->n, l->mu_intr, 1, mu, 1);
+	if (!l->interp) dcopy_ (CINTP (l->n), l->mu, &ione, mu, &ione);
+	else dcopy_ (CINTP (l->n), l->mu_intr, &ione, mu, &ione);
 	return mu;
 }
 
@@ -156,7 +157,10 @@ double *
 larsen_copy_mu_elasticnet (const larsen *l)
 {
 	double	*mu = larsen_copy_mu_navie (l);
-	if (l->is_elnet) cblas_dscal (l->n, 1. / l->scale2, mu, 1);
+	if (l->is_elnet) {
+		double	alpha = 1. / l->scale2;
+		dscal_ (CINTP (l->n), &alpha, mu, &ione);
+	}
 	return mu;
 }
 

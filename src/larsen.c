@@ -9,14 +9,12 @@
 #include <math.h>
 #include <larsen.h>
 
-#define LARSEN_MIN(a, b)		(((a) > (b)) ? (b) : (a))
+#include "larsen_private.h"
 
 /* active_set.c */
 extern bool	update_activeset (larsen *l);
-
 /* stepsize.c */
 extern bool	update_stepsize (larsen *l);
-
 /* equiangular.c */
 extern bool	update_equiangular (larsen *l);
 
@@ -37,8 +35,8 @@ static void
 update_correlations (larsen *l)
 {
 	double	*r = (double *) malloc (l->n * sizeof (double));
-	cblas_dcopy (l->n, l->y, 1, r, 1);
-	cblas_daxpy (l->n, -1., l->mu, 1, r, 1);	// r = - mu + y
+	dcopy_ (CINTP (l->n), l->y, &ione, r, &ione);
+	daxpy_ (CINTP (l->n), &dmone, l->mu, &ione, r, &ione);	// r = - mu + y
 
 	/*
 	 *  c = Z' * (b - Z * beta),  b = [y; 0], Z = scale * [X; sqrt(lambda2) * E]
@@ -47,12 +45,15 @@ update_correlations (larsen *l)
 	 */
 	if (l->c) free (l->c);
 	l->c = (double *) malloc (l->p * sizeof (double));
-	cblas_dgemv (CblasColMajor, CblasTrans, l->n, l->p, l->scale, l->x, l->n, r, 1, 0., l->c, 1);
-	if (l->is_elnet) cblas_daxpy (l->p, - l->lambda2 * l->scale2, l->beta, 1, l->c, 1);
+	dgemv_ ("T", CINTP (l->n), CINTP (l->p), &l->scale, l->x, CINTP (l->n), r, &ione, &dzero, l->c, &ione);
+	if (l->is_elnet) {
+		double	alpha = - l->lambda2 * l->scale2;
+		daxpy_ (CINTP (l->p), &alpha, l->beta, &ione, l->c, &ione);
+	}
 	free (r);
 
 	{
-		int		maxidx = cblas_idamax (l->p, l->c, 1);
+		int		maxidx = idamax_ (CINTP (l->p), l->c, &ione) - 1;
 		if (l->sizeA == 0) {
 			l->oper.index_of_A = 0;
 			l->oper.column_of_X = maxidx;
@@ -78,23 +79,23 @@ update_solutions (larsen *l)
 	 *  mu_intr = mu_prev + stepsize_intr * u
 	 */
 	if (!l->interp) {
-		cblas_dcopy (l->p, l->beta, 1, beta, 1);
-		cblas_dcopy (l->n, l->mu, 1, mu, 1);
+		dcopy_ (CINTP (l->p), l->beta, &ione, beta, &ione);
+		dcopy_ (CINTP (l->n), l->mu, &ione, mu, &ione);
 	} else {
-		cblas_dcopy (l->p, l->beta_prev, 1, beta, 1);
-		cblas_dcopy (l->n, l->mu_prev, 1, mu, 1);
+		dcopy_ (CINTP (l->p), l->beta_prev, &ione, beta, &ione);
+		dcopy_ (CINTP (l->n), l->mu_prev, &ione, mu, &ione);
 	}
 	larsen_awpy (l, stepsize, l->w, beta);			// beta(A) += stepsize * w(A)
-	cblas_daxpy (l->n, stepsize, l->u, 1, mu, 1);	// mu += stepsize * u
+	daxpy_ (CINTP (l->n), &stepsize, l->u, &ione, mu, &ione);	// mu += stepsize * u
 
 	if (!l->interp) {
-		cblas_dcopy (l->p, l->beta, 1, l->beta_prev, 1);
-		cblas_dcopy (l->n, l->mu, 1, l->mu_prev, 1);
-		cblas_dcopy (l->p, beta, 1, l->beta, 1);
-		cblas_dcopy (l->n, mu, 1, l->mu, 1);
+		dcopy_ (CINTP (l->p), l->beta, &ione, l->beta_prev, &ione);
+		dcopy_ (CINTP (l->n), l->mu, &ione, l->mu_prev, &ione);
+		dcopy_ (CINTP (l->p), beta, &ione, l->beta, &ione);
+		dcopy_ (CINTP (l->n), mu, &ione, l->mu, &ione);
 	} else {
-		cblas_dcopy (l->p, beta, 1, l->beta_intr, 1);
-		cblas_dcopy (l->n, mu, 1, l->mu_intr, 1);
+		dcopy_ (CINTP (l->p), beta, &ione, l->beta_intr, &ione);
+		dcopy_ (CINTP (l->n), mu, &ione, l->mu_intr, &ione);
 	}
 	free (beta);
 	free (mu);
@@ -177,8 +178,8 @@ bool
 larsen_interpolate (larsen *l)
 {
 	double	lambda1 = (l->is_elnet) ? l->scale * l->lambda1 : l->lambda1;	// scale * lambda1
-	double	nrm1_prev = cblas_dasum (l->p, l->beta_prev, 1);
-	double	nrm1 = cblas_dasum (l->p, l->beta, 1);
+	double	nrm1_prev = dasum_ (CINTP (l->p), l->beta_prev, &ione);
+	double	nrm1 = dasum_ (CINTP (l->p), l->beta, &ione);
 	l->interp = false;
 	if (nrm1_prev <= lambda1 && lambda1 < nrm1) {
 		l->interp = true;

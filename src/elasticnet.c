@@ -7,6 +7,8 @@
 
 #include <larsen.h>
 
+#include "larsen_private.h"
+
 /*
  *  Evaluate lasso (l->lambda2 = 0) or elastic net (l->lambda2 != 0) estimator.
  *
@@ -28,12 +30,12 @@ larsen_elasticnet (larsen *l, int maxiter)
 {
 	int		iter = 0;
 	double	lambda1 = (l->is_elnet) ? l->scale * l->lambda1 : l->lambda1;	// scale * lambda1
-	double	nrm1 = cblas_dasum (l->p, l->beta, 1);
+	double	nrm1 = dasum_ (CINTP (l->p), l->beta, &ione);
 
 	/* loop of elastic net regression */
 	while (nrm1 <= lambda1 && !l->stop_loop) {
 		if (!larsen_regression_step (l)) return false;
-		nrm1 = cblas_dasum (l->p, l->beta, 1);
+		nrm1 = dasum_ (CINTP (l->p), l->beta, &ione);
 		if (++iter > maxiter) {
 			fprintf (stderr, "number of iterations reaches max tolerance.\nregression stopped.\n");
 			return false;
