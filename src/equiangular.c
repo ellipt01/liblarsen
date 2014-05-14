@@ -122,7 +122,7 @@ update_chol (larsen *l)
 	return info;
 }
 
-/* update equiangular vector and its relevant (l->u, l->w and l->absA)
+/* update equiangular vector (l->u) and its relevant (l->w and l->absA)
  * for current active set using cholinsert / delete routine */
 static bool
 update_equiangular_larsen_cholesky (larsen *l)
@@ -139,9 +139,9 @@ update_equiangular_larsen_cholesky (larsen *l)
 	cblas_dcopy (l->sizeA, s, 1, l->w, 1);
 
 	/* cholesky update and solve equiangular equation
-	 * TODO: create new method and move the following lines to it
-	 * to be able to switch some methods
-	 * */
+	 * TODO: create new methods to solve equiangular equation (using QR, SVD etc.)
+	 * and switch them in the following line
+	 */
 	info = update_chol (l);
 	if (!check_info ("update_chol", info)) return false;
 
@@ -159,38 +159,6 @@ update_equiangular_larsen_cholesky (larsen *l)
 
 	return true;
 }
-
-#ifdef QR
-static int
-update_qr (larsen *l)
-{
-	int		info = 0;
-	int		index = l->oper.index_of_A;
-
-	if (l->oper.action == ACTIVESET_ACTION_ADD) {
-		/*** insert a predictor ***/
-		int				i;
-		int				j = l->oper.column_of_X;
-		double			*t = (double *) malloc ((l->n + l->p) * sizeof (double));
-		const double	*xj = l->x + INDEX_OF_MATRIX (0, j, l->n);
-
-		// t = [xj * scale, 0,...,sqrt(lambda2) * scale, ..., 0]
-		for (i = 0; i < l->n + l->p; i++) t[l->n + i] = 0.;
-		cblas_daxpy (l->n, l->scale, xj, 1, t, 1);
-		t[l->p + j] = sqrt(l->lambda2) * l->scale;
-
-		if ()
-		info = larsen_linalg_QR_insert (l->sizeA - 1, &l->chol, index, t);
-		free (t);
-
-	} else if (l->oper.action == ACTIVESET_ACTION_DROP) {
-		/*** delete a predictor ***/
-		larsen_linalg_cholesky_delete (l->sizeA + 1, &l->chol, index);
-	}
-
-	return info;
-}
-#endif
 
 /* call equiangular vector updater
  * if another routine is implenented, swicth them in here */
