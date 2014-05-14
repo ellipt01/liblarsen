@@ -13,7 +13,7 @@
 extern "C" {
 #endif
 
-#include <stdio.h>
+#include <stddef.h>
 #include <stdbool.h>
 #include <larsen_linalg.h>
 

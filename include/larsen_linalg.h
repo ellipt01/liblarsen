@@ -39,7 +39,7 @@ extern void	dgemv_ (const char *trans, const int *m, const int *n, const double 
 #ifdef HAVE_LAPACK_H
 #include <lapack.h>
 #else
-extern double	dlamch_ (char *cmach);
+extern double	dlamch_ (const char *cmach);
 extern void	dpotrs_ (const char *uplo, const int *n, const int *nrhs, const double *a, const int *lda, double *b, const int *ldb, int *info);
 #endif
 

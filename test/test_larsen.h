@@ -8,6 +8,7 @@
 #ifndef TEST_LARSEN_H_
 #define TEST_LARSEN_H_
 
+#include <stdio.h>
 #include "larsen_private.h"
 
 extern const double	done;

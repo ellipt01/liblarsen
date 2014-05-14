@@ -5,6 +5,7 @@
  *      Author: utsugi
  */
 
+#include <stdio.h>
 #include <larsen.h>
 
 #include "larsen_private.h"
