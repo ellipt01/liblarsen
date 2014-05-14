@@ -54,20 +54,23 @@ xa_dot_y (larsen *l, double alpha, double *z)
 	return y;
 }
 
-/* y = alpha * XA' * z */
+/* y = alpha * X(A)' * z */
 static double *
 xa_transpose_dot_y (larsen *l, const double alpha, const double *z)
 {
 	int		j;
 	double	*y = (double *) malloc (l->sizeA * sizeof (double));
 
-	/* another version with cblas_dgemv */
-	/*	double	*yp = (double *) malloc (l->p * sizeof (double));
-		cblas_dgemv (CblasColMajor, CblasTrans, l->n, l->p, alpha, l->x, l->n, z, 1, 0., yp, 1);
-		for (j = 0; j < l->sizeA; j++) y[j] = yp[l->A[j]];
-		free (yp); */
-
-	/* The following is more fast when l->sizeA is not huge */
+	/* eval X(A)^T * y */
+	/* another version with cblas_dgemv
+	 *
+	 *   double	*yp = (double *) malloc (l->p * sizeof (double));
+	 *   cblas_dgemv (CblasColMajor, CblasTrans, l->n, l->p, alpha, l->x, l->n, z, 1, 0., yp, 1);
+	 *   for (j = 0; j < l->sizeA; j++) y[j] = yp[l->A[j]];
+	 *   free (yp);
+	 *
+	 */
+	/* The following is faster when l->sizeA is not huge */
 	for (j = 0; j < l->sizeA; j++) {
 		const double	*xaj = l->x + LARSEN_INDEX_OF_MATRIX (0, l->A[j], l->n);
 		/* y[j] = alpha * X(:, A[j])' * z */
@@ -76,7 +79,7 @@ xa_transpose_dot_y (larsen *l, const double alpha, const double *z)
 	return y;
 }
 
-/* do cholinsert or choldelete of specified index */
+/* do cholinsert / choldelete of specified index */
 static int
 update_chol (larsen *l)
 {
@@ -91,8 +94,23 @@ update_chol (larsen *l)
 
 		/* t = scale^2 * X(:,A)' * X(:,j) */
 		t = xa_transpose_dot_y (l, l->scale2, xj);
-		/* t += lambda2 * scale^2 */
+
+		/* In the case of elasticnet (lambda2 > 0),
+		 * (now, A is already updated and j \in A)
+		 *
+		 * t = Z(A)' * Z(j)
+		 * = scale^2 * [X(A)', sqrt(lambda2) * E(A)'] * [X(j); sqrt(lambda2) * E(j)]
+		 * = scale^2 * X(A-j)' * X(j) (+ scale^2 * lambda2 * E(A-j) * E(j) = 0)
+		 *   + scale^2 * X(j)' * X(j)  + scale^2 * lambda2 * E(j)' * E(j)
+		 *
+		 * so,
+		 * t[l->oper.index_of_A] += scale^2 * lambda2
+		 *
+		 * However in the case of elastic net, because X(j)' * X(j) = 1,
+		 * t[l->oper.index_of_A] = scale^2 + lambda2 * scale^2 = 1,
+		 * but in the case of adaptive elastic net, the above != 1 */
 		if (l->is_elnet) t[index] += l->lambda2 * l->scale2;
+
 		info = larsen_linalg_cholesky_insert (l->sizeA - 1, &l->chol, index, t);
 		free (t);
 

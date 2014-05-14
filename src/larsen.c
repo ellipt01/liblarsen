@@ -9,7 +9,7 @@
 #include <math.h>
 #include <larsen.h>
 
-#define MIN(a, b)		(((a) > (b)) ? (b) : (a))
+#define LARSEN_MIN(a, b)		(((a) > (b)) ? (b) : (a))
 
 /* active_set.c */
 extern bool	update_activeset (larsen *l);
@@ -106,7 +106,7 @@ static void
 update_stop_loop_flag (larsen *l)
 {
 	int		size = l->sizeA;
-	int		n = (l->is_elnet) ? l->p : MIN (l->n - 1, l->p);
+	int		n = (l->is_elnet) ? l->p : LARSEN_MIN (l->n - 1, l->p);
 	if (l->oper.action == ACTIVESET_ACTION_DROP) size--;
 	l->stop_loop = (size >= n) ? true : false;
 	if (!l->stop_loop) l->stop_loop = (l->oper.column_of_X == -1);

@@ -20,7 +20,7 @@ larsen_double_eps (void)
 	return dlamch_ (&cmach);
 }
 
-void
+static void
 larsen_array_set_all (const size_t size, double *x, double val)
 {
 	int		i;
