@@ -115,18 +115,30 @@ update_stop_loop_flag (larsen *l)
 
 /* Progress one step of the LARS-EN algorithm
  * add / remove one variable (assigned by l->oper.column)
- * to / from the active set.
+ * to / from the active set and update equiangular vector, stepsize,
+ * and solution vectors. Also, stop_loop flag is modified.
  *
- * 1. Update correlation between residualrelevants (y - mu) and variables (X').
- *    In the case of A = {} (first iteration or restart), a variable
- *    which has largest correlation is selected (l->column is set to its index in X).
+ * 1. Update correlation between residual (y - mu) and variables (X').
+ *    In the case of A = {} (on first iteration or restarted), a variable
+ *    which has largest correlation is selected as the active set item
+ *    (l->oper.column_of_X is set to its index in X).
  *
- * 2. Add / remove one variable assigned by l->oper.column to / from the active set.
+ * 2. Add / remove one variable assigned by l->oper.column_of_X to / from the active set.
+ *    When l->oper.action == ACTIVESET_ACTION_ADD (add a new item to active set),
+ *    the value of l->oper.column_of_X is stored in l->A[l->oper.index_of_A]
+ *    and when l->oper.action == ACTIVESET_ACTION_DROP (remove a item from active set)
+ *    l->A[l->oper.index_of_A] ( == l->oper.column_of_X) is removed.
  *
  * 3. Update equi-angular vector and its relevant.
  *
  * 4. Update step size and l->oper (which specify the next operation to the active set).
  *    l->oper.action is updated according to whether gamma_hat < gamma_tilde or not.
+ *    Case gamma_tilde < gamma_hat:
+ *      l->oper.index_of_A  = argminplus_i ( gamma_tilde( A(i) ) )
+ *      l->oper.column_of_X = argminplus_j ( gamma_tilde( X(j) ) )
+ *    Case gamma_tilde > gamma_hat:
+ *      l->oper.index_of_A  = argminplus_i ( gamma_hat( Ac(i) ) )
+ *      l->oper.column_of_X = argminplus_j ( gamma_hat( X (j) ) )
  *
  * 5. Update solutions (beta and mu).
  *
