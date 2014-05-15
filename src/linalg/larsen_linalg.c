@@ -15,6 +15,7 @@ const int		ione  =  1;
 const double	dzero =  0.;
 const double	dmone = -1.;
 
+/* print an error message and exit */
 void
 larsen_linalg_error (const char * function_name, const char *error_msg)
 {
@@ -22,6 +23,14 @@ larsen_linalg_error (const char * function_name, const char *error_msg)
 	exit (1);
 }
 
+/* Reallocate *a and add new rows / columns to the end of a matrix.
+ * New rows / columns are not initialized.
+ * m	:	number of rows of matrix *a
+ * n	:	number of columns of matrix *a
+ * **a	:	matrix (pointer of m x n array)
+ * dm	:	number of rows which will be added (> 0)
+ * dn	:	number of columns which will be added (> 0)
+ */
 void
 matrix_add_rowcols (const size_t m, const size_t n, double **a, const size_t dm, const size_t dn)
 {
@@ -45,6 +54,13 @@ matrix_add_rowcols (const size_t m, const size_t n, double **a, const size_t dm,
 	return;
 }
 
+/* Remove rows / columns from the end of a matrix and reallocate *a
+ * m	:	number of rows of matrix *a
+ * n	:	number of columns of matrix *a
+ * **a	:	matrix (pointer of m x n array)
+ * dm	:	number of rows which will be removed (0 < dm <= m)
+ * dn	:	number of columns which will removed (0 < dn <= n)
+ */
 void
 matrix_remove_rowcols (const size_t m, const size_t n, double **a, const size_t dm, const size_t dn)
 {

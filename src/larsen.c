@@ -30,7 +30,7 @@ larsen_awpy (larsen *l, double alpha, double *w, double *y)
 	return;
 }
 
-/* correlation between residual (y - X * beta) and predictors X' */
+/* Calculate correlation between residual (y - X * beta) and predictors X' */
 static void
 update_correlations (larsen *l)
 {
@@ -53,7 +53,7 @@ update_correlations (larsen *l)
 	free (r);
 
 	{
-		int		maxidx = idamax_ (CINTP (l->p), l->c, &ione) - 1;
+		int		maxidx = idamax_ (CINTP (l->p), l->c, &ione) - 1;	// differ of fortran and C
 		if (l->sizeA == 0) {
 			l->oper.index_of_A = 0;
 			l->oper.column_of_X = maxidx;
@@ -64,7 +64,7 @@ update_correlations (larsen *l)
 	return;
 }
 
-/* update beta and mu. beta += stepsize * w, mu += stepsze * u */
+/* Update beta and mu. beta += stepsize * w, mu += stepsze * u */
 static void
 update_solutions (larsen *l)
 {

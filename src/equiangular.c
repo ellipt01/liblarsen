@@ -40,24 +40,24 @@ check_info (const char *func_name, const int info)
 	return is_valid;
 }
 
-/* y = alpha * XA * z */
+/* y = alpha * X(A) * z(A) */
 static double *
 xa_dot_y (larsen *l, double alpha, double *z)
 {
 	int		j;
 	double	*y = (double *) malloc (l->n * sizeof (double));
 	double	*zp = (double *) malloc (l->p * sizeof (double));
-	/* zp(j) = z(j), j in A, els = 0, j not in A */
+	/* zp(j) = z(j) for j in A, else = 0 for j not in A */
 	for (j = 0; j < l->p; j++) zp[j] = 0.;
 	for (j = 0; j < l->sizeA; j++) zp[l->A[j]] = z[j];
-	/* y = X * zp = X(A, :) * z */
+	/* y = X * zp = X(:, A) * z(A) + X(:, Ac) * 0 */
 	dgemv_ ("N", CINTP (l->n), CINTP (l->p), &alpha, l->x, CINTP (l->n), zp, &ione, &dzero, y, &ione);
 	free (zp);
 
 	return y;
 }
 
-/* y = alpha * X(A)' * z */
+/* y = alpha * X(A)' * z(A) */
 static double *
 xa_transpose_dot_y (larsen *l, const double alpha, const double *z)
 {

@@ -85,9 +85,10 @@ check_stepsize (const double stepsize)
 	return (0 < stepsize && stepsize != LARSEN_POSINF);
 }
 
-/*
- * if gamma_hat > gamma_tilde, add a new variable to the active set
- * else remove a variable from the active set
+/* Update stepsize and activeset operation l->oper.
+ * If gamma_hat > gamma_tilde, the activeset operation on the next
+ * step is add a new variable to the active set, else remove a
+ * variable from the active set
  */
 bool
 update_stepsize (larsen *l)

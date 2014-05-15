@@ -68,6 +68,7 @@ activeset_remove (larsen *l, int index, int item)
 	return true;
 }
 
+/* Return (a > b) : 1, (a == b) : 1, (a < b) : -1 */
 static int
 compare (const void *_a, const void *_b)
 {
@@ -77,6 +78,7 @@ compare (const void *_a, const void *_b)
 	return (a > b) ? 1 : -1;
 }
 
+/* sort A in ascend */
 static void
 sort_A (size_t size, int *A)
 {
@@ -112,19 +114,29 @@ check_action (ActiveSetAction action)
 }
 
 static bool
-check_index (int index)
+check_index (const size_t p, const int index)
 {
-	return (0 <= index);
+	return (0 <= index && index < p);
 }
 
-/* update active set: add / remove a variable */
+/* update active set: add / remove a variable
+ *
+ * 	j = l->oper.index_of_A
+ * 	k = l->oper.column_of_X
+ *
+ * If l->oper.action == ACTIVESET_ACTION_ADD,
+ * 		A -> A[j] = k, A[j+1:end+1] = A[j:end]
+ * 		(in this case, j == l->sizeA)
+ * 	else if l->oper.action == ACTIVESET_ACTION_DROP,
+ * 		A -> A[j:end-1] = A[j+1:end]
+ */
 bool
 update_activeset (larsen *l)
 {
 	bool	status = false;
 	if (!check_action (l->oper.action)) return false;
-	if (!check_index (l->oper.column_of_X)) return false;
-	if (!check_index (l->oper.index_of_A)) return false;
+	if (!check_index (l->p, l->oper.column_of_X)) return false;
+	if (!check_index (l->p, l->oper.index_of_A)) return false;
 
 	if (l->oper.action == ACTIVESET_ACTION_ADD)
 		status = activeset_add (l, l->oper.index_of_A, l->oper.column_of_X);

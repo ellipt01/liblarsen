@@ -10,7 +10,7 @@
 
 #include "larsen_private.h"
 
-/* centering each column of matrix:
+/* Centering each column of matrix:
  * x(:, j) -> x(:, j) - mean(x(:, j)) */
 double *
 larsen_centering (const size_t size1, const size_t size2, double *x)
@@ -27,7 +27,7 @@ larsen_centering (const size_t size1, const size_t size2, double *x)
 	return mean;
 }
 
-/* normalizing each column of matrix:
+/* Normalizing each column of matrix:
  * x(:, j) -> x(:, j) / norm(x(:, j)) */
 double *
 larsen_normalizing (const size_t size1, const size_t size2, double *x)

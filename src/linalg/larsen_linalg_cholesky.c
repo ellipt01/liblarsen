@@ -12,6 +12,7 @@ extern void	larsen_linalg_error (const char * function_name, const char *error_m
 extern void	matrix_add_rowcols (const size_t m, const size_t n, double **a, const size_t dm, const size_t dn);
 extern void	matrix_remove_rowcols (const size_t m, const size_t n, double **a, const size_t dm, const size_t dn);
 
+/* Solve a system of linear equations: L'*L * x = b, where L is a Cholesky factrization. */
 int
 larsen_linalg_cholesky_svx (const size_t size, double *l, const size_t lda, double *b)
 {
@@ -33,6 +34,8 @@ larsen_linalg_cholesky_svx (const size_t size, double *l, const size_t lda, doub
 	return info;
 }
 
+/* cholinsert: update L -> L1, where L' * L = A and
+ * L1' * L1 = [A, u(1:n-1); u(1:n-1)', u(n)] */
 int
 larsen_linalg_cholesky_insert (const size_t size, double **r, const int index, double *u)
 {
@@ -57,6 +60,11 @@ larsen_linalg_cholesky_insert (const size_t size, double **r, const int index, d
 	return info;
 }
 
+/* choldelete: update L -> L1, where
+ * L1'*L1 = [
+ * 		A(1:index-1,1:index-1),   A(1:index-1,index+1:end);
+ * 		A(index+1:end,1:index-1), A(index+1:end, index+1:end)
+ * ] */
 void
 larsen_linalg_cholesky_delete (const size_t size, double **r, const int index)
 {
