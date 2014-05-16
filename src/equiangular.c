@@ -154,9 +154,23 @@ update_equiangular_larsen_cholesky (larsen *l)
 
 	l->absA = 1. / sqrt (ddot_ (CINTP (l->sizeA), s, &ione, l->w, &ione));
 	free (s);
+
+	/* w = (ZA' * ZA)^-1 * s(A) * absA */
 	dscal_ (CINTP (l->sizeA), &l->absA, l->w, &ione);
 
-	/* u = scale * XA * w */
+	/* In exactlly
+	 *
+	 *     uA = ZA * w = scale * [XA * w; sqrt(lambda2) * w],
+	 *     dim(uA) = n + sizeA.
+	 *
+	 * But in this program, to surve memory, only first n part of uA is stored
+	 *
+	 *     u = scale * XA * w,
+	 *     dim(u) = n,
+	 *
+	 * because the later part of uA ( scale * sqrt(lambda2) * w ) is not appear
+	 * in the positive on the LARS-EN algorithm.
+	 */
 	if (l->u) free (l->u);
 	l->u = xa_dot_y (l, l->scale, l->w);
 
