@@ -46,7 +46,7 @@ update_correlations (larsen *l)
 	if (l->c) free (l->c);
 	l->c = (double *) malloc (l->p * sizeof (double));
 	dgemv_ ("T", CINTP (l->n), CINTP (l->p), &l->scale, l->x, CINTP (l->n), r, &ione, &dzero, l->c, &ione);
-	if (l->is_elnet) {
+	if (!l->is_lasso) {
 		double	alpha = - l->lambda2 * l->scale2;
 		daxpy_ (CINTP (l->p), &alpha, l->beta, &ione, l->c, &ione);
 	}
@@ -107,7 +107,7 @@ static void
 update_stop_loop_flag (larsen *l)
 {
 	int		size = l->sizeA;
-	int		n = (l->is_elnet) ? l->p : LARSEN_MIN (l->n - 1, l->p);
+	int		n = (!l->is_lasso) ? l->p : LARSEN_MIN (l->n - 1, l->p);
 	if (l->oper.action == ACTIVESET_ACTION_DROP) size--;
 	l->stop_loop = (size >= n) ? true : false;
 	if (!l->stop_loop) l->stop_loop = (l->oper.column_of_X == -1);
@@ -177,7 +177,7 @@ larsen_regression_step (larsen *l)
 bool
 larsen_interpolate (larsen *l)
 {
-	double	lambda1 = (l->is_elnet) ? l->scale * l->lambda1 : l->lambda1;	// scale * lambda1
+	double	lambda1 = (!l->is_lasso) ? l->scale * l->lambda1 : l->lambda1;	// scale * lambda1
 	double	nrm1_prev = dasum_ (CINTP (l->p), l->beta_prev, &ione);
 	double	nrm1 = dasum_ (CINTP (l->p), l->beta, &ione);
 	l->interp = false;

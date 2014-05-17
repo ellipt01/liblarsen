@@ -30,7 +30,7 @@ bool
 larsen_elasticnet (larsen *l, int maxiter)
 {
 	int		iter = 0;
-	double	lambda1 = (l->is_elnet) ? l->scale * l->lambda1 : l->lambda1;	// scale * lambda1
+	double	lambda1 = (l->is_lasso) ? l->lambda1 : l->scale * l->lambda1;	// scale * lambda1
 	double	nrm1 = dasum_ (CINTP (l->p), l->beta, &ione);
 
 	/* loop of elastic net regression */

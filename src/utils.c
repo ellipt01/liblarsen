@@ -58,9 +58,9 @@ larsen_alloc (const size_t n, const size_t p, const double *y, const double *x, 
 	l->x = x;
 	l->y = y;
 
-	l->is_elnet = (lambda2 > larsen_double_eps ());
-	l->scale2 = (l->is_elnet) ? 1. / (1. + lambda2) : 1.;
-	l->scale = (l->is_elnet) ? sqrt (l->scale2) : 1.;
+	l->is_lasso = (lambda2 > larsen_double_eps ()) ? false : true;
+	l->scale2 = (l->is_lasso) ? 1. : 1. / (1. + lambda2);
+	l->scale = (l->is_lasso) ? 1. : sqrt (l->scale2);
 
 	/* correlation */
 	l->sup_c = 0.;
@@ -136,7 +136,7 @@ double *
 larsen_copy_beta_elasticnet (const larsen *l)
 {
 	double	*beta = larsen_copy_beta_navie (l);
-	if (l->is_elnet) {
+	if (!l->is_lasso) {
 		double	alpha = 1. / l->scale;
 		dscal_ (CINTP (l->p), &alpha, beta, &ione);
 	}
@@ -158,7 +158,7 @@ double *
 larsen_copy_mu_elasticnet (const larsen *l)
 {
 	double	*mu = larsen_copy_mu_navie (l);
-	if (l->is_elnet) {
+	if (!l->is_lasso) {
 		double	alpha = 1. / l->scale2;
 		dscal_ (CINTP (l->n), &alpha, mu, &ione);
 	}

@@ -112,7 +112,7 @@ update_chol (larsen *l)
 		 * However in the case of elastic net, because X(j)' * X(j) = 1,
 		 * t[l->oper.index_of_A] = scale^2 + lambda2 * scale^2 = 1,
 		 * but in the case of adaptive elastic net, the above != 1 */
-		if (l->is_elnet) t[index] += l->lambda2 * l->scale2;
+		if (!l->is_lasso) t[index] += l->lambda2 * l->scale2;
 
 		info = larsen_linalg_cholesky_insert (l->sizeA - 1, &l->chol, index, t);
 		free (t);

@@ -28,7 +28,7 @@ calc_rss (const larsen *l)
 	dcopy_ (CINTP (l->n), l->y, &ione, r, &ione);
 	daxpy_ (CINTP (l->n), &dmone, mu, &ione, r, &ione);	// r = - mu + r
 	rss = pow (dnrm2_ (CINTP (l->n), r, &ione), 2.);
-	if (l->is_elnet) rss += l->lambda2 * pow (dnrm2_ (CINTP (l->p), beta, &ione), 2.);
+	if (!l->is_lasso) rss += l->lambda2 * pow (dnrm2_ (CINTP (l->p), beta, &ione), 2.);
 	free (r);
 	free (beta);
 	free (mu);
@@ -60,7 +60,7 @@ larsen_eval_bic (const larsen *l, double gamma)
 	double	df = calc_degree_of_freedom (l);
 	double	n = (double) l->n;
 	double	p = (double) l->p;
-	if (l->is_elnet) n += p;
+	if (!l->is_lasso) n += p;
 
 	return log (rss) + df * (log (n) + 2. * gamma * log (p)) / n;
 }
