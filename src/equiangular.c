@@ -10,7 +10,7 @@
 #include <math.h>
 #include <larsen.h>
 
-#include "larsen_private.h"
+#include "linsys_private.h"
 
 /* s = sign(c) */
 static double *
@@ -45,13 +45,13 @@ static double *
 xa_dot_y (larsen *l, double alpha, double *z)
 {
 	int		j;
-	double	*y = (double *) malloc (l->n * sizeof (double));
-	double	*zp = (double *) malloc (l->p * sizeof (double));
+	double	*y = (double *) malloc (l->sys->n * sizeof (double));
+	double	*zp = (double *) malloc (l->sys->p * sizeof (double));
 	/* zp(j) = z(j) for j in A, else = 0 for j not in A */
-	for (j = 0; j < l->p; j++) zp[j] = 0.;
+	for (j = 0; j < l->sys->p; j++) zp[j] = 0.;
 	for (j = 0; j < l->sizeA; j++) zp[l->A[j]] = z[j];
 	/* y = X * zp = X(:, A) * z(A) + X(:, Ac) * 0 */
-	dgemv_ ("N", CINTP (l->n), CINTP (l->p), &alpha, l->x, CINTP (l->n), zp, &ione, &dzero, y, &ione);
+	dgemv_ ("N", LINSYS_CINTP (l->sys->n), LINSYS_CINTP (l->sys->p), &alpha, l->sys->x, LINSYS_CINTP (l->sys->n), zp, &ione, &dzero, y, &ione);
 	free (zp);
 
 	return y;
@@ -75,9 +75,9 @@ xa_transpose_dot_y (larsen *l, const double alpha, const double *z)
 	 */
 	/* The following is faster when l->sizeA is not huge */
 	for (j = 0; j < l->sizeA; j++) {
-		const double	*xaj = l->x + LARSEN_INDEX_OF_MATRIX (0, l->A[j], l->n);
+		const double	*xaj = l->sys->x + LINSYS_INDEX_OF_MATRIX (0, l->A[j], l->sys->n);
 		/* y[j] = alpha * X(:, A[j])' * z */
-		y[j] = alpha * ddot_ (CINTP (l->n), xaj, &ione, z, &ione);
+		y[j] = alpha * ddot_ (LINSYS_CINTP (l->sys->n), xaj, &ione, z, &ione);
 	}
 	return y;
 }
@@ -93,7 +93,7 @@ update_chol (larsen *l)
 		/*** insert a predictor ***/
 		int				j = l->oper.column_of_X;
 		double			*t = (double *) malloc (l->sizeA * sizeof (double));
-		const double	*xj = l->x + LARSEN_INDEX_OF_MATRIX (0, j, l->n);
+		const double	*xj = l->sys->x + LINSYS_INDEX_OF_MATRIX (0, j, l->sys->n);
 
 		/* t = scale^2 * X(:,A)' * X(:,j) */
 		t = xa_transpose_dot_y (l, l->scale2, xj);
@@ -139,7 +139,7 @@ update_equiangular_larsen_cholesky (larsen *l)
 
 	if (l->w) free (l->w);
 	l->w = (double *) malloc (l->sizeA * sizeof (double));
-	dcopy_ (CINTP (l->sizeA), s, &ione, l->w, &ione);
+	dcopy_ (LINSYS_CINTP (l->sizeA), s, &ione, l->w, &ione);
 
 	/* cholesky update and solve equiangular equation
 	 * TODO: create new methods to solve equiangular equation (using QR, SVD etc.)
@@ -152,11 +152,11 @@ update_equiangular_larsen_cholesky (larsen *l)
 	if (!check_info ("cholesky_svx", info)) return false;
 	/* end */
 
-	l->absA = 1. / sqrt (ddot_ (CINTP (l->sizeA), s, &ione, l->w, &ione));
+	l->absA = 1. / sqrt (ddot_ (LINSYS_CINTP (l->sizeA), s, &ione, l->w, &ione));
 	free (s);
 
 	/* w = (ZA' * ZA)^-1 * s(A) * absA */
-	dscal_ (CINTP (l->sizeA), &l->absA, l->w, &ione);
+	dscal_ (LINSYS_CINTP (l->sizeA), &l->absA, l->w, &ione);
 
 	/* In exactlly
 	 *

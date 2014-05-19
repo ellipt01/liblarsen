@@ -13,9 +13,23 @@
 extern "C" {
 #endif
 
-#include <stddef.h>
-#include <stdbool.h>
-#include <larsen_linalg.h>
+#include <linsys.h>
+
+/* lapack */
+#ifdef HAVE_LAPACK_H
+#include <lapack.h>
+#else
+extern double	dlamch_ (const char *cmach);
+extern void	dpotrs_ (const char *uplo, const int *n, const int *nrhs, const double *a, const int *lda, double *b, const int *ldb, int *info);
+#endif
+
+/* qrupdate: choesky linsert/delete */
+#ifdef HAVE_QRUPDATE_H
+#include <qrupdate.h>
+#else
+extern void	dchinx_ (const int *n, double *R, const int *ldr, const int *j, const double *u, double *w, int *info);
+extern void	dchdex_ (const int *n, double *R, const int *ldr, const int *j, double *w);
+#endif
 
 typedef enum {
 	ACTIVESET_ACTION_NONE	= -1,
@@ -34,8 +48,8 @@ typedef struct s_larsen	larsen;
 
 struct s_larsen {
 
-	size_t					n;	// number of data
-	size_t					p;	// number of variables
+	/* linear system of regression equations */
+	const linsys			*sys;
 
 	/* if true, loop of lasso or elastic net regression is terminated */
 	bool					stop_loop;
@@ -52,9 +66,6 @@ struct s_larsen {
 	 * scale2 = l->scale^2 */
 	double					scale;
 	double					scale2;
-
-	const double			*y;		// data
-	const double			*x;		// variables
 
 	/* correlation */
 	double					sup_c;	// sup(abs(c))
@@ -92,8 +103,13 @@ struct s_larsen {
 
 };
 
+/* linalg.c */
+int			larsen_linalg_cholesky_svx (const size_t size, double *l, const size_t lda, double *b);
+int			larsen_linalg_cholesky_insert (const size_t n, double **r, const int index, double *u);
+void		larsen_linalg_cholesky_delete (const size_t size, double **r, const int index);
+
 /* util.c */
-larsen		*larsen_alloc (const size_t n, const size_t p, const double *y, const double *x, const double lambda1, const double lambda2);
+larsen		*larsen_alloc (const linsys *sys, const double lambda1, const double lambda2);
 void		larsen_free (larsen *l);
 double		*larsen_copy_beta_navie (const larsen *l);
 double		*larsen_copy_beta_elasticnet (const larsen *l);

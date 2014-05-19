@@ -10,7 +10,7 @@
 #include <math.h>
 #include <larsen.h>
 
-#include "larsen_private.h"
+#include "linsys_private.h"
 
 static double
 larsen_double_eps (void)
@@ -27,36 +27,27 @@ larsen_array_set_all (const size_t size, double *x, double val)
 }
 
 larsen *
-larsen_alloc (const size_t n, const size_t p, const double *y, const double *x, const double lambda1, const double lambda2)
+larsen_alloc (const linsys *sys, const double lambda1, const double lambda2)
 {
 	larsen	*l;
 
-	if (!y) {
-		fprintf (stderr, "ERROR: vector *y is empty.\n");
-		return NULL;
-	}
-	if (!x) {
-		fprintf (stderr, "ERROR: matrix *x is empty.\n");
-		return NULL;
-	}
+	if (!sys) linsys_error ("larsen_alloc", "linsys *sys is empty.");
 	if (lambda1 < 0 || lambda2 < 0) {
-		fprintf (stderr, "ERROR: lambda1(= %f), lambda2(= %f) must be >= 0.\n", lambda1, lambda2);
-		return NULL;
+		char	msg[80];
+		sprintf (msg, "ERROR: lambda1(= %f), lambda2(= %f) must be >= 0.", lambda1, lambda2);
+		linsys_error ("larsen_alloc", msg);
 	}
 
 	l = (larsen *) malloc (sizeof (larsen));
 
-	l->n = n;
-	l->p = p;
+	l->sys = sys;
+	if (!l->sys->y_centerdized) linsys_error ("larsen_alloc", "vector *y must be centerdized.");
+	if (!l->sys->x_centerdized || !l->sys->x_centerdized) linsys_error ("larsen_alloc", "matrix *x must be normalized.");
 
 	l->stop_loop = false;
 
 	l->lambda1 = lambda1;
 	l->lambda2 = lambda2;
-
-	/* vector and matrix view of original y and x */
-	l->x = x;
-	l->y = y;
 
 	l->is_lasso = (lambda2 > larsen_double_eps ()) ? false : true;
 	l->scale2 = (l->is_lasso) ? 1. : 1. / (1. + lambda2);
@@ -72,7 +63,7 @@ larsen_alloc (const size_t n, const size_t p, const double *y, const double *x, 
 	l->oper.column_of_X = -1;
 
 	l->sizeA = 0;
-	l->A = (int *) malloc (l->p * sizeof (int));
+	l->A = (int *) malloc (l->sys->p * sizeof (int));
 
 	/* active set */
 	l->absA = 0.;
@@ -80,20 +71,20 @@ larsen_alloc (const size_t n, const size_t p, const double *y, const double *x, 
 	l->w = NULL;
 
 	/* solution */
-	l->beta = (double *) malloc (l->p * sizeof (double));
-	larsen_array_set_all (l->p, l->beta, 0.);
-	l->mu = (double *) malloc (l->n * sizeof (double));
-	larsen_array_set_all (l->n, l->mu, 0.);
+	l->beta = (double *) malloc (l->sys->p * sizeof (double));
+	larsen_array_set_all (l->sys->p, l->beta, 0.);
+	l->mu = (double *) malloc (l->sys->n * sizeof (double));
+	larsen_array_set_all (l->sys->n, l->mu, 0.);
 
 	/* backup of solution */
-	l->beta_prev = (double *) malloc (l->p * sizeof (double));
-	l->mu_prev = (double *) malloc (l->n * sizeof (double));
+	l->beta_prev = (double *) malloc (l->sys->p * sizeof (double));
+	l->mu_prev = (double *) malloc (l->sys->n * sizeof (double));
 
 	/* interpolation */
 	l->interp = false;
 	l->stepsize_intr = 0.;
-	l->beta_intr = (double *) malloc (l->p * sizeof (double));
-	l->mu_intr = (double *) malloc (l->n * sizeof (double));
+	l->beta_intr = (double *) malloc (l->sys->p * sizeof (double));
+	l->mu_intr = (double *) malloc (l->sys->n * sizeof (double));
 
 	/* cholesky factorization */
 	l->chol = NULL;
@@ -125,9 +116,9 @@ larsen_free (larsen *l)
 double *
 larsen_copy_beta_navie (const larsen *l)
 {
-	double	*beta = (double *) malloc (l->p * sizeof (double));
-	if (!l->interp) dcopy_ (CINTP (l->p), l->beta, &ione, beta, &ione);
-	else dcopy_ (CINTP (l->p), l->beta_intr, &ione, beta, &ione);
+	double	*beta = (double *) malloc (l->sys->p * sizeof (double));
+	if (!l->interp) dcopy_ (LINSYS_CINTP (l->sys->p), l->beta, &ione, beta, &ione);
+	else dcopy_ (LINSYS_CINTP (l->sys->p), l->beta_intr, &ione, beta, &ione);
 	return beta;
 }
 
@@ -138,7 +129,7 @@ larsen_copy_beta_elasticnet (const larsen *l)
 	double	*beta = larsen_copy_beta_navie (l);
 	if (!l->is_lasso) {
 		double	alpha = 1. / l->scale;
-		dscal_ (CINTP (l->p), &alpha, beta, &ione);
+		dscal_ (LINSYS_CINTP (l->sys->p), &alpha, beta, &ione);
 	}
 	return beta;
 }
@@ -147,9 +138,9 @@ larsen_copy_beta_elasticnet (const larsen *l)
 double *
 larsen_copy_mu_navie (const larsen *l)
 {
-	double	*mu = (double *) malloc (l->n * sizeof (double));
-	if (!l->interp) dcopy_ (CINTP (l->n), l->mu, &ione, mu, &ione);
-	else dcopy_ (CINTP (l->n), l->mu_intr, &ione, mu, &ione);
+	double	*mu = (double *) malloc (l->sys->n * sizeof (double));
+	if (!l->interp) dcopy_ (LINSYS_CINTP (l->sys->n), l->mu, &ione, mu, &ione);
+	else dcopy_ (LINSYS_CINTP (l->sys->n), l->mu_intr, &ione, mu, &ione);
 	return mu;
 }
 
@@ -160,7 +151,7 @@ larsen_copy_mu_elasticnet (const larsen *l)
 	double	*mu = larsen_copy_mu_navie (l);
 	if (!l->is_lasso) {
 		double	alpha = 1. / l->scale2;
-		dscal_ (CINTP (l->n), &alpha, mu, &ione);
+		dscal_ (LINSYS_CINTP (l->sys->n), &alpha, mu, &ione);
 	}
 	return mu;
 }

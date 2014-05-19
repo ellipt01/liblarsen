@@ -9,7 +9,7 @@
 #define TEST_LARSEN_H_
 
 #include <stdio.h>
-#include "larsen_private.h"
+#include "linsys_private.h"
 
 extern const double	done;
 

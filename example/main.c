@@ -124,19 +124,26 @@ main (int argc, char **argv)
 	double		*y;
 	double		*x;
 
+	linsys		*sys;
+	double		*meany;
+	double		*meanx;
+	double		*normx;
+
 	if (!read_params (argc, argv)) usage (argv[0]);
 	fprintf_params ();
 
 	read_data (fn, skipheaders, &n, &p, &y, &x);
 
-	larsen_centering (n, 1, y);
-	larsen_centering (n, p, x);
-	larsen_normalizing (n, p, x);
-
-	example_elasticnet (n, p, x, y, start, dt, stop, lambda2, gamma_bic, maxiter);
-
+	meany = linsys_centering (n, 1, y);
+	meanx = linsys_centering (n, p, x);
+	normx = linsys_normalizing (n, p, x);
+	sys = linsys_alloc (n, p, y, x, meany, meanx, normx);
 	free (y);
 	free (x);
+
+	example_elasticnet (sys, start, dt, stop, lambda2, gamma_bic, maxiter);
+
+	linsys_free (sys);
 
 	return EXIT_SUCCESS;
 }

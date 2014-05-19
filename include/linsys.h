@@ -1,5 +1,5 @@
 /*
- * larsen_linalg.h
+ * linsys.h
  *
  *  Wrapper of lapack and qrupdate
  *
@@ -7,15 +7,18 @@
  *      Author: utsugi
  */
 
-#ifndef LARSEN_LINALG_H_
-#define LARSEN_LINALG_H_
+#ifndef LINSYS_H_
+#define LINSYS_H_
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#ifndef LARSEN_INDEX_OF_MATRIX
-#define LARSEN_INDEX_OF_MATRIX(i, j, lda) ((i) + (j) * (lda))
+#include <stddef.h>
+#include <stdbool.h>
+
+#ifndef LINSYS_INDEX_OF_MATRIX
+#define LINSYS_INDEX_OF_MATRIX(i, j, lda) ((i) + (j) * (lda))
 #endif
 
 /* blas */
@@ -35,28 +38,34 @@ extern void	dgemv_ (const char *trans, const int *m, const int *n, const double 
 			const double *x, const int *incx, const double *beta, double *y, const int *incy);
 #endif
 
-/* lapack */
-#ifdef HAVE_LAPACK_H
-#include <lapack.h>
-#else
-extern double	dlamch_ (const char *cmach);
-extern void	dpotrs_ (const char *uplo, const int *n, const int *nrhs, const double *a, const int *lda, double *b, const int *ldb, int *info);
-#endif
+typedef struct s_linsys	linsys;
 
-/* qrupdate: choesky linsert/delete */
-#ifdef HAVE_QRUPDATE_H
-#include <qrupdate.h>
-#else
-extern void	dchinx_ (const int *n, double *R, const int *ldr, const int *j, const double *u, double *w, int *info);
-extern void	dchdex_ (const int *n, double *R, const int *ldr, const int *j, double *w);
-#endif
+/* structure for linear system of regression equations */
+struct s_linsys {
+	size_t		n;	// number of data
+	size_t		p;	// number of variables
 
-int		larsen_linalg_cholesky_svx (const size_t size, double *l, const size_t lda, double *b);
-int		larsen_linalg_cholesky_insert (const size_t n, double **r, const int index, double *u);
-void	larsen_linalg_cholesky_delete (const size_t size, double **r, const int index);
+	bool		y_centerdized;
+	bool		x_centerdized;
+	bool		x_normalized;
+
+	double		*y;		// data
+	double		*x;		// variables
+
+	double		*meany;
+	double		*meanx;
+	double		*normx;
+
+};
+
+/* linsys.c */
+linsys		*linsys_alloc (const size_t n, const size_t p, const double *y, const double *x, const double *meany, const double *meanx, const double *normx);
+void		linsys_free (linsys *l);
+double		*linsys_centering (const size_t size1, const size_t size2, double *x);
+double		*linsys_normalizing (const size_t size1, const size_t size2, double *x);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* LARSEN_LINALG_H_ */
+#endif /* LINSYS_H_ */
