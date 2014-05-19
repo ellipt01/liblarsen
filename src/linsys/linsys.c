@@ -13,6 +13,7 @@
 
 const int		ione  =  1;
 const double	dzero =  0.;
+const double	done  =  1.;
 const double	dmone = -1.;
 
 /* print an error message and exit */
@@ -68,6 +69,8 @@ linsys_alloc (const size_t n, const size_t p, const double *y, const double *x, 
 	}
 	ls->x_normalized = (ls->normx != NULL);
 
+	ls->pen = NULL;
+
 	return ls;
 }
 
@@ -119,4 +122,34 @@ linsys_normalizing (const size_t size1, const size_t size2, double *x)
 		dscal_ (LINSYS_CINTP (size1), &alpha, xj, &ione);
 	}
 	return nrm;
+}
+
+penalty *
+penalty_alloc (const size_t p1, const size_t p, const double a, const double b, const double *r)
+{
+	penalty	*pen = (penalty *) malloc (sizeof (penalty));
+	size_t		t = p1 * p;
+	pen->p1 = p1;
+	pen->a = a;
+	pen->b = b;
+	pen->r = (double *) malloc (t * sizeof (double));
+	dcopy_ (LINSYS_CINTP (t), r, &ione, pen->r, &ione);
+	return pen;
+}
+
+void
+penalty_free (penalty *pen)
+{
+	if (pen) {
+		if (pen->r) free (pen->r);
+		free (pen);
+	}
+	return;
+}
+
+void
+linsys_set_penalty (linsys *ls, const penalty *pen)
+{
+	ls->pen = pen;
+	return;
 }

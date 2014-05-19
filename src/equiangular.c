@@ -12,6 +12,9 @@
 
 #include "linsys_private.h"
 
+extern double	*larsen_xa_dot_ya (larsen *l, const size_t n, double alpha, const double *x, const double *ya);
+extern double	*larsen_xa_transpose_dot_y (larsen *l, const size_t n, const double alpha, const double *x, const double *y);
+
 /* s = sign(c) */
 static double *
 update_sign (larsen *l)
@@ -40,48 +43,6 @@ check_info (const char *func_name, const int info)
 	return is_valid;
 }
 
-/* y = alpha * X(A) * z(A) */
-static double *
-xa_dot_y (larsen *l, double alpha, double *z)
-{
-	int		j;
-	double	*y = (double *) malloc (l->sys->n * sizeof (double));
-	double	*zp = (double *) malloc (l->sys->p * sizeof (double));
-	/* zp(j) = z(j) for j in A, else = 0 for j not in A */
-	for (j = 0; j < l->sys->p; j++) zp[j] = 0.;
-	for (j = 0; j < l->sizeA; j++) zp[l->A[j]] = z[j];
-	/* y = X * zp = X(:, A) * z(A) + X(:, Ac) * 0 */
-	dgemv_ ("N", LINSYS_CINTP (l->sys->n), LINSYS_CINTP (l->sys->p), &alpha, l->sys->x, LINSYS_CINTP (l->sys->n), zp, &ione, &dzero, y, &ione);
-	free (zp);
-
-	return y;
-}
-
-/* y = alpha * X(A)' * z(A) */
-static double *
-xa_transpose_dot_y (larsen *l, const double alpha, const double *z)
-{
-	int		j;
-	double	*y = (double *) malloc (l->sizeA * sizeof (double));
-
-	/* eval X(A)^T * y */
-	/* another version with dgemv_
-	 *
-	 *   double	*yp = (double *) malloc (l->p * sizeof (double));
-	 *   dgemv_ ("T", CINTP (l->n), CINTP (l->p), &alpha, l->x, CINTP (l->n), z, &ione, &dzero, yp, &ione);
-	 *   for (j = 0; j < l->sizeA; j++) y[j] = yp[l->A[j]];
-	 *   free (yp);
-	 *
-	 */
-	/* The following is faster when l->sizeA is not huge */
-	for (j = 0; j < l->sizeA; j++) {
-		const double	*xaj = l->sys->x + LINSYS_INDEX_OF_MATRIX (0, l->A[j], l->sys->n);
-		/* y[j] = alpha * X(:, A[j])' * z */
-		y[j] = alpha * ddot_ (LINSYS_CINTP (l->sys->n), xaj, &ione, z, &ione);
-	}
-	return y;
-}
-
 /* do cholinsert / choldelete of specified index */
 static int
 update_chol (larsen *l)
@@ -94,25 +55,40 @@ update_chol (larsen *l)
 		int				j = l->oper.column_of_X;
 		double			*t = (double *) malloc (l->sizeA * sizeof (double));
 		const double	*xj = l->sys->x + LINSYS_INDEX_OF_MATRIX (0, j, l->sys->n);
+		double			alpha = l->lambda2 * l->scale2;
 
 		/* t = scale^2 * X(:,A)' * X(:,j) */
-		t = xa_transpose_dot_y (l, l->scale2, xj);
+		t = larsen_xa_transpose_dot_y (l, l->sys->n, l->scale2, l->sys->x, xj);
 
-		/* In the case of elasticnet (lambda2 > 0),
-		 * (now, A is already updated and j \in A)
-		 *
-		 * t = Z(A)' * Z(j)
-		 * = scale^2 * [X(A)', sqrt(lambda2) * E(A)'] * [X(j); sqrt(lambda2) * E(j)]
-		 * = scale^2 * X(A-j)' * X(j) (+ scale^2 * lambda2 * E(A-j) * E(j) = 0)
-		 *   + scale^2 * X(j)' * X(j)  + scale^2 * lambda2 * E(j)' * E(j)
-		 *
-		 * so,
-		 * t[l->oper.index_of_A] += scale^2 * lambda2
-		 *
-		 * However in the case of elastic net, because X(j)' * X(j) = 1,
-		 * t[l->oper.index_of_A] = scale^2 + lambda2 * scale^2 = 1,
-		 * but in the case of adaptive elastic net, the above != 1 */
-		if (!l->is_lasso) t[index] += l->lambda2 * l->scale2;
+		if (!l->is_lasso) {	// lambda2 > 0
+			/* Now, A is already updated and j \in A.
+			 *
+			 * t = Z(:,A)' * Z(:,j)
+			 * = scale^2 * [X(:,A)', sqrt(lambda2) * J(:,A)'] * [X(:,j); sqrt(lambda2) * J(:,j)]
+			 * = scale^2 * X(:,A)' * X(:,j) + scale^2 * lambda2 * J(:,A) * J(:,j) = 0)
+			 *
+			 * In the case of elastic net (J = E)
+			 * t = scale^2 * [X(:,A)', sqrt(lambda2) * E(:,A)'] * [X(:,j); sqrt(lambda2) * E(:,j)]
+			 * = scale^2 * X(:,A-1)' * X(:,j)
+			 *   scale^2 * X(:,j)' * X(:,j) + scale^2 * lambda2 * E(:,j) * E(:,j)
+			 * so,
+			 * t[l->oper.index_of_A] += scale^2 * lambda2
+			 * where, because X(:,j)' * X(:,j) = 1,
+			 * t[l->oper.index_of_A] = scale^2 + lambda2 * scale^2 = 1,
+			 * but in the case of adaptive elastic net, the above != 1 */
+			if (!l->sys->pen) {	// elastic net
+				t[index] += alpha;
+			} else {
+				/* t = scale^2 * X(:,A)' * X(:,j) + scale^2 * lambda2 * J(:,A)' * J(:,j) */
+				size_t			p1 = l->sys->pen->p1;
+				const double	*rj = l->sys->pen->r + LINSYS_INDEX_OF_MATRIX (0, j, p1);
+				/* rtrj = J(:,A)' * J(:,j) */
+				double			*rtrj = larsen_xa_transpose_dot_y (l, p1, 1., l->sys->pen->r, rj);
+				/* t += scale^2 * lambda2 * J(:,A)' * J(:,j) */
+				daxpy_ (LINSYS_CINTP (l->sizeA), &alpha, rtrj, &ione, t, &ione);
+				free (rtrj);
+			}
+		}
 
 		info = larsen_linalg_cholesky_insert (l->sizeA - 1, &l->chol, index, t);
 		free (t);
@@ -172,7 +148,7 @@ update_equiangular_larsen_cholesky (larsen *l)
 	 * in the positive on the LARS-EN algorithm.
 	 */
 	if (l->u) free (l->u);
-	l->u = xa_dot_y (l, l->scale, l->w);
+	l->u = larsen_xa_dot_ya (l, l->sys->n, l->scale, l->sys->x, l->w);
 
 	return true;
 }

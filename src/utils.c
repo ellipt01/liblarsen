@@ -52,8 +52,18 @@ larsen_alloc (const linsys *sys, const double lambda1, const double lambda2)
 	l->lambda2 = lambda2;
 
 	l->is_lasso = (lambda2 > larsen_double_eps ()) ? false : true;
-	l->scale2 = (l->is_lasso) ? 1. : 1. / (1. + lambda2);
-	l->scale = (l->is_lasso) ? 1. : sqrt (l->scale2);
+	if (l->is_lasso) {
+		l->scale = 1.;
+		l->scale2 = 1.;
+	} else {
+		if (l->sys->pen) {
+			l->scale2 = 1. / (l->sys->pen->a + l->sys->pen->b * lambda2);
+			l->scale  = sqrt (l->scale2);
+		} else {
+			l->scale2 = 1. / (1. + lambda2);
+			l->scale  = sqrt (l->scale2);
+		}
+	}
 
 	/* correlation */
 	l->sup_c = 0.;

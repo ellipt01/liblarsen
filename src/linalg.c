@@ -10,6 +10,60 @@
 
 #include "linsys_private.h"
 
+/* y(A) = alpha * w(A) + y(A) */
+void
+larsen_awpy (larsen *l, double alpha, double *w, double *y)
+{
+	int		i;
+	for (i = 0; i < l->sizeA; i++) {
+		int		j = l->A[i];
+		y[j] += alpha * w[i];
+	}
+	return;
+}
+
+/* z = alpha * X(A) * ya; ya_i = y(A(i)) */
+double *
+larsen_xa_dot_ya (larsen *l, const size_t n, double alpha, const double *x, const double *ya)
+{
+	int		j;
+	double	*z = (double *) malloc (n * sizeof (double));
+	double	*y = (double *) malloc (l->sys->p * sizeof (double));
+	/* y(j) = ya(j) for j in A, else = 0 for j not in A */
+	for (j = 0; j < l->sys->p; j++) y[j] = 0.;
+	for (j = 0; j < l->sizeA; j++) y[l->A[j]] = ya[j];
+	/* z = X * y = X(:, A) * z(A) + X(:, Ac) * 0 */
+	dgemv_ ("N", LINSYS_CINTP (n), LINSYS_CINTP (l->sys->p), &alpha, x, LINSYS_CINTP (n), y, &ione, &dzero, z, &ione);
+	free (y);
+
+	return z;
+}
+
+/* y = alpha * X(A)' * ya */
+double *
+larsen_xa_transpose_dot_y (larsen *l, const size_t n, const double alpha, const double *x, const double *y)
+{
+	int		j;
+	double	*z = (double *) malloc (l->sizeA * sizeof (double));
+
+	/* eval X(A)^T * y */
+	/* another version with dgemv_
+	 *
+	 *   double	*yp = (double *) malloc (l->p * sizeof (double));
+	 *   dgemv_ ("T", CINTP (l->n), CINTP (l->p), &alpha, l->x, CINTP (l->n), z, &ione, &dzero, yp, &ione);
+	 *   for (j = 0; j < l->sizeA; j++) y[j] = yp[l->A[j]];
+	 *   free (yp);
+	 *
+	 */
+	/* The following is faster when l->sizeA is not huge */
+	for (j = 0; j < l->sizeA; j++) {
+		const double	*xaj = x + LINSYS_INDEX_OF_MATRIX (0, l->A[j], n);
+		/* z[j] = alpha * X(:, A[j])' * y */
+		z[j] = alpha * ddot_ (LINSYS_CINTP (n), xaj, &ione, y, &ione);
+	}
+	return z;
+}
+
 /* Reallocate *a and add new rows / columns to the end of a matrix.
  * New rows / columns are not initialized.
  * m	:	number of rows of matrix *a

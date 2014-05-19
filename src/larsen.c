@@ -18,17 +18,7 @@ extern bool	update_stepsize (larsen *l);
 /* equiangular.c */
 extern bool	update_equiangular (larsen *l);
 
-/* y(A) = alpha * w(A) + y(A) */
-static void
-larsen_awpy (larsen *l, double alpha, double *w, double *y)
-{
-	int		i;
-	for (i = 0; i < l->sizeA; i++) {
-		int		j = l->A[i];
-		y[j] += alpha * w[i];
-	}
-	return;
-}
+extern void	larsen_awpy (larsen *l, double alpha, double *w, double *y);
 
 /* Calculate correlation between residual (y - X * beta) and predictors X' */
 static void
@@ -41,16 +31,34 @@ update_correlations (larsen *l)
 	/*
 	 *  c = Z' * (b - Z * beta),  b = [y; 0], Z = scale * [X; sqrt(lambda2) * E]
 	 *  if lambda2 > 0 (scale != 1),
-	 *  c = scale * ( X' * (y - mu) - scale * lambda2 * beta )
+	 *  c = scale * ( X' * (y - mu) - scale * lambda2 * J' * J * beta )
 	 */
 	if (l->c) free (l->c);
 	l->c = (double *) malloc (l->sys->p * sizeof (double));
 	dgemv_ ("T", LINSYS_CINTP (l->sys->n), LINSYS_CINTP (l->sys->p), &l->scale, l->sys->x, LINSYS_CINTP (l->sys->n), r, &ione, &dzero, l->c, &ione);
-	if (!l->is_lasso) {
-		double	alpha = - l->lambda2 * l->scale2;
-		daxpy_ (LINSYS_CINTP (l->sys->p), &alpha, l->beta, &ione, l->c, &ione);
-	}
 	free (r);
+	if (!l->is_lasso) {	// lambda2 > 0
+		double	alpha = - l->lambda2 * l->scale2;
+		if (!l->sys->pen) {	// elastic net
+			/* c -= scale2 * lambda2 * beta */
+			daxpy_ (LINSYS_CINTP (l->sys->p), &alpha, l->beta, &ione, l->c, &ione);
+		} else {
+			int		m = (int) l->sys->pen->p1;
+			int		n = (int) l->sys->p;
+			double	*rb = (double *) malloc (l->sys->pen->p1 * sizeof (double));
+			double	*rtrb = (double *) malloc (l->sys->p * sizeof (double));
+
+			/* c -= scale2 * lambda2 * J' * J * beta */
+			/* jb = J * beta */
+			dgemv_ ("N", &m, &n, &done, l->sys->pen->r, &m, l->beta, &ione, &dzero, rb, &ione);
+			/* e = J' * J * beta */
+			dgemv_ ("T", &m, &n, &done, l->sys->pen->r, &m, rb, &ione, &dzero, rtrb, &ione);
+			free (rb);
+			daxpy_ (&n, &alpha, rtrb, &ione, l->c, &ione);
+			free (rtrb);
+		}
+
+	}
 
 	{
 		int		maxidx = idamax_ (LINSYS_CINTP (l->sys->p), l->c, &ione) - 1;	// differ of fortran and C
