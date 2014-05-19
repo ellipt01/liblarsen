@@ -41,7 +41,7 @@ update_correlations (larsen *l)
 	/*
 	 *  c = Z' * (b - Z * beta),  b = [y; 0], Z = scale * [X; sqrt(lambda2) * E]
 	 *  if lambda2 > 0 (scale != 1),
-	 *  c = scale * (X' * (y - mu) - scale * lambda2 * beta)
+	 *  c = scale * ( X' * (y - mu) - scale * lambda2 * beta )
 	 */
 	if (l->c) free (l->c);
 	l->c = (double *) malloc (l->p * sizeof (double));

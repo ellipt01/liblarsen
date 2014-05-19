@@ -48,7 +48,7 @@ struct s_larsen {
 	/* true: elastic net, false: lasso */
 	bool					is_lasso;
 
-	/* scale  = (is_elnet) ? 1 / sqrt(1 + lambda2) : 1
+	/* scale  = (is_lasso) ? 1 : 1 / sqrt(1 + lambda2)
 	 * scale2 = l->scale^2 */
 	double					scale;
 	double					scale2;

@@ -27,7 +27,7 @@ calc_gamma_hat (larsen *l, int *index, int *column, double *val)
 		int			i;		double		*a = (double *) malloc (l->p * sizeof (double));
 		/* a = scale * X' * u */
 		dgemv_ ("T", CINTP (l->n), CINTP (l->p), &l->scale, l->x, CINTP (l->n), l->u, &ione, &dzero, a, &ione);
-		/* If l->is_elnet == true, a(A) must be a(A) += l->lambda2 * l->scale^2 * w.
+		/* If !l->is_lasso, a(A) must be a(A) += l->lambda2 * l->scale^2 * w.
 		 * But for the estimation of gamma_hat, a(A) are not referred. */
 		for (i = 0; i < l->p - l->sizeA; i++) {
 			int		j = Ac[i];
