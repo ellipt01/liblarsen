@@ -54,11 +54,13 @@ update_chol (larsen *l)
 		/*** insert a predictor ***/
 		int				j = l->oper.column_of_X;
 		double			*t = (double *) malloc (l->sizeA * sizeof (double));
-		const double	*xj = l->sys->x + LINSYS_INDEX_OF_MATRIX (0, j, l->sys->n);
+		size_t			n = l->lsys->n;
+		const double	*x = l->lsys->x;
+		const double	*xj = x + LINSYS_INDEX_OF_MATRIX (0, j, n);
 		double			alpha = l->lambda2 * l->scale2;
 
 		/* t = scale^2 * X(:,A)' * X(:,j) */
-		t = larsen_xa_transpose_dot_y (l, l->sys->n, l->scale2, l->sys->x, xj);
+		t = larsen_xa_transpose_dot_y (l, n, l->scale2, x, xj);
 
 		if (!l->is_lasso) {	// lambda2 > 0
 			/* Now, A is already updated and j \in A.
@@ -76,14 +78,15 @@ update_chol (larsen *l)
 			 * where, because X(:,j)' * X(:,j) = 1,
 			 * t[l->oper.index_of_A] = scale^2 + lambda2 * scale^2 = 1,
 			 * but in the case of adaptive elastic net, the above != 1 */
-			if (!l->sys->pen) {	// elastic net
+			if (!l->lsys->pen) {	// elastic net
 				t[index] += alpha;
 			} else {
 				/* t = scale^2 * X(:,A)' * X(:,j) + scale^2 * lambda2 * J(:,A)' * J(:,j) */
-				size_t			p1 = l->sys->pen->p1;
-				const double	*rj = l->sys->pen->r + LINSYS_INDEX_OF_MATRIX (0, j, p1);
+				size_t			p1 = l->lsys->pen->p1;
+				const double	*r = l->lsys->pen->r;
+				const double	*rj = r + LINSYS_INDEX_OF_MATRIX (0, j, p1);
 				/* rtrj = J(:,A)' * J(:,j) */
-				double			*rtrj = larsen_xa_transpose_dot_y (l, p1, 1., l->sys->pen->r, rj);
+				double			*rtrj = larsen_xa_transpose_dot_y (l, p1, 1., r, rj);
 				/* t += scale^2 * lambda2 * J(:,A)' * J(:,j) */
 				daxpy_ (LINSYS_CINTP (l->sizeA), &alpha, rtrj, &ione, t, &ione);
 				free (rtrj);
@@ -148,7 +151,7 @@ update_equiangular_larsen_cholesky (larsen *l)
 	 * in the positive on the LARS-EN algorithm.
 	 */
 	if (l->u) free (l->u);
-	l->u = larsen_xa_dot_ya (l, l->sys->n, l->scale, l->sys->x, l->w);
+	l->u = larsen_xa_dot_ya (l, l->lsys->n, l->scale, l->lsys->x, l->w);
 
 	return true;
 }

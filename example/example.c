@@ -89,7 +89,7 @@ output_solutionpath (int iter, larsen *l)
 	FILE		*fp;
 	double		*beta = larsen_copy_beta_elasticnet (l);
 
-	for (i = 0; i < l->sys->p; i++) {
+	for (i = 0; i < l->lsys->p; i++) {
 
 		sprintf (fn, "beta%03d.res", i);
 
@@ -111,7 +111,7 @@ fprintf_beta (FILE *stream, int iter, larsen *l)
 	double	*beta = larsen_copy_beta_elasticnet (l);
 
 	fprintf (stream, "beta[%04d, t = %.2f] = \n", iter, l->lambda1);
-	for (i = 0; i < l->sys->p; i++) fprintf (stream, "%.4e\n", beta[i]);
+	for (i = 0; i < l->lsys->p; i++) fprintf (stream, "%.4e\n", beta[i]);
 	fprintf (stream, "]\n");
 	free (beta);
 

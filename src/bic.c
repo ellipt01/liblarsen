@@ -22,13 +22,13 @@ static double
 calc_rss (const larsen *l)
 {
 	double		rss;
-	double		*r = (double *) malloc (l->sys->n * sizeof (double));
+	double		*r = (double *) malloc (l->lsys->n * sizeof (double));
 	double		*beta = larsen_copy_beta_elasticnet (l);	// scale * beta
 	double		*mu = larsen_copy_mu_elasticnet (l);		// scale^2 * mu
-	dcopy_ (LINSYS_CINTP (l->sys->n), l->sys->y, &ione, r, &ione);
-	daxpy_ (LINSYS_CINTP (l->sys->n), &dmone, mu, &ione, r, &ione);	// r = - mu + r
-	rss = pow (dnrm2_ (LINSYS_CINTP (l->sys->n), r, &ione), 2.);
-	if (!l->is_lasso) rss += l->lambda2 * pow (dnrm2_ (LINSYS_CINTP (l->sys->p), beta, &ione), 2.);
+	dcopy_ (LINSYS_CINTP (l->lsys->n), l->lsys->y, &ione, r, &ione);
+	daxpy_ (LINSYS_CINTP (l->lsys->n), &dmone, mu, &ione, r, &ione);	// r = - mu + r
+	rss = pow (dnrm2_ (LINSYS_CINTP (l->lsys->n), r, &ione), 2.);
+	if (!l->is_lasso) rss += l->lambda2 * pow (dnrm2_ (LINSYS_CINTP (l->lsys->p), beta, &ione), 2.);
 	free (r);
 	free (beta);
 	free (mu);
@@ -58,8 +58,8 @@ larsen_eval_bic (const larsen *l, double gamma)
 {
 	double	rss = calc_rss (l);
 	double	df = calc_degree_of_freedom (l);
-	double	n = (double) l->sys->n;
-	double	p = (double) l->sys->p;
+	double	n = (double) l->lsys->n;
+	double	p = (double) l->lsys->p;
 	if (!l->is_lasso) n += p;
 
 	return log (rss) + df * (log (n) + 2. * gamma * log (p)) / n;

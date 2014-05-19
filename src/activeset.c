@@ -46,7 +46,7 @@ remove_item (size_t size, int *v, int index)
 static bool
 activeset_add (larsen *l, int index, int item)
 {
-	if (l->sizeA >= l->sys->p) return false;
+	if (l->sizeA >= l->lsys->p) return false;
 	if (find_item (item, l->sizeA, l->A, false)) return false;
 
 	add_item (l->sizeA, l->A, index, item);
@@ -91,7 +91,8 @@ int *
 complementA (larsen *l)
 {
 	int		i, j, k;
-	int		n = l->sys->p - l->sizeA;
+	size_t	p = l->lsys->p;
+	int		n = (int) (p - l->sizeA);
 	int		A[l->sizeA];
 	int		*Ac = (int *) malloc (n * sizeof (int));
 
@@ -100,7 +101,7 @@ complementA (larsen *l)
 	sort_A (l->sizeA, A);
 
 	/* Ac : complement of A */
-	for (i = 0, j = 0, k = 0; i < l->sys->p && k < n; i++) {
+	for (i = 0, j = 0, k = 0; i < p && k < n; i++) {
 		if (find_item (i, l->sizeA - j, &A[j], true)) j++;
 		else Ac[k++] = i;
 	}
@@ -134,9 +135,11 @@ bool
 update_activeset (larsen *l)
 {
 	bool	status = false;
+	size_t	p = l->lsys->p;
+
 	if (!check_action (l->oper.action)) return false;
-	if (!check_index (l->sys->p, l->oper.column_of_X)) return false;
-	if (!check_index (l->sys->p, l->oper.index_of_A)) return false;
+	if (!check_index (p, l->oper.column_of_X)) return false;
+	if (!check_index (p, l->oper.index_of_A)) return false;
 
 	if (l->oper.action == ACTIVESET_ACTION_ADD)
 		status = activeset_add (l, l->oper.index_of_A, l->oper.column_of_X);

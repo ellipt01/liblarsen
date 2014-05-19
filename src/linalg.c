@@ -27,13 +27,14 @@ double *
 larsen_xa_dot_ya (larsen *l, const size_t n, double alpha, const double *x, const double *ya)
 {
 	int		j;
+	size_t	p = l->lsys->p;
 	double	*z = (double *) malloc (n * sizeof (double));
-	double	*y = (double *) malloc (l->sys->p * sizeof (double));
+	double	*y = (double *) malloc (p * sizeof (double));
 	/* y(j) = ya(j) for j in A, else = 0 for j not in A */
-	for (j = 0; j < l->sys->p; j++) y[j] = 0.;
+	for (j = 0; j < p; j++) y[j] = 0.;
 	for (j = 0; j < l->sizeA; j++) y[l->A[j]] = ya[j];
 	/* z = X * y = X(:, A) * z(A) + X(:, Ac) * 0 */
-	dgemv_ ("N", LINSYS_CINTP (n), LINSYS_CINTP (l->sys->p), &alpha, x, LINSYS_CINTP (n), y, &ione, &dzero, z, &ione);
+	dgemv_ ("N", LINSYS_CINTP (n), LINSYS_CINTP (p), &alpha, x, LINSYS_CINTP (n), y, &ione, &dzero, z, &ione);
 	free (y);
 
 	return z;

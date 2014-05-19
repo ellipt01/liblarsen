@@ -26,30 +26,35 @@ calc_gamma_hat (larsen *l, int *index, int *column, double *val)
 	double		minplus = LINSYS_POSINF;
 	int			*Ac = complementA (l);
 
-	if (l->sizeA == l->sys->p) {
+	if (l->sizeA == l->lsys->p) {
 		minplus = l->sup_c / l->absA;
-	} else if (l->sys->p > l->sizeA) {
-		int			i;		double		*a = (double *) malloc (l->sys->p * sizeof (double));
+	} else if (l->lsys->p > l->sizeA) {
+		int				i;
+		size_t			p = l->lsys->p;
+		size_t			n = l->lsys->n;
+		const double	*x = l->lsys->x;
+		double			*a = (double *) malloc (p * sizeof (double));
 		/* a = scale * X' * u */
-		dgemv_ ("T", LINSYS_CINTP (l->sys->n), LINSYS_CINTP (l->sys->p), &l->scale, l->sys->x, LINSYS_CINTP (l->sys->n), l->u, &ione, &dzero, a, &ione);
-		if (!l->sys->pen) {	// elastic net
+		dgemv_ ("T", LINSYS_CINTP (n), LINSYS_CINTP (p), &l->scale, x, LINSYS_CINTP (n), l->u, &ione, &dzero, a, &ione);
+		if (!l->lsys->pen) {	// elastic net
 			/* For elastic net, a(A) must be a(A) += l->lambda2 * l->scale^2 * w.
 			 * But for the estimation of gamma_hat, a(A) are not referred. */
 			/* do nothing */
 		} else {
 			/* a(A) += l->lambda2 * l->scale^2 * JA' * JA * w */
-			size_t	p1 = l->sys->pen->p1;
-			double	alpha = l->lambda2 * l->scale2;
+			size_t			p1 = l->lsys->pen->p1;
+			const double	*r = l->lsys->pen->r;
+			double			alpha = l->lambda2 * l->scale2;
 			/* jw = JA * w */
-			double	*jw = larsen_xa_dot_ya (l, p1, 1., l->sys->pen->r, l->w);
+			double	*jw = larsen_xa_dot_ya (l, p1, 1., r, l->w);
 			/* jtjw = JA' * JA * w */
-			double	*jtjw = larsen_xa_transpose_dot_y (l, p1, 1., l->sys->pen->r, jw);
+			double	*jtjw = larsen_xa_transpose_dot_y (l, p1, 1., r, jw);
 			free (jw);
 			/* a(A) += alpha * JA' * JA * w */
 			larsen_awpy (l, alpha, jtjw, a);
 			free (jtjw);
 		}
-		for (i = 0; i < l->sys->p - l->sizeA; i++) {
+		for (i = 0; i < l->lsys->p - l->sizeA; i++) {
 			int		j = Ac[i];
 			double	cj = l->c[j];
 			double	aj = a[j];

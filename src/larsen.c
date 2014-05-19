@@ -24,9 +24,9 @@ extern void	larsen_awpy (larsen *l, double alpha, double *w, double *y);
 static void
 update_correlations (larsen *l)
 {
-	double	*r = (double *) malloc (l->sys->n * sizeof (double));
-	dcopy_ (LINSYS_CINTP (l->sys->n), l->sys->y, &ione, r, &ione);
-	daxpy_ (LINSYS_CINTP (l->sys->n), &dmone, l->mu, &ione, r, &ione);	// r = - mu + y
+	double	*r = (double *) malloc (l->lsys->n * sizeof (double));
+	dcopy_ (LINSYS_CINTP (l->lsys->n), l->lsys->y, &ione, r, &ione);
+	daxpy_ (LINSYS_CINTP (l->lsys->n), &dmone, l->mu, &ione, r, &ione);	// r = - mu + y
 
 	/*
 	 *  c = Z' * (b - Z * beta),  b = [y; 0], Z = scale * [X; sqrt(lambda2) * E]
@@ -34,26 +34,30 @@ update_correlations (larsen *l)
 	 *  c = scale * ( X' * (y - mu) - scale * lambda2 * J' * J * beta )
 	 */
 	if (l->c) free (l->c);
-	l->c = (double *) malloc (l->sys->p * sizeof (double));
-	dgemv_ ("T", LINSYS_CINTP (l->sys->n), LINSYS_CINTP (l->sys->p), &l->scale, l->sys->x, LINSYS_CINTP (l->sys->n), r, &ione, &dzero, l->c, &ione);
+	l->c = (double *) malloc (l->lsys->p * sizeof (double));
+	dgemv_ ("T", LINSYS_CINTP (l->lsys->n), LINSYS_CINTP (l->lsys->p), &l->scale, l->lsys->x, LINSYS_CINTP (l->lsys->n), r, &ione, &dzero, l->c, &ione);
 	free (r);
 	if (!l->is_lasso) {	// lambda2 > 0
 		double	alpha = - l->lambda2 * l->scale2;
-		if (!l->sys->pen) {	// elastic net
+		if (!l->lsys->pen) {	// elastic net
 			/* c -= scale2 * lambda2 * beta */
-			daxpy_ (LINSYS_CINTP (l->sys->p), &alpha, l->beta, &ione, l->c, &ione);
+			daxpy_ (LINSYS_CINTP (l->lsys->p), &alpha, l->beta, &ione, l->c, &ione);
 		} else {
-			int		m = (int) l->sys->pen->p1;
-			int		n = (int) l->sys->p;
-			double	*rb = (double *) malloc (l->sys->pen->p1 * sizeof (double));
-			double	*rtrb = (double *) malloc (l->sys->p * sizeof (double));
+			size_t			p1 = l->lsys->pen->p1;
+			size_t			p  = l->lsys->p;
+			int				m = (int) p1;
+			int				n = (int) l->lsys->p;
+			const double	*r = l->lsys->pen->r;
+			double			*rb = (double *) malloc (p1 * sizeof (double));
+			double			*rtrb = (double *) malloc (p * sizeof (double));
 
 			/* c -= scale2 * lambda2 * J' * J * beta */
 			/* jb = J * beta */
-			dgemv_ ("N", &m, &n, &done, l->sys->pen->r, &m, l->beta, &ione, &dzero, rb, &ione);
+			dgemv_ ("N", &m, &n, &done, r, &m, l->beta, &ione, &dzero, rb, &ione);
 			/* e = J' * J * beta */
-			dgemv_ ("T", &m, &n, &done, l->sys->pen->r, &m, rb, &ione, &dzero, rtrb, &ione);
+			dgemv_ ("T", &m, &n, &done, r, &m, rb, &ione, &dzero, rtrb, &ione);
 			free (rb);
+			/* c -= scale2 * lambda2 * J' * J * beta */
 			daxpy_ (&n, &alpha, rtrb, &ione, l->c, &ione);
 			free (rtrb);
 		}
@@ -61,7 +65,7 @@ update_correlations (larsen *l)
 	}
 
 	{
-		int		maxidx = idamax_ (LINSYS_CINTP (l->sys->p), l->c, &ione) - 1;	// differ of fortran and C
+		int		maxidx = idamax_ (LINSYS_CINTP (l->lsys->p), l->c, &ione) - 1;	// differ of fortran and C
 		if (l->sizeA == 0) {
 			l->oper.index_of_A = 0;
 			l->oper.column_of_X = maxidx;
@@ -77,8 +81,8 @@ static void
 update_solutions (larsen *l)
 {
 	double		stepsize = (!l->interp) ? l->stepsize : l->stepsize_intr;
-	double		*beta = (double *) malloc (l->sys->p * sizeof (double));
-	double		*mu = (double *) malloc (l->sys->n * sizeof (double));
+	double		*beta = (double *) malloc (l->lsys->p * sizeof (double));
+	double		*mu = (double *) malloc (l->lsys->n * sizeof (double));
 
 	/*
 	 *  in the case of l->interp == true, i.e.,
@@ -87,23 +91,23 @@ update_solutions (larsen *l)
 	 *  mu_intr = mu_prev + stepsize_intr * u
 	 */
 	if (!l->interp) {
-		dcopy_ (LINSYS_CINTP (l->sys->p), l->beta, &ione, beta, &ione);
-		dcopy_ (LINSYS_CINTP (l->sys->n), l->mu, &ione, mu, &ione);
+		dcopy_ (LINSYS_CINTP (l->lsys->p), l->beta, &ione, beta, &ione);
+		dcopy_ (LINSYS_CINTP (l->lsys->n), l->mu, &ione, mu, &ione);
 	} else {
-		dcopy_ (LINSYS_CINTP (l->sys->p), l->beta_prev, &ione, beta, &ione);
-		dcopy_ (LINSYS_CINTP (l->sys->n), l->mu_prev, &ione, mu, &ione);
+		dcopy_ (LINSYS_CINTP (l->lsys->p), l->beta_prev, &ione, beta, &ione);
+		dcopy_ (LINSYS_CINTP (l->lsys->n), l->mu_prev, &ione, mu, &ione);
 	}
 	larsen_awpy (l, stepsize, l->w, beta);			// beta(A) += stepsize * w(A)
-	daxpy_ (LINSYS_CINTP (l->sys->n), &stepsize, l->u, &ione, mu, &ione);	// mu += stepsize * u
+	daxpy_ (LINSYS_CINTP (l->lsys->n), &stepsize, l->u, &ione, mu, &ione);	// mu += stepsize * u
 
 	if (!l->interp) {
-		dcopy_ (LINSYS_CINTP (l->sys->p), l->beta, &ione, l->beta_prev, &ione);
-		dcopy_ (LINSYS_CINTP (l->sys->n), l->mu, &ione, l->mu_prev, &ione);
-		dcopy_ (LINSYS_CINTP (l->sys->p), beta, &ione, l->beta, &ione);
-		dcopy_ (LINSYS_CINTP (l->sys->n), mu, &ione, l->mu, &ione);
+		dcopy_ (LINSYS_CINTP (l->lsys->p), l->beta, &ione, l->beta_prev, &ione);
+		dcopy_ (LINSYS_CINTP (l->lsys->n), l->mu, &ione, l->mu_prev, &ione);
+		dcopy_ (LINSYS_CINTP (l->lsys->p), beta, &ione, l->beta, &ione);
+		dcopy_ (LINSYS_CINTP (l->lsys->n), mu, &ione, l->mu, &ione);
 	} else {
-		dcopy_ (LINSYS_CINTP (l->sys->p), beta, &ione, l->beta_intr, &ione);
-		dcopy_ (LINSYS_CINTP (l->sys->n), mu, &ione, l->mu_intr, &ione);
+		dcopy_ (LINSYS_CINTP (l->lsys->p), beta, &ione, l->beta_intr, &ione);
+		dcopy_ (LINSYS_CINTP (l->lsys->n), mu, &ione, l->mu_intr, &ione);
 	}
 	free (beta);
 	free (mu);
@@ -115,7 +119,7 @@ static void
 update_stop_loop_flag (larsen *l)
 {
 	int		size = l->sizeA;
-	int		n = (!l->is_lasso) ? l->sys->p : LINSYS_MIN (l->sys->n - 1, l->sys->p);
+	int		n = (!l->is_lasso) ? l->lsys->p : LINSYS_MIN (l->lsys->n - 1, l->lsys->p);
 	if (l->oper.action == ACTIVESET_ACTION_DROP) size--;
 	l->stop_loop = (size >= n) ? true : false;
 	if (!l->stop_loop) l->stop_loop = (l->oper.column_of_X == -1);
@@ -186,8 +190,8 @@ bool
 larsen_interpolate (larsen *l)
 {
 	double	lambda1 = (!l->is_lasso) ? l->scale * l->lambda1 : l->lambda1;	// scale * lambda1
-	double	nrm1_prev = dasum_ (LINSYS_CINTP (l->sys->p), l->beta_prev, &ione);
-	double	nrm1 = dasum_ (LINSYS_CINTP (l->sys->p), l->beta, &ione);
+	double	nrm1_prev = dasum_ (LINSYS_CINTP (l->lsys->p), l->beta_prev, &ione);
+	double	nrm1 = dasum_ (LINSYS_CINTP (l->lsys->p), l->beta, &ione);
 	l->interp = false;
 	if (nrm1_prev <= lambda1 && lambda1 < nrm1) {
 		l->interp = true;

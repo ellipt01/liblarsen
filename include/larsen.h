@@ -49,7 +49,7 @@ typedef struct s_larsen	larsen;
 struct s_larsen {
 
 	/* linear system of regression equations */
-	const linsys			*sys;
+	const linsys			*lsys;
 
 	/* if true, loop of lasso or elastic net regression is terminated */
 	bool					stop_loop;

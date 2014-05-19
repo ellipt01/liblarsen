@@ -31,12 +31,12 @@ larsen_elasticnet (larsen *l, int maxiter)
 {
 	int		iter = 0;
 	double	lambda1 = (l->is_lasso) ? l->lambda1 : l->scale * l->lambda1;	// scale * lambda1
-	double	nrm1 = dasum_ (LINSYS_CINTP (l->sys->p), l->beta, &ione);
+	double	nrm1 = dasum_ (LINSYS_CINTP (l->lsys->p), l->beta, &ione);
 
 	/* loop of elastic net regression */
 	while (nrm1 <= lambda1 && !l->stop_loop) {
 		if (!larsen_regression_step (l)) return false;
-		nrm1 = dasum_ (LINSYS_CINTP (l->sys->p), l->beta, &ione);
+		nrm1 = dasum_ (LINSYS_CINTP (l->lsys->p), l->beta, &ione);
 		if (++iter > maxiter) {
 			fprintf (stderr, "number of iterations reaches max tolerance.\nregression stopped.\n");
 			return false;
