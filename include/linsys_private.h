@@ -29,6 +29,6 @@ extern const int		ione;	//  1
 extern const double	dzero;	//  0.
 extern const double	dmone;	// -1.
 
-void	linsys_error (const char *funcname, const char *msg);
+void	linsys_error (const char * function_name, const char *error_msg, const char *file, const int line);
 
 #endif /* LINSYS_PRIVATE_H_ */

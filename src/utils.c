@@ -31,18 +31,20 @@ larsen_alloc (const linsys *sys, const double lambda1, const double lambda2)
 {
 	larsen	*l;
 
-	if (!sys) linsys_error ("larsen_alloc", "linsys *sys is empty.");
+	if (!sys) linsys_error ("larsen_alloc", "linsys *sys is empty.", __FILE__, __LINE__);
 	if (lambda1 < 0 || lambda2 < 0) {
 		char	msg[80];
 		sprintf (msg, "ERROR: lambda1(= %f), lambda2(= %f) must be >= 0.", lambda1, lambda2);
-		linsys_error ("larsen_alloc", msg);
+		linsys_error ("larsen_alloc", msg, __FILE__, __LINE__);
 	}
 
 	l = (larsen *) malloc (sizeof (larsen));
 
 	l->sys = sys;
-	if (!l->sys->y_centerdized) linsys_error ("larsen_alloc", "vector *y must be centerdized.");
-	if (!l->sys->x_centerdized || !l->sys->x_centerdized) linsys_error ("larsen_alloc", "matrix *x must be normalized.");
+	if (!l->sys->y_centerdized)
+		linsys_error ("larsen_alloc", "vector *y must be centerdized.", __FILE__, __LINE__);
+	if (!l->sys->x_centerdized || !l->sys->x_centerdized)
+		linsys_error ("larsen_alloc", "matrix *x must be normalized.", __FILE__, __LINE__);
 
 	l->stop_loop = false;
 

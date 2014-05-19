@@ -30,7 +30,7 @@ test_linalg_cholesky_decomp (const size_t size, double *a, const size_t lda)
 	int		n;
 	int		_lda;
 
-	if (!a) linsys_error ("linsys_linalg_cholesky_decomp", "matrix is empty.");
+	if (!a) linsys_error ("linsys_linalg_cholesky_decomp", "matrix is empty.", __FILE__, __LINE__);
 
 	uplo = 'U';
 	n = (int) size;

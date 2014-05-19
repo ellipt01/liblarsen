@@ -10,8 +10,6 @@
 
 #include "linsys_private.h"
 
-extern void	linsys_error (const char * function_name, const char *error_msg);
-
 /* Reallocate *a and add new rows / columns to the end of a matrix.
  * New rows / columns are not initialized.
  * m	:	number of rows of matrix *a
@@ -85,8 +83,8 @@ larsen_linalg_cholesky_svx (const size_t size, double *l, const size_t lda, doub
 	int		nrhs;
 	int		_lda;
 
-	if (!l) linsys_error ("larsen_linalg_cholesky_svx", "first matrix is empty.");
-	if (!b) linsys_error ("larsen_linalg_cholesky_svx", "second matrix is empty.");
+	if (!l) linsys_error ("larsen_linalg_cholesky_svx", "first matrix is empty.", __FILE__, __LINE__);
+	if (!b) linsys_error ("larsen_linalg_cholesky_svx", "second matrix is empty.", __FILE__, __LINE__);
 
 	uplo = 'U';
 	n = (int) size;
@@ -108,7 +106,8 @@ larsen_linalg_cholesky_insert (const size_t size, double **r, const int index, d
 	int			j;
 	double		*w;
 
-	if (index < 0 || size < index) linsys_error ("larsen_linalg_cholesky_insert", "index must be in [0, size].");
+	if (index < 0 || size < index)
+		linsys_error ("larsen_linalg_cholesky_insert", "index must be in [0, size].", __FILE__, __LINE__);
 
 	j = index + 1;
 
@@ -136,7 +135,8 @@ larsen_linalg_cholesky_delete (const size_t size, double **r, const int index)
 	int		j;
 	double	*w;
 
-	if (index < 0 || size <= index) linsys_error ("larsen_linalg_cholesky_delete", "index must be in [0, size).");
+	if (index < 0 || size <= index)
+		linsys_error ("larsen_linalg_cholesky_delete", "index must be in [0, size).", __FILE__, __LINE__);
 
 	j = index + 1;
 

@@ -17,9 +17,9 @@ const double	dmone = -1.;
 
 /* print an error message and exit */
 void
-linsys_error (const char * function_name, const char *error_msg)
+linsys_error (const char * function_name, const char *error_msg, const char *file, const int line)
 {
-	fprintf (stderr, "ERROR: %s: %s\n", function_name, error_msg);
+	fprintf (stderr, "ERROR: %s: %s:%d: %s\n", function_name, file, line, error_msg);
 	exit (1);
 }
 
@@ -29,10 +29,10 @@ linsys_alloc (const size_t n, const size_t p, const double *y, const double *x, 
 	size_t		np;
 	linsys		*ls;
 
-	if (!y) linsys_error ("lisys_alloc", "vector *y is empty.");
-	if (!x) linsys_error ("lisys_alloc", "matrix *x is empty.");
-	if (n <= 0) linsys_error ("lisys_alloc", "n must be > 0.");
-	if (p <= 0) linsys_error ("lisys_alloc", "p must be > 0.");
+	if (!y) linsys_error ("lisys_alloc", "vector *y is empty.", __FILE__, __LINE__);
+	if (!x) linsys_error ("lisys_alloc", "matrix *x is empty.", __FILE__, __LINE__);
+	if (n <= 0) linsys_error ("lisys_alloc", "n must be > 0.", __FILE__, __LINE__);
+	if (p <= 0) linsys_error ("lisys_alloc", "p must be > 0.", __FILE__, __LINE__);
 
 	ls = (linsys *) malloc (sizeof (linsys));
 
