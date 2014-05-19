@@ -160,10 +160,10 @@ update_equiangular_larsen_cholesky (larsen *l)
 
 	/* In exactlly
 	 *
-	 *     uA = ZA * w = scale * [XA * w; sqrt(lambda2) * w],
-	 *     dim(uA) = n + sizeA.
+	 *     uA = ZA * w = scale * [XA * w; sqrt(lambda2) * EA * w],
+	 *     dim(uA) = n + p (size of nonzero EA * w is |A|).
 	 *
-	 * But in this program, to surve memory, only first n part of uA is stored
+	 * But in this program, to save memory, only first n part of uA is stored
 	 *
 	 *     u = scale * XA * w,
 	 *     dim(u) = n,
