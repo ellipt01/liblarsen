@@ -134,9 +134,11 @@ main (int argc, char **argv)
 
 	/* linear system */
 	read_data (fn, skipheaders, &n, &p, &y, &x);
-	lsys = linsys_alloc (lambda2, n, p, y, false, x, false, false);
+	lsys = linsys_alloc (lambda2, n, p, y, x);
 	free (y);
 	free (x);
+	linsys_centering_y (lsys);
+	linsys_standardizing_x (lsys);
 
 	/* penalty term */
 	{

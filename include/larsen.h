@@ -32,19 +32,17 @@ typedef struct s_larsen	larsen;
 
 struct s_larsen {
 
-	/* if true, loop of lasso or elastic net regression is terminated */
+	/* if true, loop of regression is terminated */
 	bool					stop_loop;
 
 	/* linear system of regression equations */
 	const linsys			*lsys;
-	/* false: lsys->lambda2 is ignored (lsys->lambda2 < eps) */
-//	bool					is_lasso;
 
 	/* threshold for L1 penalty */
 	double					lambda1;
 
 	/* correlation */
-	double					sup_c;	// sup(abs(c))
+	double					sup_c;	// sign: sup(abs(c))
 	double					*c;		// colleration: = X' * (y - mu)
 
 	/* active set */
@@ -62,14 +60,14 @@ struct s_larsen {
 
 	/* solution */
 	double					*beta;	// regression coefficients
-	double					*mu;	// estimated response
+	double					*mu;	// estimation of the response y
 
 	/* previous beta and mu */
-	double					*beta_prev;	// previous beta
-	double					*mu_prev;		// previous mu
+	double					*beta_prev;	// backup of previouse beta
+	double					*mu_prev;		// backup of previous mu
 
 	/* interpolation */
-	bool					interp;		// interpolation was done or not
+	bool					is_interped;	// interpolation was done or not
 	double					stepsize_intr;
 	double					*beta_intr;	// interpolated beta
 	double					*mu_intr;		// interpolated mu

@@ -70,10 +70,13 @@ struct s_penalty {
 };
 
 /* linsys.c */
-linsys			*linsys_alloc (const double lambda2, const size_t n, const size_t p, const double *y, bool ycentered, const double *x, bool xcenterd, bool xnormalized);
+linsys			*linsys_alloc (const double lambda2, const size_t n, const size_t p, const double *y, const double *x);
 void			linsys_free (linsys *l);
-double			*linsys_centering (const size_t size1, const size_t size2, double *x);
-double			*linsys_normalizing (const size_t size1, const size_t size2, double *x);
+
+void			linsys_centering_y (linsys *lsys);
+void			linsys_centering_x (linsys *lsys);
+void			linsys_normalizing_x (linsys *lsys);
+void			linsys_standardizing_x (linsys *lsys);
 
 penalty		*penalty_alloc (const size_t p1, const size_t p, const double *r);
 void			penalty_free (penalty *pen);

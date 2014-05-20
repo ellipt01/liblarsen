@@ -13,7 +13,7 @@
 #include "larsen_private.h"
 
 static void
-larsen_array_set_all (const size_t size, double *x, double val)
+array_set_all (const size_t size, double *x, double val)
 {
 	int		i;
 	for (i = 0; i < size; i++) x[i] = val;
@@ -24,21 +24,23 @@ larsen_alloc (const linsys *lsys, const double lambda1)
 {
 	larsen	*l;
 
-	if (!lsys) linsys_error ("larsen_alloc", "linsys *sys is empty.", __FILE__, __LINE__);
+	if (!lsys) linsys_error ("larsen_alloc", "linsys *lsys is empty.", __FILE__, __LINE__);
 	if (lambda1 < 0) linsys_error ("larsen_alloc", "lambda1 must be >= 0.", __FILE__, __LINE__);
 
-	if (!lsys->ycentered) linsys_error ("larsen_alloc", "vector *lsys->y must be centered.", __FILE__, __LINE__);
-	if (!lsys->xcentered || !lsys->xnormalized) linsys_error ("larsen_alloc", "matrix *lsys->x must be standerdized.", __FILE__, __LINE__);
+	if (!lsys->ycentered)
+		linsys_error ("larsen_alloc", "for LARSE-EN, vector *y must be centered.\nplease use linsys_centering_y()", __FILE__, __LINE__);
+	if (!lsys->xcentered || !lsys->xnormalized)
+		linsys_error ("larsen_alloc", "for LARSE-EN, matrix *x must be standardized.\nplease use linsys_{centering,normalizing}_x()", __FILE__, __LINE__);
 
 	l = (larsen *) malloc (sizeof (larsen));
 
 	l->stop_loop = false;
 
+	/* register linear system of regression equations */
 	l->lsys = lsys;
 
+	/*L1 threshold */
 	l->lambda1 = lambda1;
-
-//	l->is_lasso = (linsys_get_lambda2 (l->lsys) > dlamch_ ("e")) ? false : true;
 
 	/* correlation */
 	l->sup_c = 0.;
@@ -59,21 +61,21 @@ larsen_alloc (const linsys *lsys, const double lambda1)
 
 	/* solution */
 	l->beta = (double *) malloc (l->lsys->p * sizeof (double));
-	larsen_array_set_all (l->lsys->p, l->beta, 0.);
+	array_set_all (l->lsys->p, l->beta, 0.);
 	l->mu = (double *) malloc (l->lsys->n * sizeof (double));
-	larsen_array_set_all (l->lsys->n, l->mu, 0.);
+	array_set_all (l->lsys->n, l->mu, 0.);
 
 	/* backup of solution */
 	l->beta_prev = (double *) malloc (l->lsys->p * sizeof (double));
 	l->mu_prev = (double *) malloc (l->lsys->n * sizeof (double));
 
 	/* interpolation */
-	l->interp = false;
+	l->is_interped = false;
 	l->stepsize_intr = 0.;
 	l->beta_intr = (double *) malloc (l->lsys->p * sizeof (double));
 	l->mu_intr = (double *) malloc (l->lsys->n * sizeof (double));
 
-	/* cholesky factorization */
+	/* Cholesky factorization of Z(:,A)' * Z(:,A) */
 	l->chol = NULL;
 
 	return l;
@@ -99,18 +101,19 @@ larsen_free (larsen *l)
 	return;
 }
 
-/* return copy of navie solution: beta_navie = l->beta */
+/* return copy of l->beta */
 static double *
 larsen_copy_beta_navie (const larsen *l)
 {
 	size_t	p = linsys_get_p (l->lsys);
 	double	*beta = (double *) malloc (p * sizeof (double));
-	if (!l->interp) dcopy_ (LINSYS_CINTP (p), l->beta, &ione, beta, &ione);
+	if (!l->is_interped) dcopy_ (LINSYS_CINTP (p), l->beta, &ione, beta, &ione);
 	else dcopy_ (LINSYS_CINTP (p), l->beta_intr, &ione, beta, &ione);
 	return beta;
 }
 
-/* return copy of elastic net solution: beta_elnet = beta_navie / scale */
+/* return copy of beta
+ * if scaling == true && !lasso, return copy of l->beta / scale */
 double *
 larsen_copy_beta (const larsen *l, bool scaling)
 {
@@ -124,18 +127,19 @@ larsen_copy_beta (const larsen *l, bool scaling)
 	return beta;
 }
 
-/* return copy of navie solution: mu_navie = l->mu */
+/* return copy of l->mu */
 static double *
 larsen_copy_mu_navie (const larsen *l)
 {
 	size_t	n = linsys_get_n (l->lsys);
 	double	*mu = (double *) malloc (n * sizeof (double));
-	if (!l->interp) dcopy_ (LINSYS_CINTP (n), l->mu, &ione, mu, &ione);
+	if (!l->is_interped) dcopy_ (LINSYS_CINTP (n), l->mu, &ione, mu, &ione);
 	else dcopy_ (LINSYS_CINTP (n), l->mu_intr, &ione, mu, &ione);
 	return mu;
 }
 
-/* return copy of elastic net solution: mu_elnet = mu_navie / scale^2 */
+/* return copy of mu
+ * if scaling == true && !lasso, return copy of l->mu / scale^2 */
 double *
 larsen_copy_mu (const larsen *l, bool scaling)
 {
@@ -149,7 +153,7 @@ larsen_copy_mu (const larsen *l, bool scaling)
 	return mu;
 }
 
-/* increment l->lambda1 */
+/* set l->lambda1 = t */
 void
 larsen_set_lambda1 (larsen *l, double t)
 {
@@ -157,7 +161,8 @@ larsen_set_lambda1 (larsen *l, double t)
 	return;
 }
 
-/* return (regtype_lasso) ? scale * lambda1 : lambda1 */
+/* return l->lambda1
+ * if scaling == true && !lasso, return scale * l->lambda1 */
 double
 larsen_get_lambda1 (const larsen *l, bool scaling)
 {

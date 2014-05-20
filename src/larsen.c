@@ -76,7 +76,7 @@ update_solutions (larsen *l)
 {
 	size_t		n = linsys_get_n (l->lsys);
 	size_t		p = linsys_get_p (l->lsys);
-	double		stepsize = (!l->interp) ? l->stepsize : l->stepsize_intr;
+	double		stepsize = (!l->is_interped) ? l->stepsize : l->stepsize_intr;
 	double		*beta = (double *) malloc (p * sizeof (double));
 	double		*mu = (double *) malloc (n * sizeof (double));
 
@@ -86,7 +86,7 @@ update_solutions (larsen *l)
 	 *  beta_intr = beta_prev + stepsize_intr * w,
 	 *  mu_intr = mu_prev + stepsize_intr * u
 	 */
-	if (!l->interp) {
+	if (!l->is_interped) {
 		dcopy_ (LINSYS_CINTP (p), l->beta, &ione, beta, &ione);
 		dcopy_ (LINSYS_CINTP (n), l->mu, &ione, mu, &ione);
 	} else {
@@ -96,7 +96,7 @@ update_solutions (larsen *l)
 	larsen_axapy (l, stepsize, l->w, beta);			// beta(A) += stepsize * w(A)
 	daxpy_ (LINSYS_CINTP (n), &stepsize, l->u, &ione, mu, &ione);	// mu += stepsize * u
 
-	if (!l->interp) {
+	if (!l->is_interped) {
 		dcopy_ (LINSYS_CINTP (p), l->beta, &ione, l->beta_prev, &ione);
 		dcopy_ (LINSYS_CINTP (n), l->mu, &ione, l->mu_prev, &ione);
 		dcopy_ (LINSYS_CINTP (p), beta, &ione, l->beta, &ione);
@@ -158,7 +158,7 @@ update_stop_loop_flag (larsen *l)
 bool
 larsen_regression_step (larsen *l)
 {
-	l->interp = false;
+	l->is_interped = false;
 	l->stop_loop = true;
 
 	update_correlations (l);
@@ -192,11 +192,11 @@ larsen_interpolate (larsen *l)
 	double	nrm1 = dasum_ (LINSYS_CINTP (p), l->beta, &ione);
 	double	lambda1 = larsen_get_lambda1 (l, true);
 
-	l->interp = false;
+	l->is_interped = false;
 	if (nrm1_prev <= lambda1 && lambda1 < nrm1) {
-		l->interp = true;
+		l->is_interped = true;
 		l->stepsize_intr = l->absA * (lambda1 - nrm1_prev);
 		update_solutions (l);
 	}
-	return l->interp;
+	return l->is_interped;
 }

@@ -8,7 +8,7 @@
 #ifndef LINSYS_PRIVATE_H_
 #define LINSYS_PRIVATE_H_
 
-/* Private macros and entry of constants
+/* Private macros, constants and headers
  * which are only used internally */
 
 /* blas */
@@ -25,7 +25,7 @@ extern void	dscal_  (const int *n, const double *alpha, double *x, const int *in
 extern int		idamax_ (const int *n, const double *x, const int *incx);
 // Level2
 extern void	dgemv_ (const char *trans, const int *m, const int *n, const double *alpha, const double *a, const int *lda,
-			const double *x, const int *incx, const double *beta, double *y, const int *incy);
+		const double *x, const int *incx, const double *beta, double *y, const int *incy);
 // Level3
 extern void	dgemm_ (const char *transa, const char *transb, const int *m, const int *n, const int *k,
 		const double *alpha, const double *a, const int *lda, const double *b, const int *ldb,
@@ -57,6 +57,7 @@ extern const double	dzero;	//  0.
 extern const double	done;	//  1.
 extern const double	dmone;	// -1.
 
+/* print error message and terminate program */
 void	linsys_error (const char * function_name, const char *error_msg, const char *file, const int line);
 
 #endif /* LINSYS_PRIVATE_H_ */

@@ -26,7 +26,7 @@ linsys_error (const char * function_name, const char *error_msg, const char *fil
 }
 
 linsys *
-linsys_alloc (const double lambda2, const size_t n, const size_t p, const double *y, bool ycentered, const double *x, bool xcentered, bool xnormalized)
+linsys_alloc (const double lambda2, const size_t n, const size_t p, const double *y, const double *x)
 {
 	size_t		np;
 	linsys		*lsys;
@@ -49,30 +49,18 @@ linsys_alloc (const double lambda2, const size_t n, const size_t p, const double
 	dcopy_ (LINSYS_CINTP (n), y, &ione, lsys->y, &ione);
 	dcopy_ (LINSYS_CINTP (np), x, &ione, lsys->x, &ione);
 
+	/* By default, data is assumed to be not normalized and not standardized */
 	lsys->meany = NULL;
-	lsys->ycentered = ycentered;
-	if (!ycentered) {
-		lsys->meany = linsys_centering (n, 1, lsys->y);
-		lsys->ycentered = true;
-	}
-
 	lsys->meanx = NULL;
-	lsys->xcentered = xcentered;
-	if (!xcentered) {
-		lsys->meanx = linsys_centering (n, p, lsys->x);
-		lsys->xcentered = true;
-	}
-
 	lsys->normx = NULL;
-	lsys->xnormalized = xnormalized;
-	if (!xnormalized) {
-		lsys->normx = linsys_normalizing (n, p, lsys->x);
-		lsys->xnormalized = true;
-	}
+	lsys->ycentered = false;
+	lsys->xcentered = false;
+	lsys->xnormalized = false;
 
 	lsys->lambda2 = lambda2;
-	/* scale for ridge regression */
-	if (lambda2 > dlamch_ ("e")) {	// ridge regression
+
+	/* regression type */
+	if (lambda2 > dlamch_ ("e")) {	// default: ridge regression
 		lsys->regtype = REGULARIZATION_RIDGE;
 		lsys->scale2 = 1. / (1. + lambda2);
 		lsys->scale = sqrt (lsys->scale2);
@@ -104,8 +92,8 @@ linsys_free (linsys *lsys)
 
 /* Centering each column of matrix:
  * x(:, j) -> x(:, j) - mean(x(:, j)) */
-double *
-linsys_centering (const size_t size1, const size_t size2, double *x)
+static double *
+centering (const size_t size1, const size_t size2, double *x)
 {
 	int		i, j;
 	double	*mean = (double *) malloc (size2 * sizeof (double));
@@ -121,8 +109,8 @@ linsys_centering (const size_t size1, const size_t size2, double *x)
 
 /* Normalizing each column of matrix:
  * x(:, j) -> x(:, j) / norm(x(:, j)) */
-double *
-linsys_normalizing (const size_t size1, const size_t size2, double *x)
+static double *
+normalizing (const size_t size1, const size_t size2, double *x)
 {
 	int		j;
 	double	*nrm = (double *) malloc (size2 * sizeof (double));
@@ -134,6 +122,45 @@ linsys_normalizing (const size_t size1, const size_t size2, double *x)
 		dscal_ (LINSYS_CINTP (size1), &alpha, xj, &ione);
 	}
 	return nrm;
+}
+
+/* centering lsys->y,
+ * and set lsys->meany[0] = mean( y ) */
+void
+linsys_centering_y (linsys *lsys)
+{
+	lsys->meany = centering (lsys->n, 1, lsys->y);
+	lsys->ycentered = true;
+	return;
+}
+
+/* centering each col of lsys->x,
+ * and set lsys->meanx[j] = mean( X(:,j) ) */
+void
+linsys_centering_x (linsys *lsys)
+{
+	lsys->meanx = centering (lsys->n, lsys->p, lsys->x);
+	lsys->xcentered = true;
+	return;
+}
+
+/* normalizing each col of lsys->x,
+ * and set lsys->normx[j] = mean( X(:,j) ) */
+void
+linsys_normalizing_x (linsys *lsys)
+{
+	lsys->normx = normalizing (lsys->n, lsys->p, lsys->x);
+	lsys->xnormalized = true;
+	return;
+}
+
+/* standardizing lsys->x */
+void
+linsys_standardizing_x (linsys *lsys)
+{
+	linsys_centering_x (lsys);
+	linsys_normalizing_x (lsys);
+	return;
 }
 
 penalty *
@@ -162,10 +189,12 @@ penalty_free (penalty *pen)
 	return;
 }
 
+/* set lsys->pen = pen, and set lsys->scale2 = 1 / (a + b * lambda2) */
 void
 linsys_set_penalty (linsys *lsys, const double a, const double b, const penalty *pen)
 {
-	if (pen && lsys->p != pen->p)
+	if (!pen) linsys_error ("linsys_set_penalty", "penalty *pen is empty.", __FILE__, __LINE__);
+	if (lsys->p != pen->p)
 		linsys_error ("linsys_set_penalty", "penalty *pen->p must be same as linsys *lsys->p.", __FILE__, __LINE__);
 
 	lsys->regtype = REGULARIZATION_USER_DEFINED;
@@ -174,12 +203,15 @@ linsys_set_penalty (linsys *lsys, const double a, const double b, const penalty 
 	lsys->pen = pen;
 }
 
+/* is lasso? : lambda2 <= eps? */
 bool
 linsys_is_regtype_lasso (const linsys *lsys)
 {
 	return (lsys->regtype == REGULARIZATION_LASSO);
 }
 
+/* is Ridge? :
+ * lambda2 > eps && default lsys->pen == NULL, i.e. default regression type? */
 bool
 linsys_is_regtype_ridge (const linsys *lsys)
 {
@@ -216,6 +248,7 @@ linsys_get_p (const linsys *lsys)
 	return lsys->p;
 }
 
+/* return number of rows of penalty matrix: lsys->pen->pj */
 const size_t
 linsys_get_pj (const linsys *lsys)
 {
@@ -223,18 +256,21 @@ linsys_get_pj (const linsys *lsys)
 	return lsys->p;
 }
 
+/* return lsys->x */
 const double
 *linsys_get_x (const linsys *lsys)
 {
 	return lsys->x;
 }
 
+/* return lsys->y */
 const double
 *linsys_get_y (const linsys *lsys)
 {
 	return lsys->y;
 }
 
+/* return lsys->pen->r */
 const double
 *linsys_get_penalty (const linsys *lsys)
 {

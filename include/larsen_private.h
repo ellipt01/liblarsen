@@ -8,13 +8,15 @@
 #ifndef LARSEN_PRIVATE_H_
 #define LARSEN_PRIVATE_H_
 
+/* Private macros, constants and headers
+ * which are only used internally */
+
 #include "linsys_private.h"
 
 /* lapack */
 #ifdef HAVE_LAPACK_H
 #include <lapack.h>
 #else
-//extern double	dlamch_ (const char *cmach);
 extern void	dpotrs_ (const char *uplo, const int *n, const int *nrhs, const double *a, const int *lda, double *b, const int *ldb, int *info);
 #endif
 
