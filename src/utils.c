@@ -10,14 +10,7 @@
 #include <math.h>
 #include <larsen.h>
 
-#include "linsys_private.h"
-
-static double
-larsen_double_eps (void)
-{
-	char	cmach = 'e';
-	return dlamch_ (&cmach);
-}
+#include "larsen_private.h"
 
 static void
 larsen_array_set_all (const size_t size, double *x, double val)
@@ -27,43 +20,25 @@ larsen_array_set_all (const size_t size, double *x, double val)
 }
 
 larsen *
-larsen_alloc (const linsys *lsys, const double lambda1, const double lambda2)
+larsen_alloc (const linsys *lsys, const double lambda1)
 {
 	larsen	*l;
 
 	if (!lsys) linsys_error ("larsen_alloc", "linsys *sys is empty.", __FILE__, __LINE__);
-	if (lambda1 < 0 || lambda2 < 0) {
-		char	msg[80];
-		sprintf (msg, "ERROR: lambda1(= %f), lambda2(= %f) must be >= 0.", lambda1, lambda2);
-		linsys_error ("larsen_alloc", msg, __FILE__, __LINE__);
-	}
+	if (lambda1 < 0) linsys_error ("larsen_alloc", "lambda1 must be >= 0.", __FILE__, __LINE__);
+
+	if (!lsys->ycentered) linsys_error ("larsen_alloc", "vector *lsys->y must be centered.", __FILE__, __LINE__);
+	if (!lsys->xcentered || !lsys->xnormalized) linsys_error ("larsen_alloc", "matrix *lsys->x must be standerdized.", __FILE__, __LINE__);
 
 	l = (larsen *) malloc (sizeof (larsen));
 
-	l->lsys = lsys;
-	if (!l->lsys->y_centerdized)
-		linsys_error ("larsen_alloc", "vector *y must be centerdized.", __FILE__, __LINE__);
-	if (!l->lsys->x_centerdized || !l->lsys->x_centerdized)
-		linsys_error ("larsen_alloc", "matrix *x must be normalized.", __FILE__, __LINE__);
-
 	l->stop_loop = false;
 
-	l->lambda1 = lambda1;
-	l->lambda2 = lambda2;
+	l->lsys = lsys;
 
-	l->is_lasso = (lambda2 > larsen_double_eps ()) ? false : true;
-	if (l->is_lasso) {
-		l->scale = 1.;
-		l->scale2 = 1.;
-	} else {
-		if (l->lsys->pen) {
-			l->scale2 = 1. / (l->lsys->pen->a + l->lsys->pen->b * lambda2);
-			l->scale  = sqrt (l->scale2);
-		} else {
-			l->scale2 = 1. / (1. + lambda2);
-			l->scale  = sqrt (l->scale2);
-		}
-	}
+	l->lambda1 = lambda1;
+
+//	l->is_lasso = (linsys_get_lambda2 (l->lsys) > dlamch_ ("e")) ? false : true;
 
 	/* correlation */
 	l->sup_c = 0.;
@@ -125,45 +100,51 @@ larsen_free (larsen *l)
 }
 
 /* return copy of navie solution: beta_navie = l->beta */
-double *
+static double *
 larsen_copy_beta_navie (const larsen *l)
 {
-	double	*beta = (double *) malloc (l->lsys->p * sizeof (double));
-	if (!l->interp) dcopy_ (LINSYS_CINTP (l->lsys->p), l->beta, &ione, beta, &ione);
-	else dcopy_ (LINSYS_CINTP (l->lsys->p), l->beta_intr, &ione, beta, &ione);
+	size_t	p = linsys_get_p (l->lsys);
+	double	*beta = (double *) malloc (p * sizeof (double));
+	if (!l->interp) dcopy_ (LINSYS_CINTP (p), l->beta, &ione, beta, &ione);
+	else dcopy_ (LINSYS_CINTP (p), l->beta_intr, &ione, beta, &ione);
 	return beta;
 }
 
 /* return copy of elastic net solution: beta_elnet = beta_navie / scale */
 double *
-larsen_copy_beta_elasticnet (const larsen *l)
+larsen_copy_beta (const larsen *l, bool scaling)
 {
+	size_t	p = linsys_get_p (l->lsys);
+	double	scale = linsys_get_scale (l->lsys);
 	double	*beta = larsen_copy_beta_navie (l);
-	if (!l->is_lasso) {
-		double	alpha = 1. / l->scale;
-		dscal_ (LINSYS_CINTP (l->lsys->p), &alpha, beta, &ione);
+	if (scaling && !linsys_is_regtype_lasso (l->lsys)) {
+		double	alpha = 1. / scale;
+		dscal_ (LINSYS_CINTP (p), &alpha, beta, &ione);
 	}
 	return beta;
 }
 
 /* return copy of navie solution: mu_navie = l->mu */
-double *
+static double *
 larsen_copy_mu_navie (const larsen *l)
 {
-	double	*mu = (double *) malloc (l->lsys->n * sizeof (double));
-	if (!l->interp) dcopy_ (LINSYS_CINTP (l->lsys->n), l->mu, &ione, mu, &ione);
-	else dcopy_ (LINSYS_CINTP (l->lsys->n), l->mu_intr, &ione, mu, &ione);
+	size_t	n = linsys_get_n (l->lsys);
+	double	*mu = (double *) malloc (n * sizeof (double));
+	if (!l->interp) dcopy_ (LINSYS_CINTP (n), l->mu, &ione, mu, &ione);
+	else dcopy_ (LINSYS_CINTP (n), l->mu_intr, &ione, mu, &ione);
 	return mu;
 }
 
 /* return copy of elastic net solution: mu_elnet = mu_navie / scale^2 */
 double *
-larsen_copy_mu_elasticnet (const larsen *l)
+larsen_copy_mu (const larsen *l, bool scaling)
 {
+	size_t	n = linsys_get_n (l->lsys);
+	double	scale2 = linsys_get_scale2 (l->lsys);
 	double	*mu = larsen_copy_mu_navie (l);
-	if (!l->is_lasso) {
-		double	alpha = 1. / l->scale2;
-		dscal_ (LINSYS_CINTP (l->lsys->n), &alpha, mu, &ione);
+	if (scaling && !linsys_is_regtype_lasso (l->lsys)) {
+		double	alpha = 1. / scale2;
+		dscal_ (LINSYS_CINTP (n), &alpha, mu, &ione);
 	}
 	return mu;
 }
@@ -174,4 +155,13 @@ larsen_set_lambda1 (larsen *l, double t)
 {
 	l->lambda1 = t;
 	return;
+}
+
+/* return (regtype_lasso) ? scale * lambda1 : lambda1 */
+double
+larsen_get_lambda1 (const larsen *l, bool scaling)
+{
+	double	lambda1 = l->lambda1;
+	if (scaling && !linsys_is_regtype_lasso (l->lsys)) lambda1 *= linsys_get_scale (l->lsys);
+	return lambda1;
 }

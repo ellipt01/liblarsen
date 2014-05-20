@@ -126,10 +126,7 @@ main (int argc, char **argv)
 	double		*y;
 	double		*x;
 
-	linsys		*sys;
-	double		*meany;
-	double		*meanx;
-	double		*normx;
+	linsys		*lsys;
 	penalty	*pen;
 
 	if (!read_params (argc, argv)) usage (argv[0]);
@@ -137,10 +134,7 @@ main (int argc, char **argv)
 
 	/* linear system */
 	read_data (fn, skipheaders, &n, &p, &y, &x);
-	meany = linsys_centering (n, 1, y);
-	meanx = linsys_centering (n, p, x);
-	normx = linsys_normalizing (n, p, x);
-	sys = linsys_alloc (n, p, y, x, meany, meanx, normx);
+	lsys = linsys_alloc (lambda2, n, p, y, false, x, false, false);
 	free (y);
 	free (x);
 
@@ -150,16 +144,21 @@ main (int argc, char **argv)
 		double	*r = (double *) malloc (p * p * sizeof (double));
 		for (i = 0; i < p * p; i++) r[i] = 0.;
 		for (i = 0; i < p; i++) r[LINSYS_INDEX_OF_MATRIX (i, i, p)] = 1.;
-		pen = penalty_alloc (p, p, 1., 1., r);
-		linsys_set_penalty (sys, pen);
+		pen = penalty_alloc (p, p, r);
+		free (r);
+		linsys_set_penalty (lsys, 1., 1., pen);
 	}
 
-	clock_t	t1, t2;
-	t1 = clock ();
-	example_elasticnet (sys, start, dt, stop, lambda2, gamma_bic, maxiter);
-	t2 = clock ();
-	fprintf (stderr, "time = %.2e\n", (double) (t2 - t1) / CLOCKS_PER_SEC);
-	linsys_free (sys);
+	{
+		clock_t	t1, t2;
+		t1 = clock ();
+		example_elasticnet (lsys, start, dt, stop, gamma_bic, maxiter);
+		t2 = clock ();
+		fprintf (stderr, "time = %.2e\n", (double) (t2 - t1) / CLOCKS_PER_SEC);
+	}
+
+	linsys_free (lsys);
+	penalty_free (pen);
 
 	return EXIT_SUCCESS;
 }

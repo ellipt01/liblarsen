@@ -9,52 +9,49 @@
 #include <math.h>
 #include <larsen.h>
 
-#include "linsys_private.h"
-
-/* activeset.c */
-extern int		*complementA (larsen *l);
-
-extern void	larsen_awpy (larsen *l, double alpha, double *w, double *y);
-extern double	*larsen_xa_dot_ya (larsen *l, const size_t n, double alpha, const double *x, const double *ya);
-extern double	*larsen_xa_transpose_dot_y (larsen *l, const size_t n, const double alpha, const double *x, const double *y);
+#include "larsen_private.h"
 
 /* \hat{gamma} */
 static void
 calc_gamma_hat (larsen *l, int *index, int *column, double *val)
 {
+	size_t		n = linsys_get_n (l->lsys);
+	size_t		p = linsys_get_p (l->lsys);
 	int			minplus_idx = -1;
 	double		minplus = LINSYS_POSINF;
 	int			*Ac = complementA (l);
 
-	if (l->sizeA == l->lsys->p) {
+	if (l->sizeA == p) {
 		minplus = l->sup_c / l->absA;
-	} else if (l->lsys->p > l->sizeA) {
+	} else if (p > l->sizeA) {
 		int				i;
-		size_t			p = l->lsys->p;
-		size_t			n = l->lsys->n;
-		const double	*x = l->lsys->x;
+		double			scale = linsys_get_scale (l->lsys);
+		const double	*x = linsys_get_x (l->lsys);
 		double			*a = (double *) malloc (p * sizeof (double));
 		/* a = scale * X' * u */
-		dgemv_ ("T", LINSYS_CINTP (n), LINSYS_CINTP (p), &l->scale, x, LINSYS_CINTP (n), l->u, &ione, &dzero, a, &ione);
-		if (!l->lsys->pen) {	// elastic net
-			/* For elastic net, a(A) must be a(A) += l->lambda2 * l->scale^2 * w.
-			 * But for the estimation of gamma_hat, a(A) are not referred. */
-			/* do nothing */
-		} else {
-			/* a(A) += l->lambda2 * l->scale^2 * JA' * JA * w */
-			size_t			p1 = l->lsys->pen->p1;
-			const double	*r = l->lsys->pen->r;
-			double			alpha = l->lambda2 * l->scale2;
-			/* jw = JA * w */
-			double	*jw = larsen_xa_dot_ya (l, p1, 1., r, l->w);
-			/* jtjw = JA' * JA * w */
-			double	*jtjw = larsen_xa_transpose_dot_y (l, p1, 1., r, jw);
-			free (jw);
-			/* a(A) += alpha * JA' * JA * w */
-			larsen_awpy (l, alpha, jtjw, a);
-			free (jtjw);
+		dgemv_ ("T", LINSYS_CINTP (n), LINSYS_CINTP (p), &scale, x, LINSYS_CINTP (n), l->u, &ione, &dzero, a, &ione);
+		if (!linsys_is_regtype_lasso (l->lsys)) {
+			if (linsys_is_regtype_ridge (l->lsys)) {	// Ridge penalty
+				/* For elastic net, a(A) must be a(A) += l->lambda2 * l->scale^2 * w.
+				 * But for the estimation of gamma_hat, a(A) are not referred. */
+
+				/* do nothing */
+			} else {
+				/* a(A) += l->lambda2 * l->scale^2 * JA' * JA * w */
+				size_t			pj = linsys_get_pj (l->lsys);
+				const double	*r = linsys_get_penalty (l->lsys);
+				double			alpha = linsys_get_lambda2 (l->lsys) * linsys_get_scale2 (l->lsys);
+				/* jw = JA * w */
+				double	*jw = larsen_xa_dot_ya (l, pj, 1., r, l->w);
+				/* jtjw = JA' * JA * w */
+				double	*jtjw = larsen_xa_transpose_dot_y (l, pj, 1., r, jw);
+				free (jw);
+				/* a(A) += alpha * JA' * JA * w */
+				larsen_axapy (l, alpha, jtjw, a);
+				free (jtjw);
+			}
 		}
-		for (i = 0; i < l->lsys->p - l->sizeA; i++) {
+		for (i = 0; i < p - l->sizeA; i++) {
 			int		j = Ac[i];
 			double	cj = l->c[j];
 			double	aj = a[j];

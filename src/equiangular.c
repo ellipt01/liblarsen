@@ -10,10 +10,7 @@
 #include <math.h>
 #include <larsen.h>
 
-#include "linsys_private.h"
-
-extern double	*larsen_xa_dot_ya (larsen *l, const size_t n, double alpha, const double *x, const double *ya);
-extern double	*larsen_xa_transpose_dot_y (larsen *l, const size_t n, const double alpha, const double *x, const double *y);
+#include "larsen_private.h"
 
 /* s = sign(c) */
 static double *
@@ -32,15 +29,15 @@ update_sign (larsen *l)
 static bool
 check_info (const char *func_name, const int info)
 {
-	bool	is_valid = false;
+	bool	is_valid_info = false;
 
-	if (info == 0) is_valid = true;
+	if (info == 0) is_valid_info = true;
 	else if (info < 0) fprintf (stderr, "WARNING: %s : the %d-th argument had an illegal value.\n", func_name, - info - 1);
 	else if (info > 0) {
 		fprintf (stderr, "WARNING: %s : the leading minor of order %d is not positive definite.\n", func_name, info);
 		fprintf (stderr, "         factorization could not be completed.\n");
 	}
-	return is_valid;
+	return is_valid_info;
 }
 
 /* do cholinsert / choldelete of specified index */
@@ -54,15 +51,17 @@ update_chol (larsen *l)
 		/*** insert a predictor ***/
 		int				j = l->oper.column_of_X;
 		double			*t = (double *) malloc (l->sizeA * sizeof (double));
-		size_t			n = l->lsys->n;
-		const double	*x = l->lsys->x;
+		size_t			n = linsys_get_n (l->lsys);
+		const double	*x = linsys_get_x (l->lsys);
 		const double	*xj = x + LINSYS_INDEX_OF_MATRIX (0, j, n);
-		double			alpha = l->lambda2 * l->scale2;
+		double			lambda2 = linsys_get_lambda2 (l->lsys);
+		double			scale2 = linsys_get_scale2 (l->lsys);
+		double			alpha = lambda2 * scale2;
 
 		/* t = scale^2 * X(:,A)' * X(:,j) */
-		t = larsen_xa_transpose_dot_y (l, n, l->scale2, x, xj);
+		t = larsen_xa_transpose_dot_y (l, n, scale2, x, xj);
 
-		if (!l->is_lasso) {	// lambda2 > 0
+		if (!linsys_is_regtype_lasso (l->lsys)) {	// lambda2 > 0
 			/* Now, A is already updated and j \in A.
 			 *
 			 * t = Z(:,A)' * Z(:,j)
@@ -78,15 +77,15 @@ update_chol (larsen *l)
 			 * where, because X(:,j)' * X(:,j) = 1,
 			 * t[l->oper.index_of_A] = scale^2 + lambda2 * scale^2 = 1,
 			 * but in the case of adaptive elastic net, the above != 1 */
-			if (!l->lsys->pen) {	// elastic net
+			if (linsys_is_regtype_ridge (l->lsys)) {	// Ridge penalty
 				t[index] += alpha;
 			} else {
 				/* t = scale^2 * X(:,A)' * X(:,j) + scale^2 * lambda2 * J(:,A)' * J(:,j) */
-				size_t			p1 = l->lsys->pen->p1;
-				const double	*r = l->lsys->pen->r;
-				const double	*rj = r + LINSYS_INDEX_OF_MATRIX (0, j, p1);
+				size_t			pj = linsys_get_pj (l->lsys);
+				const double	*r = linsys_get_penalty (l->lsys);
+				const double	*rj = r + LINSYS_INDEX_OF_MATRIX (0, j, pj);
 				/* rtrj = J(:,A)' * J(:,j) */
-				double			*rtrj = larsen_xa_transpose_dot_y (l, p1, 1., r, rj);
+				double			*rtrj = larsen_xa_transpose_dot_y (l, pj, 1., r, rj);
 				/* t += scale^2 * lambda2 * J(:,A)' * J(:,j) */
 				daxpy_ (LINSYS_CINTP (l->sizeA), &alpha, rtrj, &ione, t, &ione);
 				free (rtrj);
@@ -114,6 +113,7 @@ update_equiangular_larsen_cholesky (larsen *l)
 
 	if (l->sizeA <= 0) return false;
 
+	/* s = sign (c) */
 	s = update_sign (l);
 
 	if (l->w) free (l->w);
@@ -151,7 +151,12 @@ update_equiangular_larsen_cholesky (larsen *l)
 	 * in the positive on the LARS-EN algorithm.
 	 */
 	if (l->u) free (l->u);
-	l->u = larsen_xa_dot_ya (l, l->lsys->n, l->scale, l->lsys->x, l->w);
+	{
+		size_t			n = linsys_get_n (l->lsys);
+		double			scale = linsys_get_scale (l->lsys);
+		const double	*x = linsys_get_x (l->lsys);
+		l->u = larsen_xa_dot_ya (l, n, scale, x, l->w);
+	}
 
 	return true;
 }

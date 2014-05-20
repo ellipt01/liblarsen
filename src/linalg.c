@@ -8,21 +8,21 @@
 #include <stdlib.h>
 #include <larsen.h>
 
-#include "linsys_private.h"
+#include "larsen_private.h"
 
-/* y(A) = alpha * w(A) + y(A) */
+/* y(A(i)) = alpha * xa(i) + y(A(i)) */
 void
-larsen_awpy (larsen *l, double alpha, double *w, double *y)
+larsen_axapy (larsen *l, double alpha, double *xa, double *y)
 {
 	int		i;
 	for (i = 0; i < l->sizeA; i++) {
 		int		j = l->A[i];
-		y[j] += alpha * w[i];
+		y[j] += alpha * xa[i];
 	}
 	return;
 }
 
-/* z = alpha * X(A) * ya; ya_i = y(A(i)) */
+/* z = alpha * X(:,A) * ya */
 double *
 larsen_xa_dot_ya (larsen *l, const size_t n, double alpha, const double *x, const double *ya)
 {
@@ -40,14 +40,14 @@ larsen_xa_dot_ya (larsen *l, const size_t n, double alpha, const double *x, cons
 	return z;
 }
 
-/* y = alpha * X(A)' * ya */
+/* y = alpha * X(:,A)' * y */
 double *
 larsen_xa_transpose_dot_y (larsen *l, const size_t n, const double alpha, const double *x, const double *y)
 {
 	int		j;
 	double	*z = (double *) malloc (l->sizeA * sizeof (double));
 
-	/* eval X(A)^T * y */
+	/* eval X(:,A)^T * y */
 	/* another version with dgemv_
 	 *
 	 *   double	*yp = (double *) malloc (l->p * sizeof (double));
@@ -59,7 +59,7 @@ larsen_xa_transpose_dot_y (larsen *l, const size_t n, const double alpha, const 
 	/* The following is faster when l->sizeA is not huge */
 	for (j = 0; j < l->sizeA; j++) {
 		const double	*xaj = x + LINSYS_INDEX_OF_MATRIX (0, l->A[j], n);
-		/* z[j] = alpha * X(:, A[j])' * y */
+		/* z[j] = alpha * X(:,A[j])' * y */
 		z[j] = alpha * ddot_ (LINSYS_CINTP (n), xaj, &ione, y, &ione);
 	}
 	return z;
@@ -133,19 +133,11 @@ int
 larsen_linalg_cholesky_svx (const size_t size, double *l, const size_t lda, double *b)
 {
 	int		info;
-	char	uplo;
-	int		n;
-	int		nrhs;
-	int		_lda;
 
 	if (!l) linsys_error ("larsen_linalg_cholesky_svx", "first matrix is empty.", __FILE__, __LINE__);
 	if (!b) linsys_error ("larsen_linalg_cholesky_svx", "second matrix is empty.", __FILE__, __LINE__);
 
-	uplo = 'U';
-	n = (int) size;
-	nrhs = 1;
-	_lda = (int) lda;
-	dpotrs_ (&uplo, &n, &nrhs, l, &_lda, b, &n, &info);
+	dpotrs_ ("U", LINSYS_CINTP (size), &ione, l, LINSYS_CINTP (lda), b, LINSYS_CINTP (size), &info);
 
 	return info;
 }
@@ -156,7 +148,6 @@ int
 larsen_linalg_cholesky_insert (const size_t size, double **r, const int index, double *u)
 {
 	int			info;
-	int			n;
 	int			ldr;
 	int			j;
 	double		*w;
@@ -168,10 +159,9 @@ larsen_linalg_cholesky_insert (const size_t size, double **r, const int index, d
 
 	matrix_add_rowcols (size, size, r, 1, 1);
 
-	n = (int) size;
-	ldr = n + 1;
+	ldr = (int) size + 1;
 	w = (double *) malloc (ldr * sizeof (double));
-	dchinx_ (&n, *r, &ldr, &j, u, w, &info);
+	dchinx_ (LINSYS_CINTP (size), *r, &ldr, &j, u, w, &info);
 	free (w);
 
 	return info;
@@ -185,8 +175,6 @@ larsen_linalg_cholesky_insert (const size_t size, double **r, const int index, d
 void
 larsen_linalg_cholesky_delete (const size_t size, double **r, const int index)
 {
-	int		n;
-	int		ldr;
 	int		j;
 	double	*w;
 
@@ -196,10 +184,7 @@ larsen_linalg_cholesky_delete (const size_t size, double **r, const int index)
 	j = index + 1;
 
 	w = (double *) malloc (size * sizeof (double));
-
-	n = (int) size;
-	ldr = (int) size;
-	dchdex_ (&n, *r, &ldr, &j, w);
+	dchdex_ (LINSYS_CINTP (size), *r, LINSYS_CINTP (size), &j, w);
 	free (w);
 
 	matrix_remove_rowcols (size, size, r, 1, 1);

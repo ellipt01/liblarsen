@@ -9,7 +9,7 @@
 #include <math.h>
 #include <larsen.h>
 
-#include "linsys_private.h"
+#include "larsen_private.h"
 
 /*
  *   Bayesian Information Criterion for L2 reguralized
@@ -21,17 +21,28 @@
 static double
 calc_rss (const larsen *l)
 {
-	double		rss;
-	double		*r = (double *) malloc (l->lsys->n * sizeof (double));
-	double		*beta = larsen_copy_beta_elasticnet (l);	// scale * beta
-	double		*mu = larsen_copy_mu_elasticnet (l);		// scale^2 * mu
-	dcopy_ (LINSYS_CINTP (l->lsys->n), l->lsys->y, &ione, r, &ione);
-	daxpy_ (LINSYS_CINTP (l->lsys->n), &dmone, mu, &ione, r, &ione);	// r = - mu + r
-	rss = pow (dnrm2_ (LINSYS_CINTP (l->lsys->n), r, &ione), 2.);
-	if (!l->is_lasso) rss += l->lambda2 * pow (dnrm2_ (LINSYS_CINTP (l->lsys->p), beta, &ione), 2.);
-	free (r);
-	free (beta);
+	size_t			n = linsys_get_n (l->lsys);
+	size_t			p = linsys_get_p (l->lsys);
+	const double	*y = linsys_get_y (l->lsys);
+	double			lambda2 = linsys_get_lambda2 (l->lsys);
+
+	double			rss;
+	double			*r = (double *) malloc (n * sizeof (double));
+	double			*beta;
+	double			*mu;
+
+	dcopy_ (LINSYS_CINTP (n), y, &ione, r, &ione);
+	mu = larsen_copy_mu (l, true);	// = scale^2 * mu
+	daxpy_ (LINSYS_CINTP (n), &dmone, mu, &ione, r, &ione);	// r = - mu + r
 	free (mu);
+
+	rss = pow (dnrm2_ (LINSYS_CINTP (n), r, &ione), 2.);
+	free (r);
+
+	beta = larsen_copy_beta (l, true);	// = scale * beta
+	if (!linsys_is_regtype_lasso (l->lsys)) rss += lambda2 * pow (dnrm2_ (LINSYS_CINTP (p), beta, &ione), 2.);
+	free (beta);
+
 	return rss;
 }
 
@@ -58,9 +69,9 @@ larsen_eval_bic (const larsen *l, double gamma)
 {
 	double	rss = calc_rss (l);
 	double	df = calc_degree_of_freedom (l);
-	double	n = (double) l->lsys->n;
-	double	p = (double) l->lsys->p;
-	if (!l->is_lasso) n += p;
+	double	n = (double) linsys_get_n (l->lsys);
+	double	p = (double) linsys_get_p (l->lsys);
+	if (!linsys_is_regtype_lasso (l->lsys)) n += p;
 
 	return log (rss) + df * (log (n) + 2. * gamma * log (p)) / n;
 }

@@ -7,6 +7,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 #include <linsys.h>
 
 #include "linsys_private.h"
@@ -25,67 +26,78 @@ linsys_error (const char * function_name, const char *error_msg, const char *fil
 }
 
 linsys *
-linsys_alloc (const size_t n, const size_t p, const double *y, const double *x, const double *meany, const double *meanx, const double *normx)
+linsys_alloc (const double lambda2, const size_t n, const size_t p, const double *y, bool ycentered, const double *x, bool xcentered, bool xnormalized)
 {
 	size_t		np;
-	linsys		*ls;
+	linsys		*lsys;
 
+	if (lambda2 < 0.) linsys_error ("lisys_alloc", "lambda2 must be >= 0.", __FILE__, __LINE__);
 	if (!y) linsys_error ("lisys_alloc", "vector *y is empty.", __FILE__, __LINE__);
 	if (!x) linsys_error ("lisys_alloc", "matrix *x is empty.", __FILE__, __LINE__);
 	if (n <= 0) linsys_error ("lisys_alloc", "n must be > 0.", __FILE__, __LINE__);
 	if (p <= 0) linsys_error ("lisys_alloc", "p must be > 0.", __FILE__, __LINE__);
 
-	ls = (linsys *) malloc (sizeof (linsys));
+	lsys = (linsys *) malloc (sizeof (linsys));
 
-	ls->n = n;
-	ls->p = p;
-	np = ls->n * ls->p;
+	lsys->n = n;
+	lsys->p = p;
+	np = lsys->n * lsys->p;
 
-	ls->y = (double *) malloc (ls->n * sizeof (double));
-	ls->x = (double *) malloc (np * sizeof (double));
+	lsys->y = (double *) malloc (lsys->n * sizeof (double));
+	lsys->x = (double *) malloc (np * sizeof (double));
 
-	dcopy_ (LINSYS_CINTP (ls->n), y, &ione, ls->y, &ione);
-	dcopy_ (LINSYS_CINTP (np), x, &ione, ls->x, &ione);
+	dcopy_ (LINSYS_CINTP (n), y, &ione, lsys->y, &ione);
+	dcopy_ (LINSYS_CINTP (np), x, &ione, lsys->x, &ione);
 
-	ls->meany = NULL;
-	if (meany) {
-		ls->meany = (double *) malloc (sizeof (double));
-		ls->meany[0] = meany[0];
+	lsys->meany = NULL;
+	lsys->ycentered = ycentered;
+	if (!ycentered) {
+		lsys->meany = linsys_centering (n, 1, lsys->y);
+		lsys->ycentered = true;
 	}
-	ls->y_centerdized = (ls->meany != NULL);
 
-
-	ls->meanx = NULL;
-	if (meanx) {
-		ls->meanx = (double *) malloc (ls->p * sizeof (double));
-		dcopy_ (LINSYS_CINTP (ls->p), meanx, &ione, ls->meanx, &ione);
+	lsys->meanx = NULL;
+	lsys->xcentered = xcentered;
+	if (!xcentered) {
+		lsys->meanx = linsys_centering (n, p, lsys->x);
+		lsys->xcentered = true;
 	}
-	ls->x_centerdized = (ls->meanx != NULL);
 
-	ls->normx = NULL;
-	if (normx) {
-		ls->normx = (double *) malloc (ls->p * sizeof (double));
-		dcopy_ (LINSYS_CINTP (ls->p), normx, &ione, ls->normx, &ione);
+	lsys->normx = NULL;
+	lsys->xnormalized = xnormalized;
+	if (!xnormalized) {
+		lsys->normx = linsys_normalizing (n, p, lsys->x);
+		lsys->xnormalized = true;
 	}
-	ls->x_normalized = (ls->normx != NULL);
 
-	ls->pen = NULL;
+	lsys->lambda2 = lambda2;
+	/* scale for ridge regression */
+	if (lambda2 > dlamch_ ("e")) {	// ridge regression
+		lsys->regtype = REGULARIZATION_RIDGE;
+		lsys->scale2 = 1. / (1. + lambda2);
+		lsys->scale = sqrt (lsys->scale2);
+	} else {	// lasso
+		lsys->regtype = REGULARIZATION_LASSO;
+		lsys->scale2 = 1. ;
+		lsys->scale = 1.;
+	}
+	lsys->pen = NULL;
 
-	return ls;
+	return lsys;
 }
 
 void
-linsys_free (linsys *ls)
+linsys_free (linsys *lsys)
 {
-	if (ls) {
-		if (ls->y) free (ls->y);
-		if (ls->x) free (ls->x);
+	if (lsys) {
+		if (lsys->y) free (lsys->y);
+		if (lsys->x) free (lsys->x);
 
-		if (ls->meany) free (ls->meany);
-		if (ls->meanx) free (ls->meanx);
-		if (ls->normx) free (ls->normx);
+		if (lsys->meany) free (lsys->meany);
+		if (lsys->meanx) free (lsys->meanx);
+		if (lsys->normx) free (lsys->normx);
 
-		free (ls);
+		free (lsys);
 	}
 	return;
 }
@@ -125,13 +137,16 @@ linsys_normalizing (const size_t size1, const size_t size2, double *x)
 }
 
 penalty *
-penalty_alloc (const size_t p1, const size_t p, const double a, const double b, const double *r)
+penalty_alloc (const size_t pj, const size_t p, const double *r)
 {
-	penalty	*pen = (penalty *) malloc (sizeof (penalty));
-	size_t		t = p1 * p;
-	pen->p1 = p1;
-	pen->a = a;
-	pen->b = b;
+	penalty	*pen;
+	size_t		t;
+
+	if (!r) linsys_error ("penalty_alloc", "matrix *r is empty.", __FILE__, __LINE__);
+	pen = (penalty *) malloc (sizeof (penalty));
+	t = pj * p;
+	pen->pj = pj;
+	pen->p = p;
 	pen->r = (double *) malloc (t * sizeof (double));
 	dcopy_ (LINSYS_CINTP (t), r, &ione, pen->r, &ione);
 	return pen;
@@ -148,8 +163,81 @@ penalty_free (penalty *pen)
 }
 
 void
-linsys_set_penalty (linsys *ls, const penalty *pen)
+linsys_set_penalty (linsys *lsys, const double a, const double b, const penalty *pen)
 {
-	ls->pen = pen;
-	return;
+	if (pen && lsys->p != pen->p)
+		linsys_error ("linsys_set_penalty", "penalty *pen->p must be same as linsys *lsys->p.", __FILE__, __LINE__);
+
+	lsys->regtype = REGULARIZATION_USER_DEFINED;
+	lsys->scale2 = 1. / (a + b * lsys->lambda2);
+	lsys->scale = sqrt (lsys->scale2);
+	lsys->pen = pen;
+}
+
+bool
+linsys_is_regtype_lasso (const linsys *lsys)
+{
+	return (lsys->regtype == REGULARIZATION_LASSO);
+}
+
+bool
+linsys_is_regtype_ridge (const linsys *lsys)
+{
+	return (lsys->regtype == REGULARIZATION_RIDGE);
+}
+
+double
+linsys_get_lambda2 (const linsys *lsys)
+{
+	return lsys->lambda2;
+}
+
+double
+linsys_get_scale (const linsys *lsys)
+{
+	return lsys->scale;
+}
+
+double
+linsys_get_scale2 (const linsys *lsys)
+{
+	return lsys->scale2;
+}
+
+const size_t
+linsys_get_n (const linsys *lsys)
+{
+	return lsys->n;
+}
+
+const size_t
+linsys_get_p (const linsys *lsys)
+{
+	return lsys->p;
+}
+
+const size_t
+linsys_get_pj (const linsys *lsys)
+{
+	if (lsys->pen) return lsys->pen->pj;
+	return lsys->p;
+}
+
+const double
+*linsys_get_x (const linsys *lsys)
+{
+	return lsys->x;
+}
+
+const double
+*linsys_get_y (const linsys *lsys)
+{
+	return lsys->y;
+}
+
+const double
+*linsys_get_penalty (const linsys *lsys)
+{
+	if (lsys->pen) return lsys->pen->r;
+	return NULL;
 }
