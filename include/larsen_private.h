@@ -29,18 +29,18 @@ extern void	dchdex_ (const int *n, double *R, const int *ldr, const int *j, doub
 #endif
 
 /* linalg.c */
-void		larsen_axapy (larsen *l, double alpha, double *xa, double *y);
-double		*larsen_xa_dot_ya (larsen *l, const size_t n, double alpha, const double *x, const double *ya);
-double		*larsen_xa_transpose_dot_y (larsen *l, const size_t n, const double alpha, const double *x, const double *y);
+void			larsen_axapy (larsen *l, double alpha, double *xa, double *y);
+double			*larsen_xa_dot_ya (larsen *l, const size_t n, double alpha, const double *x, const double *ya);
+double			*larsen_xa_transpose_dot_y (larsen *l, const size_t n, const double alpha, const double *x, const double *y);
 
 /* active_set.c */
-int			*complementA (larsen *l);
-bool		update_activeset (larsen *l);
+int				*complementA (larsen *l);
+bool			update_activeset (larsen *l);
 
 /* stepsize.c */
-bool		update_stepsize (larsen *l);
+bool			update_stepsize (larsen *l);
 
 /* equiangular.c */
-bool		update_equiangular (larsen *l);
+bool			update_equiangular (larsen *l);
 
 #endif /* LARSEN_PRIVATE_H_ */

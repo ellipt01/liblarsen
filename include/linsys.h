@@ -63,10 +63,9 @@ struct s_linsys {
 
 /* penalty term */
 struct s_penalty {
-	size_t					pj;
-	size_t					p;
-	/* scale factor: scale = 1. / (a + b * lambda2) */
-	double					*r;
+	size_t					pj;		// rows of r
+	size_t					p;		// cols of r
+	double					*r;		// pj x p penalty matrix
 };
 
 /* linsys.c */

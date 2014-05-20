@@ -115,9 +115,9 @@ static void
 update_stop_loop_flag (larsen *l)
 {
 	size_t	n = linsys_get_n (l->lsys);
-	size_t	p = linsys_get_p (l->lsys);
+	size_t	p = linsys_get_pj (l->lsys);
 	int		size = l->sizeA;
-	int		m = (!linsys_is_regtype_lasso (l->lsys)) ? (int) p : (int) LINSYS_MIN (n - 1, p);
+	int		m = (linsys_is_regtype_lasso (l->lsys)) ? (int) LINSYS_MIN (n - 1, p) : (int) p;
 	if (l->oper.action == ACTIVESET_ACTION_DROP) size--;
 	l->stop_loop = (size >= m) ? true : false;
 	if (!l->stop_loop) l->stop_loop = (l->oper.column_of_X == -1);
@@ -175,7 +175,7 @@ larsen_regression_step (larsen *l)
 
 	return true;
 }
-
+#include <stdio.h>
 /* Interpolation
  * In the case of l->lambda1 < | beta | after larsen_regression_step (),
  * the solution corresponding to a designed lambda1 is obtained by the
@@ -198,5 +198,6 @@ larsen_interpolate (larsen *l)
 		l->stepsize_intr = l->absA * (lambda1 - nrm1_prev);
 		update_solutions (l);
 	}
+	fprintf (stdout, "lambda1 = %.4f, nrm1 = %.4f, nrm1_prev = %.4f, step_intr = %.4f\n", lambda1, nrm1, nrm1_prev, l->stepsize_intr);
 	return l->is_interped;
 }

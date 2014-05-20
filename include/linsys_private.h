@@ -58,6 +58,6 @@ extern const double	done;	//  1.
 extern const double	dmone;	// -1.
 
 /* print error message and terminate program */
-void	linsys_error (const char * function_name, const char *error_msg, const char *file, const int line);
+void			linsys_error (const char * function_name, const char *error_msg, const char *file, const int line);
 
 #endif /* LINSYS_PRIVATE_H_ */

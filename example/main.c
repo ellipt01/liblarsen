@@ -143,12 +143,16 @@ main (int argc, char **argv)
 	/* penalty term */
 	{
 		int		i;
-		double	*r = (double *) malloc (p * p * sizeof (double));
-		for (i = 0; i < p * p; i++) r[i] = 0.;
-		for (i = 0; i < p; i++) r[LINSYS_INDEX_OF_MATRIX (i, i, p)] = 1.;
-		pen = penalty_alloc (p, p, r);
+		size_t	pj = p - 1;
+		double	*r = (double *) malloc (pj * p * sizeof (double));
+		for (i = 0; i < pj * p; i++) r[i] = 0.;
+		for (i = 0; i < pj; i++) {
+			r[LINSYS_INDEX_OF_MATRIX (i, i, pj)] = 1.;
+			r[LINSYS_INDEX_OF_MATRIX (i, i + 1, pj)] = -1.;
+		}
+		pen = penalty_alloc (pj, p, r);
 		free (r);
-		linsys_set_penalty (lsys, 1., 1., pen);
+		linsys_set_penalty (lsys, 1., 2., pen);
 	}
 
 	{

@@ -24,7 +24,7 @@ example_elasticnet (const linsys *sys, double start, double dt, double stop, dou
 
 	while (larsen_elasticnet (l, maxiter)) {
 		output_solutionpath (iter++, l);
-		fprintf (stdout, "%d : lambda1 = %f, bic(%.2f) = %f\n", iter, l->lambda1, gamma, larsen_eval_bic (l, gamma));
+		fprintf (stdout, "%d : lambda1 = %f, bic(%.2f) = %f: |A| = %d\n", iter, larsen_get_lambda1 (l, false), gamma, larsen_eval_bic (l, gamma), l->sizeA);
 		t += dt;
 		if (t > stop) break;
 		larsen_set_lambda1 (l, t);

@@ -107,8 +107,8 @@ larsen_copy_beta_navie (const larsen *l)
 {
 	size_t	p = linsys_get_p (l->lsys);
 	double	*beta = (double *) malloc (p * sizeof (double));
-	if (!l->is_interped) dcopy_ (LINSYS_CINTP (p), l->beta, &ione, beta, &ione);
-	else dcopy_ (LINSYS_CINTP (p), l->beta_intr, &ione, beta, &ione);
+	if (l->is_interped) dcopy_ (LINSYS_CINTP (p), l->beta_intr, &ione, beta, &ione);
+	else dcopy_ (LINSYS_CINTP (p), l->beta, &ione, beta, &ione);
 	return beta;
 }
 
@@ -133,8 +133,8 @@ larsen_copy_mu_navie (const larsen *l)
 {
 	size_t	n = linsys_get_n (l->lsys);
 	double	*mu = (double *) malloc (n * sizeof (double));
-	if (!l->is_interped) dcopy_ (LINSYS_CINTP (n), l->mu, &ione, mu, &ione);
-	else dcopy_ (LINSYS_CINTP (n), l->mu_intr, &ione, mu, &ione);
+	if (l->is_interped) dcopy_ (LINSYS_CINTP (n), l->mu_intr, &ione, mu, &ione);
+	else dcopy_ (LINSYS_CINTP (n), l->mu, &ione, mu, &ione);
 	return mu;
 }
 
