@@ -83,7 +83,7 @@ int			larsen_linalg_cholesky_insert (const size_t n, double **r, const int index
 void		larsen_linalg_cholesky_delete (const size_t size, double **r, const int index);
 
 /* util.c */
-larsen		*larsen_alloc (const linreg *sys, const double lambda1);
+larsen		*larsen_alloc (const linreg *lreg, const double lambda1);
 void		larsen_free (larsen *l);
 
 double		*larsen_copy_beta (const larsen *l, bool scaling);

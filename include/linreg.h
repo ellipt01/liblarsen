@@ -30,7 +30,11 @@ typedef enum {
 	REGULARIZATION_USER_DEFINED	= 2		// lambda2 > EPS && lreg->pen != NULL
 } RegularizationType;
 
-/* structure for linear system of regression equations */
+/* structure of linear regression model
+ *   b = Z * beta,
+ *   b = [y; 0]
+ *   Z = scale * [X; sqrt(lambda2) * J]
+ */
 struct s_linreg {
 	size_t					n;	// number of data
 	size_t					p;	// number of variables
