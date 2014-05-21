@@ -197,9 +197,11 @@ linsys_set_penalty (linsys *lsys, const double a, const double b, const penalty 
 	if (lsys->p != pen->p)
 		linsys_error ("linsys_set_penalty", "penalty *pen->p must be same as linsys *lsys->p.", __FILE__, __LINE__);
 
-	lsys->regtype = REGULARIZATION_USER_DEFINED;
-	lsys->scale2 = 1. / (a + b * lsys->lambda2);
-	lsys->scale = sqrt (lsys->scale2);
+	if (lsys->regtype != REGULARIZATION_LASSO) {
+		lsys->regtype = REGULARIZATION_USER_DEFINED;
+		lsys->scale2 = 1. / (a + b * lsys->lambda2);
+		lsys->scale = sqrt (lsys->scale2);
+	}
 	lsys->pen = pen;
 }
 

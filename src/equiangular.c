@@ -25,7 +25,7 @@ update_sign (larsen *l)
 	return s;
 }
 
-/* check result of cholesky insert or delete */
+/* check result of Cholesky insert or delete */
 static bool
 check_info (const char *func_name, const int info)
 {
@@ -54,44 +54,45 @@ update_chol (larsen *l)
 		size_t			n = linsys_get_n (l->lsys);
 		const double	*x = linsys_get_x (l->lsys);
 		const double	*xj = x + LINSYS_INDEX_OF_MATRIX (0, j, n);
-		double			lambda2 = linsys_get_lambda2 (l->lsys);
 		double			scale2 = linsys_get_scale2 (l->lsys);
-		double			alpha = lambda2 * scale2;
 
-		/* t = scale^2 * X(:,A)' * X(:,j) */
+		/*** t = scale^2 * X(:,A)' * X(:,j) ***/
 		t = larsen_xa_transpose_dot_y (l, n, scale2, x, xj);
 
-		if (!linsys_is_regtype_lasso (l->lsys)) {	// lambda2 > 0
-			/* Now, A is already updated and j \in A.
+		if (!linsys_is_regtype_lasso (l->lsys)) {
+			double		lambda2 = linsys_get_lambda2 (l->lsys);
+			double		alpha = lambda2 * scale2;
+			/* In the case of lambda2 > 0, (now, A is already updated and j \in A)
 			 *
-			 * t = Z(:,A)' * Z(:,j)
-			 * = scale^2 * [X(:,A)', sqrt(lambda2) * J(:,A)'] * [X(:,j); sqrt(lambda2) * J(:,j)]
-			 * = scale^2 * X(:,A)' * X(:,j) + scale^2 * lambda2 * J(:,A) * J(:,j) = 0)
-			 *
-			 * In the case of elastic net (J = E)
-			 * t = scale^2 * [X(:,A)', sqrt(lambda2) * E(:,A)'] * [X(:,j); sqrt(lambda2) * E(:,j)]
-			 * = scale^2 * X(:,A-1)' * X(:,j)
-			 *   scale^2 * X(:,j)' * X(:,j) + scale^2 * lambda2 * E(:,j) * E(:,j)
-			 * so,
-			 * t[l->oper.index_of_A] += scale^2 * lambda2
-			 * where, because X(:,j)' * X(:,j) = 1,
-			 * t[l->oper.index_of_A] = scale^2 + lambda2 * scale^2 = 1,
-			 * but in the case of adaptive elastic net, the above != 1 */
-			if (linsys_is_regtype_ridge (l->lsys)) {	// Ridge penalty
+			 *   t = Z(:,A)' * Z(:,j)
+			 *     = scale^2 * [X(:,A)', sqrt(lambda2) * J(:,A)'] * [X(:,j); sqrt(lambda2) * J(:,j)]
+			 *     = scale^2 * [X(:,A)' * X(:,j) + lambda2 * J(:,A)' * J(:,j)]
+			 * So,
+			 *   t += scale^2 * lambda2 * J(:,A)' * J(:,j)
+			 */
+			if (linsys_is_regtype_ridge (l->lsys)) {	// Ridge
+				/* In this case, J = E, so
+				 *   t += scale^2 * lambda2 * E(:,A)' * E(:,j)
+				 *      = scale^2 * [E(:,A-1)' * E(:,j) (= 0); E(:,j)' * E(:,j) (= 1)]
+				 * so,
+				 *   t[l->oper.index_of_A] += scale^2 * lambda2
+				 * where, because X(:,j)' * X(:,j) = 1,
+				 * t[l->oper.index_of_A] = scale^2 + lambda2 * scale^2 = 1,
+				 * but in the case of adaptive elastic net, the above != 1 */
 				t[index] += alpha;
 			} else {
-				/* t = scale^2 * X(:,A)' * X(:,j) + scale^2 * lambda2 * J(:,A)' * J(:,j) */
+				/*** t += scale^2 * lambda2 * J(:,A)' * J(:,j) ***/
 				size_t			pj = linsys_get_pj (l->lsys);
-				const double	*r = linsys_get_penalty (l->lsys);
-				const double	*rj = r + LINSYS_INDEX_OF_MATRIX (0, j, pj);
-				/* rtrj = J(:,A)' * J(:,j) */
-				double			*rtrj = larsen_xa_transpose_dot_y (l, pj, 1., r, rj);
+				const double	*jr = linsys_get_penalty (l->lsys);	// J
+				const double	*jrj = jr + LINSYS_INDEX_OF_MATRIX (0, j, pj);	// J(:,j)
+				// J(:,A)' * J(:,j)
+				double			*jtj = larsen_xa_transpose_dot_y (l, pj, 1., jr, jrj);
 				/* t += scale^2 * lambda2 * J(:,A)' * J(:,j) */
-				daxpy_ (LINSYS_CINTP (l->sizeA), &alpha, rtrj, &ione, t, &ione);
-				free (rtrj);
+				daxpy_ (LINSYS_CINTP (l->sizeA), &alpha, jtj, &ione, t, &ione);
+				free (jtj);
 			}
 		}
-
+		/*** insert t ***/
 		info = larsen_linalg_cholesky_insert (l->sizeA - 1, &l->chol, index, t);
 		free (t);
 
@@ -120,7 +121,7 @@ update_equiangular_larsen_cholesky (larsen *l)
 	l->w = (double *) malloc (l->sizeA * sizeof (double));
 	dcopy_ (LINSYS_CINTP (l->sizeA), s, &ione, l->w, &ione);
 
-	/* cholesky update and solve equiangular equation
+	/* Cholesky update and solve equiangular equation
 	 * TODO: create new methods to solve equiangular equation (using QR, SVD etc.)
 	 * and switch them in the following line
 	 */
@@ -137,17 +138,17 @@ update_equiangular_larsen_cholesky (larsen *l)
 	/* w = (ZA' * ZA)^-1 * s(A) * absA */
 	dscal_ (LINSYS_CINTP (l->sizeA), &l->absA, l->w, &ione);
 
-	/* In exactlly
+	/* In exactly
 	 *
-	 *     uA = ZA * w = scale * [XA * w; sqrt(lambda2) * EA * w],
-	 *     dim(uA) = n + p (size of nonzero EA * w is |A|).
+	 *     u = Z(:,A) * w = scale * [X(:,A) * w; sqrt(lambda2) * J(:,A) * w],
+	 *     dim(u) = n + pJ (size of nonzero J(:,A) * w is |A|).
 	 *
-	 * But in this program, to save memory, only first n part of uA is stored
+	 * But in this program, to save memory, only first n part of u is stored
 	 *
 	 *     u = scale * XA * w,
 	 *     dim(u) = n,
 	 *
-	 * because the later part of uA ( scale * sqrt(lambda2) * w ) is not appear
+	 * because u(n+1:n+pJ) (= scale * sqrt(lambda2) * J * w ) is not appear
 	 * in the positive on the LARS-EN algorithm.
 	 */
 	if (l->u) free (l->u);
@@ -162,7 +163,7 @@ update_equiangular_larsen_cholesky (larsen *l)
 }
 
 /* call equiangular vector updater
- * if another routine is implenented, swicth them in here */
+ * if another routine is implemented, switch them in here */
 bool
 update_equiangular (larsen *l)
 {

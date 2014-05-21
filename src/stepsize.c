@@ -18,7 +18,7 @@ calc_gamma_hat (larsen *l, int *index, int *column, double *val)
 	size_t		n = linsys_get_n (l->lsys);
 	size_t		p = linsys_get_p (l->lsys);
 	int			minplus_idx = -1;
-	double		minplus = LINSYS_POSINF;
+	double		minplus = LINSYS_POSINF;	// (+1. / 0.)
 	int			*Ac = complementA (l);
 
 	if (l->sizeA == p) {
@@ -28,27 +28,34 @@ calc_gamma_hat (larsen *l, int *index, int *column, double *val)
 		double			scale = linsys_get_scale (l->lsys);
 		const double	*x = linsys_get_x (l->lsys);
 		double			*a = (double *) malloc (p * sizeof (double));
-		/* a = scale * X' * u */
+
+		/*** a = scale * X' * u ***/
 		dgemv_ ("T", LINSYS_CINTP (n), LINSYS_CINTP (p), &scale, x, LINSYS_CINTP (n), l->u, &ione, &dzero, a, &ione);
+
 		if (!linsys_is_regtype_lasso (l->lsys)) {
-			if (linsys_is_regtype_ridge (l->lsys)) {	// Ridge penalty
-				/* For elastic net, a(A) must be a(A) += l->lambda2 * l->scale^2 * w.
-				 * But for the estimation of gamma_hat, a(A) are not referred. */
+			if (linsys_is_regtype_ridge (l->lsys)) {	// Ridge
+				/* For elastic net,
+				 *   a += z
+				 *   z = l->lambda2 * l->scale^2 * E' * E(:,A) * w,
+				 * and z(A) != 0, z(Ac) = 0.
+				 * But for the estimation of gamma_hat, a(A), and z(A) are not referred. */
 
 				/* do nothing */
 			} else {
-				/* a(A) += l->lambda2 * l->scale^2 * JA' * JA * w */
+				/*** a += l->lambda2 * l->scale^2 * J' * J(:,A) * w ***/
 				size_t			pj = linsys_get_pj (l->lsys);
-				const double	*r = linsys_get_penalty (l->lsys);
+				const double	*jr = linsys_get_penalty (l->lsys);
 				double			alpha = linsys_get_lambda2 (l->lsys) * linsys_get_scale2 (l->lsys);
-				/* jw = JA * w */
-				double	*jw = larsen_xa_dot_ya (l, pj, 1., r, l->w);
-				/* jtjw = JA' * JA * w */
-				double	*jtjw = larsen_xa_transpose_dot_y (l, pj, 1., r, jw);
+				double			*jw = larsen_xa_dot_ya (l, pj, 1., jr, l->w);	// J(:,A) * w
+
+				// J' * (J(:,A) * w)
+				double			*jtjw = (double *) malloc (p * sizeof (double));
+				dgemv_ ("T", LINSYS_CINTP (pj), LINSYS_CINTP (p), &done, jr, LINSYS_CINTP (pj), jw, &ione, &dzero, jtjw, &ione);
 				free (jw);
-				/* a(A) += alpha * JA' * JA * w */
-				larsen_axapy (l, alpha, jtjw, a);
+				/* a += alpha * J' * J(:,A) * w */
+				daxpy_ (LINSYS_CINTP (p), &alpha, jtjw, &ione, a, &ione);
 				free (jtjw);
+
 			}
 		}
 		for (i = 0; i < p - l->sizeA; i++) {

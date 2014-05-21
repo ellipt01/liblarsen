@@ -17,44 +17,50 @@ update_correlations (larsen *l)
 {
 	size_t			n = linsys_get_n (l->lsys);
 	size_t			p = linsys_get_p (l->lsys);
-	double			lambda2 = linsys_get_lambda2 (l->lsys);
 	double			scale = linsys_get_scale (l->lsys);
-	double			scale2 = linsys_get_scale2 (l->lsys);
 	const double	*x = linsys_get_x (l->lsys);
 	const double	*y = linsys_get_y (l->lsys);
+
+	/*
+	 *  c = Z' * (b - Z * beta),  b = [y; 0], Z = scale * [X; sqrt(lambda2) * J]
+	 *  if lambda2 > 0 (scale != 1),
+	 *  c = scale * X' * (y - mu) - scale^2 * lambda2 * J' * J * beta
+	 */
+
+	// c = scale * X' * (y - mu)
 	double	*r = (double *) malloc (n * sizeof (double));
 	dcopy_ (LINSYS_CINTP (n), y, &ione, r, &ione);
 	daxpy_ (LINSYS_CINTP (n), &dmone, l->mu, &ione, r, &ione);	// r = - mu + y
 
-	/*
-	 *  c = Z' * (b - Z * beta),  b = [y; 0], Z = scale * [X; sqrt(lambda2) * E]
-	 *  if lambda2 > 0 (scale != 1),
-	 *  c = scale * ( X' * (y - mu) - scale * lambda2 * J' * J * beta )
-	 */
 	if (l->c) free (l->c);
 	l->c = (double *) malloc (p * sizeof (double));
 	dgemv_ ("T", LINSYS_CINTP (n), LINSYS_CINTP (p), &scale, x, LINSYS_CINTP (n), r, &ione, &dzero, l->c, &ione);
 	free (r);
+
+	/*** c -= scale2 * lambda2 * J' * J * beta ***/
 	if (!linsys_is_regtype_lasso (l->lsys)) {	// lambda2 > 0
-		double	alpha = - lambda2 * scale2;
-		if (linsys_is_regtype_ridge (l->lsys)) {	// Ridge penalty
-			/* c -= scale2 * lambda2 * beta */
+		double		lambda2 = linsys_get_lambda2 (l->lsys);
+		double		scale2 = linsys_get_scale2 (l->lsys);
+		double		alpha = - lambda2 * scale2;
+
+		if (linsys_is_regtype_ridge (l->lsys)) {	// Ridge
+			/*** c -= scale2 * lambda2 * E' * E * beta ***/
 			daxpy_ (LINSYS_CINTP (p), &alpha, l->beta, &ione, l->c, &ione);
 		} else {
+			/*** c -= scale2 * lambda2 * J' * J * beta ***/
 			size_t			pj = linsys_get_pj (l->lsys);
-			const double	*r = linsys_get_penalty (l->lsys);
-			double			*rb = (double *) malloc (pj * sizeof (double));
-			double			*rtrb = (double *) malloc (p * sizeof (double));
+			const double	*jr = linsys_get_penalty (l->lsys);
+			double			*jb = (double *) malloc (pj * sizeof (double));
+			double			*jtjb = (double *) malloc (p * sizeof (double));
 
-			/* c -= scale2 * lambda2 * J' * J * beta */
-			/* rb = J * beta */
-			dgemv_ ("N", LINSYS_CINTP (pj), LINSYS_CINTP (p), &done, r, LINSYS_CINTP (pj), l->beta, &ione, &dzero, rb, &ione);
-			/* rtrb = J' * J * beta */
-			dgemv_ ("T", LINSYS_CINTP (pj), LINSYS_CINTP (p), &done, r, LINSYS_CINTP (pj), rb, &ione, &dzero, rtrb, &ione);
-			free (rb);
-			/* c -= scale2 * lambda2 * J' * J * beta */
-			daxpy_ (LINSYS_CINTP (p), &alpha, rtrb, &ione, l->c, &ione);
-			free (rtrb);
+			// J * beta
+			dgemv_ ("N", LINSYS_CINTP (pj), LINSYS_CINTP (p), &done, jr, LINSYS_CINTP (pj), l->beta, &ione, &dzero, jb, &ione);
+			// J' * (J * beta)
+			dgemv_ ("T", LINSYS_CINTP (pj), LINSYS_CINTP (p), &done, jr, LINSYS_CINTP (pj), jb, &ione, &dzero, jtjb, &ione);
+			free (jb);
+			// c -= scale2 * lambda2 * J' * J * beta
+			daxpy_ (LINSYS_CINTP (p), &alpha, jtjb, &ione, l->c, &ione);
+			free (jtjb);
 		}
 	}
 
@@ -175,7 +181,7 @@ larsen_regression_step (larsen *l)
 
 	return true;
 }
-#include <stdio.h>
+
 /* Interpolation
  * In the case of l->lambda1 < | beta | after larsen_regression_step (),
  * the solution corresponding to a designed lambda1 is obtained by the
@@ -198,6 +204,5 @@ larsen_interpolate (larsen *l)
 		l->stepsize_intr = l->absA * (lambda1 - nrm1_prev);
 		update_solutions (l);
 	}
-	fprintf (stdout, "lambda1 = %.4f, nrm1 = %.4f, nrm1_prev = %.4f, step_intr = %.4f\n", lambda1, nrm1, nrm1_prev, l->stepsize_intr);
 	return l->is_interped;
 }

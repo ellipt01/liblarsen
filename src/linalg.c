@@ -47,14 +47,13 @@ larsen_xa_transpose_dot_y (larsen *l, const size_t n, const double alpha, const 
 	int		j;
 	double	*z = (double *) malloc (l->sizeA * sizeof (double));
 
-	/* eval X(:,A)^T * y */
+	/* Evaluate X(:,A)' * y */
 	/* another version with dgemv_
 	 *
 	 *   double	*yp = (double *) malloc (l->p * sizeof (double));
 	 *   dgemv_ ("T", CINTP (l->n), CINTP (l->p), &alpha, l->x, CINTP (l->n), z, &ione, &dzero, yp, &ione);
 	 *   for (j = 0; j < l->sizeA; j++) y[j] = yp[l->A[j]];
 	 *   free (yp);
-	 *
 	 */
 	/* The following is faster when l->sizeA is not huge */
 	for (j = 0; j < l->sizeA; j++) {
@@ -128,7 +127,7 @@ matrix_remove_rowcols (const size_t m, const size_t n, double **a, const size_t 
 	return;
 }
 
-/* Solve a system of linear equations: L'*L * x = b, where L is a Cholesky factrization. */
+/* Solve a system of linear equations: L'*L * x = b, where L is a Cholesky factorization. */
 int
 larsen_linalg_cholesky_svx (const size_t size, double *l, const size_t lda, double *b)
 {

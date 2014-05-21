@@ -140,7 +140,7 @@ main (int argc, char **argv)
 	linsys_centering_y (lsys);
 	linsys_standardizing_x (lsys);
 
-	/* penalty term */
+	/* penalty term: S-Lasso */
 	{
 		int		i;
 		size_t	pj = p - 1;
