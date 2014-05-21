@@ -20,24 +20,24 @@ array_set_all (const size_t size, double *x, double val)
 }
 
 larsen *
-larsen_alloc (const linsys *lsys, const double lambda1)
+larsen_alloc (const linreg *lreg, const double lambda1)
 {
 	larsen	*l;
 
-	if (!lsys) linsys_error ("larsen_alloc", "linsys *lsys is empty.", __FILE__, __LINE__);
-	if (lambda1 < 0) linsys_error ("larsen_alloc", "lambda1 must be >= 0.", __FILE__, __LINE__);
+	if (!lreg) linreg_error ("larsen_alloc", "linreg *lreg is empty.", __FILE__, __LINE__);
+	if (lambda1 < 0) linreg_error ("larsen_alloc", "lambda1 must be >= 0.", __FILE__, __LINE__);
 
-	if (!lsys->ycentered)
-		linsys_error ("larsen_alloc", "for LARSE-EN, vector *y must be centered.\nplease use linsys_centering_y()", __FILE__, __LINE__);
-	if (!lsys->xcentered || !lsys->xnormalized)
-		linsys_error ("larsen_alloc", "for LARSE-EN, matrix *x must be standardized.\nplease use linsys_{centering,normalizing}_x()", __FILE__, __LINE__);
+	if (!lreg->ycentered)
+		linreg_error ("larsen_alloc", "for LARSE-EN, vector *y must be centered.\nplease use linreg_centering_y()", __FILE__, __LINE__);
+	if (!lreg->xcentered || !lreg->xnormalized)
+		linreg_error ("larsen_alloc", "for LARSE-EN, matrix *x must be standardized.\nplease use linreg_{centering,normalizing}_x()", __FILE__, __LINE__);
 
 	l = (larsen *) malloc (sizeof (larsen));
 
 	l->stop_loop = false;
 
 	/* register linear system of regression equations */
-	l->lsys = lsys;
+	l->lreg = lreg;
 
 	/*L1 threshold */
 	l->lambda1 = lambda1;
@@ -52,7 +52,7 @@ larsen_alloc (const linsys *lsys, const double lambda1)
 	l->oper.column_of_X = -1;
 
 	l->sizeA = 0;
-	l->A = (int *) malloc (l->lsys->p * sizeof (int));
+	l->A = (int *) malloc (l->lreg->p * sizeof (int));
 
 	/* active set */
 	l->absA = 0.;
@@ -60,20 +60,20 @@ larsen_alloc (const linsys *lsys, const double lambda1)
 	l->w = NULL;
 
 	/* solution */
-	l->beta = (double *) malloc (l->lsys->p * sizeof (double));
-	array_set_all (l->lsys->p, l->beta, 0.);
-	l->mu = (double *) malloc (l->lsys->n * sizeof (double));
-	array_set_all (l->lsys->n, l->mu, 0.);
+	l->beta = (double *) malloc (l->lreg->p * sizeof (double));
+	array_set_all (l->lreg->p, l->beta, 0.);
+	l->mu = (double *) malloc (l->lreg->n * sizeof (double));
+	array_set_all (l->lreg->n, l->mu, 0.);
 
 	/* backup of solution */
-	l->beta_prev = (double *) malloc (l->lsys->p * sizeof (double));
-	l->mu_prev = (double *) malloc (l->lsys->n * sizeof (double));
+	l->beta_prev = (double *) malloc (l->lreg->p * sizeof (double));
+	l->mu_prev = (double *) malloc (l->lreg->n * sizeof (double));
 
 	/* interpolation */
 	l->is_interped = false;
 	l->stepsize_intr = 0.;
-	l->beta_intr = (double *) malloc (l->lsys->p * sizeof (double));
-	l->mu_intr = (double *) malloc (l->lsys->n * sizeof (double));
+	l->beta_intr = (double *) malloc (l->lreg->p * sizeof (double));
+	l->mu_intr = (double *) malloc (l->lreg->n * sizeof (double));
 
 	/* Cholesky factorization of Z(:,A)' * Z(:,A) */
 	l->chol = NULL;
@@ -105,10 +105,10 @@ larsen_free (larsen *l)
 static double *
 larsen_copy_beta_navie (const larsen *l)
 {
-	size_t	p = linsys_get_p (l->lsys);
+	size_t	p = linreg_get_p (l->lreg);
 	double	*beta = (double *) malloc (p * sizeof (double));
-	if (l->is_interped) dcopy_ (LINSYS_CINTP (p), l->beta_intr, &ione, beta, &ione);
-	else dcopy_ (LINSYS_CINTP (p), l->beta, &ione, beta, &ione);
+	if (l->is_interped) dcopy_ (LINREG_CINTP (p), l->beta_intr, &ione, beta, &ione);
+	else dcopy_ (LINREG_CINTP (p), l->beta, &ione, beta, &ione);
 	return beta;
 }
 
@@ -117,12 +117,12 @@ larsen_copy_beta_navie (const larsen *l)
 double *
 larsen_copy_beta (const larsen *l, bool scaling)
 {
-	size_t	p = linsys_get_p (l->lsys);
-	double	scale = linsys_get_scale (l->lsys);
+	size_t	p = linreg_get_p (l->lreg);
+	double	scale = linreg_get_scale (l->lreg);
 	double	*beta = larsen_copy_beta_navie (l);
-	if (scaling && !linsys_is_regtype_lasso (l->lsys)) {
+	if (scaling && !linreg_is_regtype_lasso (l->lreg)) {
 		double	alpha = 1. / scale;
-		dscal_ (LINSYS_CINTP (p), &alpha, beta, &ione);
+		dscal_ (LINREG_CINTP (p), &alpha, beta, &ione);
 	}
 	return beta;
 }
@@ -131,10 +131,10 @@ larsen_copy_beta (const larsen *l, bool scaling)
 static double *
 larsen_copy_mu_navie (const larsen *l)
 {
-	size_t	n = linsys_get_n (l->lsys);
+	size_t	n = linreg_get_n (l->lreg);
 	double	*mu = (double *) malloc (n * sizeof (double));
-	if (l->is_interped) dcopy_ (LINSYS_CINTP (n), l->mu_intr, &ione, mu, &ione);
-	else dcopy_ (LINSYS_CINTP (n), l->mu, &ione, mu, &ione);
+	if (l->is_interped) dcopy_ (LINREG_CINTP (n), l->mu_intr, &ione, mu, &ione);
+	else dcopy_ (LINREG_CINTP (n), l->mu, &ione, mu, &ione);
 	return mu;
 }
 
@@ -143,12 +143,12 @@ larsen_copy_mu_navie (const larsen *l)
 double *
 larsen_copy_mu (const larsen *l, bool scaling)
 {
-	size_t	n = linsys_get_n (l->lsys);
-	double	scale2 = linsys_get_scale2 (l->lsys);
+	size_t	n = linreg_get_n (l->lreg);
+	double	scale2 = linreg_get_scale2 (l->lreg);
 	double	*mu = larsen_copy_mu_navie (l);
-	if (scaling && !linsys_is_regtype_lasso (l->lsys)) {
+	if (scaling && !linreg_is_regtype_lasso (l->lreg)) {
 		double	alpha = 1. / scale2;
-		dscal_ (LINSYS_CINTP (n), &alpha, mu, &ione);
+		dscal_ (LINREG_CINTP (n), &alpha, mu, &ione);
 	}
 	return mu;
 }
@@ -167,6 +167,6 @@ double
 larsen_get_lambda1 (const larsen *l, bool scaling)
 {
 	double	lambda1 = l->lambda1;
-	if (scaling && !linsys_is_regtype_lasso (l->lsys)) lambda1 *= linsys_get_scale (l->lsys);
+	if (scaling && !linreg_is_regtype_lasso (l->lreg)) lambda1 *= linreg_get_scale (l->lreg);
 	return lambda1;
 }

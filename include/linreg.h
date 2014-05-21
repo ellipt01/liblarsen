@@ -1,5 +1,5 @@
 /*
- * linsys.h
+ * linreg.h
  *
  *  Wrapper of lapack and qrupdate
  *
@@ -7,8 +7,8 @@
  *      Author: utsugi
  */
 
-#ifndef LINSYS_H_
-#define LINSYS_H_
+#ifndef LINREG_H_
+#define LINREG_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -17,21 +17,21 @@ extern "C" {
 #include <stddef.h>
 #include <stdbool.h>
 
-#ifndef LINSYS_INDEX_OF_MATRIX
-#define LINSYS_INDEX_OF_MATRIX(i, j, lda) ((i) + (j) * (lda))
+#ifndef LINREG_INDEX_OF_MATRIX
+#define LINREG_INDEX_OF_MATRIX(i, j, lda) ((i) + (j) * (lda))
 #endif
 
-typedef struct s_linsys		linsys;
+typedef struct s_linreg		linreg;
 typedef struct s_penalty		penalty;
 
 typedef enum {
 	REGULARIZATION_LASSO			= 0,	// lambda2 < EPS
-	REGULARIZATION_RIDGE			= 1,	// lambda2 > EPS && lsys->pen == NULL
-	REGULARIZATION_USER_DEFINED	= 2		// lambda2 > EPS && lsys->pen != NULL
+	REGULARIZATION_RIDGE			= 1,	// lambda2 > EPS && lreg->pen == NULL
+	REGULARIZATION_USER_DEFINED	= 2		// lambda2 > EPS && lreg->pen != NULL
 } RegularizationType;
 
 /* structure for linear system of regression equations */
-struct s_linsys {
+struct s_linreg {
 	size_t					n;	// number of data
 	size_t					p;	// number of variables
 
@@ -69,37 +69,37 @@ struct s_penalty {
 	double					*r;		// pj x p penalty matrix
 };
 
-/* linsys.c */
-linsys			*linsys_alloc (const double lambda2, const size_t n, const size_t p, const double *y, const double *x);
-void			linsys_free (linsys *l);
+/* linreg.c */
+linreg			*linreg_alloc (const double lambda2, const size_t n, const size_t p, const double *y, const double *x);
+void			linreg_free (linreg *l);
 
-void			linsys_centering_y (linsys *lsys);
-void			linsys_centering_x (linsys *lsys);
-void			linsys_normalizing_x (linsys *lsys);
-void			linsys_standardizing_x (linsys *lsys);
+void			linreg_centering_y (linreg *lreg);
+void			linreg_centering_x (linreg *lreg);
+void			linreg_normalizing_x (linreg *lreg);
+void			linreg_standardizing_x (linreg *lreg);
 
 penalty		*penalty_alloc (const size_t p1, const size_t p, const double *r);
 void			penalty_free (penalty *pen);
 
-void			linsys_set_penalty (linsys *lsys, const double a, const double b, const penalty *pen);
+void			linreg_set_penalty (linreg *lreg, const double a, const double b, const penalty *pen);
 
-bool			linsys_is_regtype_lasso (const linsys *lsys);
-bool			linsys_is_regtype_ridge (const linsys *lsys);
+bool			linreg_is_regtype_lasso (const linreg *lreg);
+bool			linreg_is_regtype_ridge (const linreg *lreg);
 
-double			linsys_get_lambda2 (const linsys *lsys);
-double			linsys_get_scale (const linsys *lsys);
-double			linsys_get_scale2 (const linsys *lsys);
+double			linreg_get_lambda2 (const linreg *lreg);
+double			linreg_get_scale (const linreg *lreg);
+double			linreg_get_scale2 (const linreg *lreg);
 
-const size_t	linsys_get_n (const linsys *lsys);
-const size_t	linsys_get_p (const linsys *lsys);
-const size_t	linsys_get_pj (const linsys *lsys);
+const size_t	linreg_get_n (const linreg *lreg);
+const size_t	linreg_get_p (const linreg *lreg);
+const size_t	linreg_get_pj (const linreg *lreg);
 
-const double	*linsys_get_x (const linsys *lsys);
-const double	*linsys_get_y (const linsys *lsys);
-const double	*linsys_get_penalty (const linsys *lsys);
+const double	*linreg_get_x (const linreg *lreg);
+const double	*linreg_get_y (const linreg *lreg);
+const double	*linreg_get_penalty (const linreg *lreg);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* LINSYS_H_ */
+#endif /* LINREG_H_ */

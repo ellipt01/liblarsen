@@ -15,11 +15,11 @@
 static void
 update_correlations (larsen *l)
 {
-	size_t			n = linsys_get_n (l->lsys);
-	size_t			p = linsys_get_p (l->lsys);
-	double			scale = linsys_get_scale (l->lsys);
-	const double	*x = linsys_get_x (l->lsys);
-	const double	*y = linsys_get_y (l->lsys);
+	size_t			n = linreg_get_n (l->lreg);
+	size_t			p = linreg_get_p (l->lreg);
+	double			scale = linreg_get_scale (l->lreg);
+	const double	*x = linreg_get_x (l->lreg);
+	const double	*y = linreg_get_y (l->lreg);
 
 	/*
 	 *  c = Z' * (b - Z * beta),  b = [y; 0], Z = scale * [X; sqrt(lambda2) * J]
@@ -29,43 +29,43 @@ update_correlations (larsen *l)
 
 	// c = scale * X' * (y - mu)
 	double	*r = (double *) malloc (n * sizeof (double));
-	dcopy_ (LINSYS_CINTP (n), y, &ione, r, &ione);
-	daxpy_ (LINSYS_CINTP (n), &dmone, l->mu, &ione, r, &ione);	// r = - mu + y
+	dcopy_ (LINREG_CINTP (n), y, &ione, r, &ione);
+	daxpy_ (LINREG_CINTP (n), &dmone, l->mu, &ione, r, &ione);	// r = - mu + y
 
 	if (l->c) free (l->c);
 	l->c = (double *) malloc (p * sizeof (double));
-	dgemv_ ("T", LINSYS_CINTP (n), LINSYS_CINTP (p), &scale, x, LINSYS_CINTP (n), r, &ione, &dzero, l->c, &ione);
+	dgemv_ ("T", LINREG_CINTP (n), LINREG_CINTP (p), &scale, x, LINREG_CINTP (n), r, &ione, &dzero, l->c, &ione);
 	free (r);
 
 	/*** c -= scale2 * lambda2 * J' * J * beta ***/
-	if (!linsys_is_regtype_lasso (l->lsys)) {	// lambda2 > 0
-		double		lambda2 = linsys_get_lambda2 (l->lsys);
-		double		scale2 = linsys_get_scale2 (l->lsys);
+	if (!linreg_is_regtype_lasso (l->lreg)) {	// lambda2 > 0
+		double		lambda2 = linreg_get_lambda2 (l->lreg);
+		double		scale2 = linreg_get_scale2 (l->lreg);
 		double		alpha = - lambda2 * scale2;
 
-		if (linsys_is_regtype_ridge (l->lsys)) {	// Ridge
+		if (linreg_is_regtype_ridge (l->lreg)) {	// Ridge
 			/*** c -= scale2 * lambda2 * E' * E * beta ***/
-			daxpy_ (LINSYS_CINTP (p), &alpha, l->beta, &ione, l->c, &ione);
+			daxpy_ (LINREG_CINTP (p), &alpha, l->beta, &ione, l->c, &ione);
 		} else {
 			/*** c -= scale2 * lambda2 * J' * J * beta ***/
-			size_t			pj = linsys_get_pj (l->lsys);
-			const double	*jr = linsys_get_penalty (l->lsys);
+			size_t			pj = linreg_get_pj (l->lreg);
+			const double	*jr = linreg_get_penalty (l->lreg);
 			double			*jb = (double *) malloc (pj * sizeof (double));
 			double			*jtjb = (double *) malloc (p * sizeof (double));
 
 			// J * beta
-			dgemv_ ("N", LINSYS_CINTP (pj), LINSYS_CINTP (p), &done, jr, LINSYS_CINTP (pj), l->beta, &ione, &dzero, jb, &ione);
+			dgemv_ ("N", LINREG_CINTP (pj), LINREG_CINTP (p), &done, jr, LINREG_CINTP (pj), l->beta, &ione, &dzero, jb, &ione);
 			// J' * (J * beta)
-			dgemv_ ("T", LINSYS_CINTP (pj), LINSYS_CINTP (p), &done, jr, LINSYS_CINTP (pj), jb, &ione, &dzero, jtjb, &ione);
+			dgemv_ ("T", LINREG_CINTP (pj), LINREG_CINTP (p), &done, jr, LINREG_CINTP (pj), jb, &ione, &dzero, jtjb, &ione);
 			free (jb);
 			// c -= scale2 * lambda2 * J' * J * beta
-			daxpy_ (LINSYS_CINTP (p), &alpha, jtjb, &ione, l->c, &ione);
+			daxpy_ (LINREG_CINTP (p), &alpha, jtjb, &ione, l->c, &ione);
 			free (jtjb);
 		}
 	}
 
 	{
-		int		maxidx = idamax_ (LINSYS_CINTP (p), l->c, &ione) - 1;	// differ of fortran and C
+		int		maxidx = idamax_ (LINREG_CINTP (p), l->c, &ione) - 1;	// differ of fortran and C
 		if (l->sizeA == 0) {
 			l->oper.index_of_A = 0;
 			l->oper.column_of_X = maxidx;
@@ -80,8 +80,8 @@ update_correlations (larsen *l)
 static void
 update_solutions (larsen *l)
 {
-	size_t		n = linsys_get_n (l->lsys);
-	size_t		p = linsys_get_p (l->lsys);
+	size_t		n = linreg_get_n (l->lreg);
+	size_t		p = linreg_get_p (l->lreg);
 	double		stepsize = (!l->is_interped) ? l->stepsize : l->stepsize_intr;
 	double		*beta = (double *) malloc (p * sizeof (double));
 	double		*mu = (double *) malloc (n * sizeof (double));
@@ -93,23 +93,23 @@ update_solutions (larsen *l)
 	 *  mu_intr = mu_prev + stepsize_intr * u
 	 */
 	if (!l->is_interped) {
-		dcopy_ (LINSYS_CINTP (p), l->beta, &ione, beta, &ione);
-		dcopy_ (LINSYS_CINTP (n), l->mu, &ione, mu, &ione);
+		dcopy_ (LINREG_CINTP (p), l->beta, &ione, beta, &ione);
+		dcopy_ (LINREG_CINTP (n), l->mu, &ione, mu, &ione);
 	} else {
-		dcopy_ (LINSYS_CINTP (p), l->beta_prev, &ione, beta, &ione);
-		dcopy_ (LINSYS_CINTP (n), l->mu_prev, &ione, mu, &ione);
+		dcopy_ (LINREG_CINTP (p), l->beta_prev, &ione, beta, &ione);
+		dcopy_ (LINREG_CINTP (n), l->mu_prev, &ione, mu, &ione);
 	}
 	larsen_axapy (l, stepsize, l->w, beta);			// beta(A) += stepsize * w(A)
-	daxpy_ (LINSYS_CINTP (n), &stepsize, l->u, &ione, mu, &ione);	// mu += stepsize * u
+	daxpy_ (LINREG_CINTP (n), &stepsize, l->u, &ione, mu, &ione);	// mu += stepsize * u
 
 	if (!l->is_interped) {
-		dcopy_ (LINSYS_CINTP (p), l->beta, &ione, l->beta_prev, &ione);
-		dcopy_ (LINSYS_CINTP (n), l->mu, &ione, l->mu_prev, &ione);
-		dcopy_ (LINSYS_CINTP (p), beta, &ione, l->beta, &ione);
-		dcopy_ (LINSYS_CINTP (n), mu, &ione, l->mu, &ione);
+		dcopy_ (LINREG_CINTP (p), l->beta, &ione, l->beta_prev, &ione);
+		dcopy_ (LINREG_CINTP (n), l->mu, &ione, l->mu_prev, &ione);
+		dcopy_ (LINREG_CINTP (p), beta, &ione, l->beta, &ione);
+		dcopy_ (LINREG_CINTP (n), mu, &ione, l->mu, &ione);
 	} else {
-		dcopy_ (LINSYS_CINTP (p), beta, &ione, l->beta_intr, &ione);
-		dcopy_ (LINSYS_CINTP (n), mu, &ione, l->mu_intr, &ione);
+		dcopy_ (LINREG_CINTP (p), beta, &ione, l->beta_intr, &ione);
+		dcopy_ (LINREG_CINTP (n), mu, &ione, l->mu_intr, &ione);
 	}
 	free (beta);
 	free (mu);
@@ -120,10 +120,10 @@ update_solutions (larsen *l)
 static void
 update_stop_loop_flag (larsen *l)
 {
-	size_t	n = linsys_get_n (l->lsys);
-	size_t	p = linsys_get_p (l->lsys);
+	size_t	n = linreg_get_n (l->lreg);
+	size_t	p = linreg_get_p (l->lreg);
 	int		size = l->sizeA;
-	int		m = (linsys_is_regtype_lasso (l->lsys)) ? (int) LINSYS_MIN (n - 1, p) : (int) p;
+	int		m = (linreg_is_regtype_lasso (l->lreg)) ? (int) LINREG_MIN (n - 1, p) : (int) p;
 	if (l->oper.action == ACTIVESET_ACTION_DROP) size--;
 	l->stop_loop = (size >= m) ? true : false;
 	if (!l->stop_loop) l->stop_loop = (l->oper.column_of_X == -1);
@@ -193,9 +193,9 @@ larsen_regression_step (larsen *l)
 bool
 larsen_interpolate (larsen *l)
 {
-	size_t	p = linsys_get_p (l->lsys);
-	double	nrm1_prev = dasum_ (LINSYS_CINTP (p), l->beta_prev, &ione);
-	double	nrm1 = dasum_ (LINSYS_CINTP (p), l->beta, &ione);
+	size_t	p = linreg_get_p (l->lreg);
+	double	nrm1_prev = dasum_ (LINREG_CINTP (p), l->beta_prev, &ione);
+	double	nrm1 = dasum_ (LINREG_CINTP (p), l->beta, &ione);
 	double	lambda1 = larsen_get_lambda1 (l, true);
 
 	l->is_interped = false;

@@ -87,7 +87,7 @@ output_solutionpath (int iter, larsen *l)
 	int			i;
 	char		fn[80];
 	FILE		*fp;
-	size_t		p = linsys_get_p (l->lsys);
+	size_t		p = linreg_get_p (l->lreg);
 	double		*beta = larsen_copy_beta (l, true);
 
 	for (i = 0; i < p; i++) {
@@ -109,7 +109,7 @@ void
 fprintf_beta (FILE *stream, int iter, larsen *l)
 {
 	int		i;
-	size_t	p = linsys_get_p (l->lsys);
+	size_t	p = linreg_get_p (l->lreg);
 	double	*beta = larsen_copy_beta (l, true);
 
 	fprintf (stream, "beta[%04d, t = %.2f] = \n", iter, l->lambda1);

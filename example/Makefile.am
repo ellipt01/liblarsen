@@ -17,9 +17,9 @@ liblarsenexample_la_CPPFLAGS =\
 
 liblarsenexample_la_LDFLAGS =\
 	-L$(top_srcdir)/src\
-	-L$(top_srcdir)/src/linsys
+	-L$(top_srcdir)/src/linreg
 
-liblarsenexample_la_LIBADD = -llinsys -llarsen
+liblarsenexample_la_LIBADD = -llinreg -llarsen
 
 # sample program
 larsen_example_SOURCES = main.c

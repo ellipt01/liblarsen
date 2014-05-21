@@ -13,7 +13,7 @@
 extern "C" {
 #endif
 
-#include <linsys.h>
+#include <linreg.h>
 
 typedef enum {
 	ACTIVESET_ACTION_NONE	= -1,
@@ -36,7 +36,7 @@ struct s_larsen {
 	bool					stop_loop;
 
 	/* linear system of regression equations */
-	const linsys			*lsys;
+	const linreg			*lreg;
 
 	/* threshold for L1 penalty */
 	double					lambda1;
@@ -83,7 +83,7 @@ int			larsen_linalg_cholesky_insert (const size_t n, double **r, const int index
 void		larsen_linalg_cholesky_delete (const size_t size, double **r, const int index);
 
 /* util.c */
-larsen		*larsen_alloc (const linsys *sys, const double lambda1);
+larsen		*larsen_alloc (const linreg *sys, const double lambda1);
 void		larsen_free (larsen *l);
 
 double		*larsen_copy_beta (const larsen *l, bool scaling);

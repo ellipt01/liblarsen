@@ -27,14 +27,14 @@ double *
 larsen_xa_dot_ya (larsen *l, const size_t n, double alpha, const double *x, const double *ya)
 {
 	int		j;
-	size_t	p = l->lsys->p;
+	size_t	p = l->lreg->p;
 	double	*z = (double *) malloc (n * sizeof (double));
 	double	*y = (double *) malloc (p * sizeof (double));
 	/* y(j) = ya(j) for j in A, else = 0 for j not in A */
 	for (j = 0; j < p; j++) y[j] = 0.;
 	for (j = 0; j < l->sizeA; j++) y[l->A[j]] = ya[j];
 	/* z = X * y = X(:, A) * z(A) + X(:, Ac) * 0 */
-	dgemv_ ("N", LINSYS_CINTP (n), LINSYS_CINTP (p), &alpha, x, LINSYS_CINTP (n), y, &ione, &dzero, z, &ione);
+	dgemv_ ("N", LINREG_CINTP (n), LINREG_CINTP (p), &alpha, x, LINREG_CINTP (n), y, &ione, &dzero, z, &ione);
 	free (y);
 
 	return z;
@@ -57,9 +57,9 @@ larsen_xa_transpose_dot_y (larsen *l, const size_t n, const double alpha, const 
 	 */
 	/* The following is faster when l->sizeA is not huge */
 	for (j = 0; j < l->sizeA; j++) {
-		const double	*xaj = x + LINSYS_INDEX_OF_MATRIX (0, l->A[j], n);
+		const double	*xaj = x + LINREG_INDEX_OF_MATRIX (0, l->A[j], n);
 		/* z[j] = alpha * X(:,A[j])' * y */
-		z[j] = alpha * ddot_ (LINSYS_CINTP (n), xaj, &ione, y, &ione);
+		z[j] = alpha * ddot_ (LINREG_CINTP (n), xaj, &ione, y, &ione);
 	}
 	return z;
 }
@@ -87,8 +87,8 @@ matrix_add_rowcols (const size_t m, const size_t n, double **a, const size_t dm,
 	if (dm > 0) {
 		double	*col = (double *) malloc (m * sizeof (double));
 		for (j = n; 0 < j; j--) {
-			dcopy_ (LINSYS_CINTP (m), *a + LINSYS_INDEX_OF_MATRIX (0, j, m), &ione, col, &ione);
-			dcopy_ (LINSYS_CINTP (m), col, &ione, *a + LINSYS_INDEX_OF_MATRIX (0, j, m + dm), &ione);
+			dcopy_ (LINREG_CINTP (m), *a + LINREG_INDEX_OF_MATRIX (0, j, m), &ione, col, &ione);
+			dcopy_ (LINREG_CINTP (m), col, &ione, *a + LINREG_INDEX_OF_MATRIX (0, j, m + dm), &ione);
 		}
 		free (col);
 	}
@@ -116,8 +116,8 @@ matrix_remove_rowcols (const size_t m, const size_t n, double **a, const size_t 
 		double	*col = (double *) malloc ((m - dm) * sizeof (double));
 		for (j = 1; j < n - dn; j++) {
 			int		mm = (int) (m - dm);
-			dcopy_ (LINSYS_CINTP (mm), *a + LINSYS_INDEX_OF_MATRIX (0, j, m), &ione, col, &ione);
-			dcopy_ (LINSYS_CINTP (mm), col, &ione, *a + LINSYS_INDEX_OF_MATRIX (0, j, m - dm), &ione);
+			dcopy_ (LINREG_CINTP (mm), *a + LINREG_INDEX_OF_MATRIX (0, j, m), &ione, col, &ione);
+			dcopy_ (LINREG_CINTP (mm), col, &ione, *a + LINREG_INDEX_OF_MATRIX (0, j, m - dm), &ione);
 		}
 		free (col);
 	}
@@ -133,10 +133,10 @@ larsen_linalg_cholesky_svx (const size_t size, double *l, const size_t lda, doub
 {
 	int		info;
 
-	if (!l) linsys_error ("larsen_linalg_cholesky_svx", "first matrix is empty.", __FILE__, __LINE__);
-	if (!b) linsys_error ("larsen_linalg_cholesky_svx", "second matrix is empty.", __FILE__, __LINE__);
+	if (!l) linreg_error ("larsen_linalg_cholesky_svx", "first matrix is empty.", __FILE__, __LINE__);
+	if (!b) linreg_error ("larsen_linalg_cholesky_svx", "second matrix is empty.", __FILE__, __LINE__);
 
-	dpotrs_ ("U", LINSYS_CINTP (size), &ione, l, LINSYS_CINTP (lda), b, LINSYS_CINTP (size), &info);
+	dpotrs_ ("U", LINREG_CINTP (size), &ione, l, LINREG_CINTP (lda), b, LINREG_CINTP (size), &info);
 
 	return info;
 }
@@ -152,7 +152,7 @@ larsen_linalg_cholesky_insert (const size_t size, double **r, const int index, d
 	double		*w;
 
 	if (index < 0 || size < index)
-		linsys_error ("larsen_linalg_cholesky_insert", "index must be in [0, size].", __FILE__, __LINE__);
+		linreg_error ("larsen_linalg_cholesky_insert", "index must be in [0, size].", __FILE__, __LINE__);
 
 	j = index + 1;
 
@@ -160,7 +160,7 @@ larsen_linalg_cholesky_insert (const size_t size, double **r, const int index, d
 
 	ldr = (int) size + 1;
 	w = (double *) malloc (ldr * sizeof (double));
-	dchinx_ (LINSYS_CINTP (size), *r, &ldr, &j, u, w, &info);
+	dchinx_ (LINREG_CINTP (size), *r, &ldr, &j, u, w, &info);
 	free (w);
 
 	return info;
@@ -178,12 +178,12 @@ larsen_linalg_cholesky_delete (const size_t size, double **r, const int index)
 	double	*w;
 
 	if (index < 0 || size <= index)
-		linsys_error ("larsen_linalg_cholesky_delete", "index must be in [0, size).", __FILE__, __LINE__);
+		linreg_error ("larsen_linalg_cholesky_delete", "index must be in [0, size).", __FILE__, __LINE__);
 
 	j = index + 1;
 
 	w = (double *) malloc (size * sizeof (double));
-	dchdex_ (LINSYS_CINTP (size), *r, LINSYS_CINTP (size), &j, w);
+	dchdex_ (LINREG_CINTP (size), *r, LINREG_CINTP (size), &j, w);
 	free (w);
 
 	matrix_remove_rowcols (size, size, r, 1, 1);

@@ -51,16 +51,16 @@ update_chol (larsen *l)
 		/*** insert a predictor ***/
 		int				j = l->oper.column_of_X;
 		double			*t = (double *) malloc (l->sizeA * sizeof (double));
-		size_t			n = linsys_get_n (l->lsys);
-		const double	*x = linsys_get_x (l->lsys);
-		const double	*xj = x + LINSYS_INDEX_OF_MATRIX (0, j, n);
-		double			scale2 = linsys_get_scale2 (l->lsys);
+		size_t			n = linreg_get_n (l->lreg);
+		const double	*x = linreg_get_x (l->lreg);
+		const double	*xj = x + LINREG_INDEX_OF_MATRIX (0, j, n);
+		double			scale2 = linreg_get_scale2 (l->lreg);
 
 		/*** t = scale^2 * X(:,A)' * X(:,j) ***/
 		t = larsen_xa_transpose_dot_y (l, n, scale2, x, xj);
 
-		if (!linsys_is_regtype_lasso (l->lsys)) {
-			double		lambda2 = linsys_get_lambda2 (l->lsys);
+		if (!linreg_is_regtype_lasso (l->lreg)) {
+			double		lambda2 = linreg_get_lambda2 (l->lreg);
 			double		alpha = lambda2 * scale2;
 			/* In the case of lambda2 > 0, (now, A is already updated and j \in A)
 			 *
@@ -70,7 +70,7 @@ update_chol (larsen *l)
 			 * So,
 			 *   t += scale^2 * lambda2 * J(:,A)' * J(:,j)
 			 */
-			if (linsys_is_regtype_ridge (l->lsys)) {	// Ridge
+			if (linreg_is_regtype_ridge (l->lreg)) {	// Ridge
 				/* In this case, J = E, so
 				 *   t += scale^2 * lambda2 * E(:,A)' * E(:,j)
 				 *      = scale^2 * [E(:,A-1)' * E(:,j) (= 0); E(:,j)' * E(:,j) (= 1)]
@@ -82,13 +82,13 @@ update_chol (larsen *l)
 				t[index] += alpha;
 			} else {
 				/*** t += scale^2 * lambda2 * J(:,A)' * J(:,j) ***/
-				size_t			pj = linsys_get_pj (l->lsys);
-				const double	*jr = linsys_get_penalty (l->lsys);	// J
-				const double	*jrj = jr + LINSYS_INDEX_OF_MATRIX (0, j, pj);	// J(:,j)
+				size_t			pj = linreg_get_pj (l->lreg);
+				const double	*jr = linreg_get_penalty (l->lreg);	// J
+				const double	*jrj = jr + LINREG_INDEX_OF_MATRIX (0, j, pj);	// J(:,j)
 				// J(:,A)' * J(:,j)
 				double			*jtj = larsen_xa_transpose_dot_y (l, pj, 1., jr, jrj);
 				/* t += scale^2 * lambda2 * J(:,A)' * J(:,j) */
-				daxpy_ (LINSYS_CINTP (l->sizeA), &alpha, jtj, &ione, t, &ione);
+				daxpy_ (LINREG_CINTP (l->sizeA), &alpha, jtj, &ione, t, &ione);
 				free (jtj);
 			}
 		}
@@ -119,7 +119,7 @@ update_equiangular_larsen_cholesky (larsen *l)
 
 	if (l->w) free (l->w);
 	l->w = (double *) malloc (l->sizeA * sizeof (double));
-	dcopy_ (LINSYS_CINTP (l->sizeA), s, &ione, l->w, &ione);
+	dcopy_ (LINREG_CINTP (l->sizeA), s, &ione, l->w, &ione);
 
 	/* Cholesky update and solve equiangular equation
 	 * TODO: create new methods to solve equiangular equation (using QR, SVD etc.)
@@ -132,11 +132,11 @@ update_equiangular_larsen_cholesky (larsen *l)
 	if (!check_info ("cholesky_svx", info)) return false;
 	/* end */
 
-	l->absA = 1. / sqrt (ddot_ (LINSYS_CINTP (l->sizeA), s, &ione, l->w, &ione));
+	l->absA = 1. / sqrt (ddot_ (LINREG_CINTP (l->sizeA), s, &ione, l->w, &ione));
 	free (s);
 
 	/* w = (ZA' * ZA)^-1 * s(A) * absA */
-	dscal_ (LINSYS_CINTP (l->sizeA), &l->absA, l->w, &ione);
+	dscal_ (LINREG_CINTP (l->sizeA), &l->absA, l->w, &ione);
 
 	/* In exactly
 	 *
@@ -153,9 +153,9 @@ update_equiangular_larsen_cholesky (larsen *l)
 	 */
 	if (l->u) free (l->u);
 	{
-		size_t			n = linsys_get_n (l->lsys);
-		double			scale = linsys_get_scale (l->lsys);
-		const double	*x = linsys_get_x (l->lsys);
+		size_t			n = linreg_get_n (l->lreg);
+		double			scale = linreg_get_scale (l->lreg);
+		const double	*x = linreg_get_x (l->lreg);
 		l->u = larsen_xa_dot_ya (l, n, scale, x, l->w);
 	}
 

@@ -9,7 +9,7 @@
 #define TEST_LARSEN_H_
 
 #include <stdio.h>
-#include "linsys_private.h"
+#include "linreg_private.h"
 
 extern const double	done;
 

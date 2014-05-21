@@ -30,7 +30,7 @@ rm -f ltmain.sh stamp-h1 config.log config.h config.sub config.status config.gue
 echo "rm -f configure libtool bin/.dirstamp"
 rm -f configure libtool bin/.dirstamp
 
-for i in . src src/linsys include example test; do
+for i in . src src/linreg include example test; do
 
 	echo "rm -f $i/Makefile"
 	rm -f $i/Makefile

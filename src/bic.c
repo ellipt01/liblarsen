@@ -21,37 +21,37 @@
 static double
 calc_rss (const larsen *l)
 {
-	size_t			n = linsys_get_n (l->lsys);
-	size_t			p = linsys_get_p (l->lsys);
-	const double	*y = linsys_get_y (l->lsys);
-	double			lambda2 = linsys_get_lambda2 (l->lsys);
+	size_t			n = linreg_get_n (l->lreg);
+	size_t			p = linreg_get_p (l->lreg);
+	const double	*y = linreg_get_y (l->lreg);
+	double			lambda2 = linreg_get_lambda2 (l->lreg);
 
 	double			rss;
 	double			*r = (double *) malloc (n * sizeof (double));
 	double			*beta;
 	double			*mu;
 
-	dcopy_ (LINSYS_CINTP (n), y, &ione, r, &ione);
+	dcopy_ (LINREG_CINTP (n), y, &ione, r, &ione);
 	mu = larsen_copy_mu (l, true);	// = scale^2 * mu
-	daxpy_ (LINSYS_CINTP (n), &dmone, mu, &ione, r, &ione);	// r = - mu + r
+	daxpy_ (LINREG_CINTP (n), &dmone, mu, &ione, r, &ione);	// r = - mu + r
 	free (mu);
 
-	rss = pow (dnrm2_ (LINSYS_CINTP (n), r, &ione), 2.);
+	rss = pow (dnrm2_ (LINREG_CINTP (n), r, &ione), 2.);
 	free (r);
 
 	beta = larsen_copy_beta (l, true);	// = scale * beta
-	if (!linsys_is_regtype_lasso (l->lsys)) {
-		if (linsys_is_regtype_ridge (l->lsys))
+	if (!linreg_is_regtype_lasso (l->lreg)) {
+		if (linreg_is_regtype_ridge (l->lreg))
 			// rss += lambda2 * |beta|^2
-			rss += lambda2 * pow (dnrm2_ (LINSYS_CINTP (p), beta, &ione), 2.);
+			rss += lambda2 * pow (dnrm2_ (LINREG_CINTP (p), beta, &ione), 2.);
 		else {
-			size_t			pj = linsys_get_pj (l->lsys);
-			const double	*jr = linsys_get_penalty (l->lsys);
+			size_t			pj = linreg_get_pj (l->lreg);
+			const double	*jr = linreg_get_penalty (l->lreg);
 			double			*jb = (double *) malloc (pj * sizeof (double));
 			// J * beta
-			dgemv_ ("N", LINSYS_CINTP (pj), LINSYS_CINTP (p), &done, jr, LINSYS_CINTP (pj), beta, &ione, &dzero, jb, &ione);
+			dgemv_ ("N", LINREG_CINTP (pj), LINREG_CINTP (p), &done, jr, LINREG_CINTP (pj), beta, &ione, &dzero, jb, &ione);
 			// rss += lambda2 * |J * beta|^2
-			rss += lambda2 * pow (dnrm2_ (LINSYS_CINTP (p), jb, &ione), 2.);
+			rss += lambda2 * pow (dnrm2_ (LINREG_CINTP (p), jb, &ione), 2.);
 			free (jb);
 		}
 	}
@@ -83,9 +83,9 @@ larsen_eval_bic (const larsen *l, double gamma)
 {
 	double	rss = calc_rss (l);
 	double	df = calc_degree_of_freedom (l);
-	double	n = (double) linsys_get_n (l->lsys);
-	double	p = (double) linsys_get_p (l->lsys);
-	if (!linsys_is_regtype_lasso (l->lsys)) n += p;
+	double	n = (double) linreg_get_n (l->lreg);
+	double	p = (double) linreg_get_p (l->lreg);
+	if (!linreg_is_regtype_lasso (l->lreg)) n += p;
 
 	return log (rss) + df * (log (n) + 2. * gamma * log (p)) / n;
 }

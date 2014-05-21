@@ -14,7 +14,7 @@
  * The value of extended BIC (Chen and Chen, 2008) are also calculated for each lambda1.
  */
 void
-example_elasticnet (const linsys *sys, double start, double dt, double stop, double gamma, int maxiter)
+example_elasticnet (const linreg *sys, double start, double dt, double stop, double gamma, int maxiter)
 {
 	int			iter = 0;
 	double		t = start;

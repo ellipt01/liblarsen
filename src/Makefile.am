@@ -20,7 +20,7 @@ liblarsen_la_SOURCES = \
 
 liblarsen_la_CPPFLAGS = -I$(top_srcdir)/include
 
-liblarsen_la_LDFLAGS = -L$(top_srcdir)/src/linsys
+liblarsen_la_LDFLAGS = -L$(top_srcdir)/src/linreg
 
-liblarsen_la_LIBADD = -llinsys
+liblarsen_la_LIBADD = -llinreg
 

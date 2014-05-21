@@ -1,12 +1,12 @@
 /*
- * linsys_private.h
+ * linreg_private.h
  *
  *  Created on: 2014/05/14
  *      Author: utsugi
  */
 
-#ifndef LINSYS_PRIVATE_H_
-#define LINSYS_PRIVATE_H_
+#ifndef LINREG_PRIVATE_H_
+#define LINREG_PRIVATE_H_
 
 /* Private macros, constants and headers
  * which are only used internally */
@@ -39,25 +39,25 @@ extern double	dlamch_ (const char *cmach);
 #endif
 
 /* cast pointer type to const int * */
-#ifndef LINSYS_CINTP
-#define LINSYS_CINTP(a)	((const int *) &(a))
+#ifndef LINREG_CINTP
+#define LINREG_CINTP(a)	((const int *) &(a))
 #endif
 
 /* min(a, b) */
-#define LINSYS_MIN(a, b)	(((a) > (b)) ? (b) : (a))
+#define LINREG_MIN(a, b)	(((a) > (b)) ? (b) : (a))
 
 /* posinf = +1. / 0. */
-#ifndef LINSYS_POSINF
-#define LINSYS_POSINF	(+1. / 0.)	// + infinity
+#ifndef LINREG_POSINF
+#define LINREG_POSINF	(+1. / 0.)	// + infinity
 #endif
 
-/* following constants are set in linsys.c */
+/* following constants are set in linreg.c */
 extern const int		ione;	//  1
 extern const double	dzero;	//  0.
 extern const double	done;	//  1.
 extern const double	dmone;	// -1.
 
 /* print error message and terminate program */
-void			linsys_error (const char * function_name, const char *error_msg, const char *file, const int line);
+void			linreg_error (const char * function_name, const char *error_msg, const char *file, const int line);
 
-#endif /* LINSYS_PRIVATE_H_ */
+#endif /* LINREG_PRIVATE_H_ */

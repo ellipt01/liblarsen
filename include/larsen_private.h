@@ -11,7 +11,7 @@
 /* Private macros, constants and headers
  * which are only used internally */
 
-#include "linsys_private.h"
+#include "linreg_private.h"
 
 /* lapack */
 #ifdef HAVE_LAPACK_H

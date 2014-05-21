@@ -46,7 +46,7 @@ remove_item (size_t size, int *v, int index)
 static bool
 activeset_add (larsen *l, int index, int item)
 {
-	if (l->sizeA >= l->lsys->p) return false;
+	if (l->sizeA >= l->lreg->p) return false;
 	if (find_item (item, l->sizeA, l->A, false)) return false;
 
 	add_item (l->sizeA, l->A, index, item);
@@ -91,7 +91,7 @@ int *
 complementA (larsen *l)
 {
 	int		i, j, k;
-	size_t	p = l->lsys->p;
+	size_t	p = l->lreg->p;
 	int		n = (int) (p - l->sizeA);
 	int		A[l->sizeA];
 	int		*Ac = (int *) malloc (n * sizeof (int));
@@ -135,7 +135,7 @@ bool
 update_activeset (larsen *l)
 {
 	bool	status = false;
-	size_t	p = l->lsys->p;
+	size_t	p = l->lreg->p;
 
 	if (!check_action (l->oper.action)) return false;
 	if (!check_index (p, l->oper.column_of_X)) return false;

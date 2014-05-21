@@ -15,27 +15,27 @@
 static void
 calc_gamma_hat (larsen *l, int *index, int *column, double *val)
 {
-	size_t		n = linsys_get_n (l->lsys);
-	size_t		p = linsys_get_p (l->lsys);
+	size_t		n = linreg_get_n (l->lreg);
+	size_t		p = linreg_get_p (l->lreg);
 	int			minplus_idx = -1;
-	double		minplus = LINSYS_POSINF;	// (+1. / 0.)
+	double		minplus = LINREG_POSINF;	// (+1. / 0.)
 	int			*Ac = complementA (l);
 
 	if (l->sizeA == p) {
 		minplus = l->sup_c / l->absA;
 	} else if (p > l->sizeA) {
 		int				i;
-		double			scale = linsys_get_scale (l->lsys);
-		const double	*x = linsys_get_x (l->lsys);
+		double			scale = linreg_get_scale (l->lreg);
+		const double	*x = linreg_get_x (l->lreg);
 		double			*a = (double *) malloc (p * sizeof (double));
 
 		/*** a = scale * X' * u ***/
-		dgemv_ ("T", LINSYS_CINTP (n), LINSYS_CINTP (p), &scale, x, LINSYS_CINTP (n), l->u, &ione, &dzero, a, &ione);
+		dgemv_ ("T", LINREG_CINTP (n), LINREG_CINTP (p), &scale, x, LINREG_CINTP (n), l->u, &ione, &dzero, a, &ione);
 
 		/*** a += l->lambda2 * l->scale^2 * J' * J(:,A) * w ***/
-		if (!linsys_is_regtype_lasso (l->lsys)) {
+		if (!linreg_is_regtype_lasso (l->lreg)) {
 
-			if (linsys_is_regtype_ridge (l->lsys)) {	// Ridge
+			if (linreg_is_regtype_ridge (l->lreg)) {	// Ridge
 				/* For elastic net,
 				 *   a += z
 				 *   z = l->lambda2 * l->scale^2 * E' * E(:,A) * w,
@@ -45,17 +45,17 @@ calc_gamma_hat (larsen *l, int *index, int *column, double *val)
 				/* do nothing */
 			} else {
 				/*** a += l->lambda2 * l->scale^2 * J' * J(:,A) * w ***/
-				size_t			pj = linsys_get_pj (l->lsys);
-				const double	*jr = linsys_get_penalty (l->lsys);
-				double			alpha = linsys_get_lambda2 (l->lsys) * linsys_get_scale2 (l->lsys);
+				size_t			pj = linreg_get_pj (l->lreg);
+				const double	*jr = linreg_get_penalty (l->lreg);
+				double			alpha = linreg_get_lambda2 (l->lreg) * linreg_get_scale2 (l->lreg);
 				double			*jw = larsen_xa_dot_ya (l, pj, 1., jr, l->w);	// J(:,A) * w
 
 				// J' * (J(:,A) * w)
 				double			*jtjw = (double *) malloc (p * sizeof (double));
-				dgemv_ ("T", LINSYS_CINTP (pj), LINSYS_CINTP (p), &done, jr, LINSYS_CINTP (pj), jw, &ione, &dzero, jtjw, &ione);
+				dgemv_ ("T", LINREG_CINTP (pj), LINREG_CINTP (p), &done, jr, LINREG_CINTP (pj), jw, &ione, &dzero, jtjw, &ione);
 				free (jw);
 				/* a += alpha * J' * J(:,A) * w */
-				daxpy_ (LINSYS_CINTP (p), &alpha, jtjw, &ione, a, &ione);
+				daxpy_ (LINREG_CINTP (p), &alpha, jtjw, &ione, a, &ione);
 				free (jtjw);
 
 			}
@@ -69,8 +69,8 @@ calc_gamma_hat (larsen *l, int *index, int *column, double *val)
 			e0 = (l->sup_c - cj) / (l->absA - aj);
 			e1 = (l->sup_c + cj) / (l->absA + aj);
 
-			if (e0 <= 0.) e0 = LINSYS_POSINF;
-			if (e1 <= 0.) e1 = LINSYS_POSINF;
+			if (e0 <= 0.) e0 = LINREG_POSINF;
+			if (e1 <= 0.) e1 = LINREG_POSINF;
 			min = (e0 <= e1) ? e0 : e1;
 
 			if (min < minplus) {
@@ -92,14 +92,14 @@ static void
 calc_gamma_tilde (larsen *l, int *index, int *column, double *val)
 {
 	int		minplus_idx = -1;
-	double	minplus = LINSYS_POSINF;
+	double	minplus = LINREG_POSINF;
 
 	if (l->sizeA > 0) {
 		int		i;
 		for (i = 0; i < l->sizeA; i++) {
 			int		j = l->A[i];
 			double	e = - l->beta[j] / l->w[i];
-			if (e <= 0.) e = LINSYS_POSINF;
+			if (e <= 0.) e = LINREG_POSINF;
 			if (e < minplus) {
 				minplus_idx = i;
 				minplus = e;
@@ -115,7 +115,7 @@ calc_gamma_tilde (larsen *l, int *index, int *column, double *val)
 static bool
 check_stepsize (const double stepsize)
 {
-	return (0 < stepsize && stepsize != LINSYS_POSINF);
+	return (0 < stepsize && stepsize != LINREG_POSINF);
 }
 int count = 0;
 /* Update stepsize and activeset operation l->oper.

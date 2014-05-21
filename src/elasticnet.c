@@ -30,14 +30,14 @@ bool
 larsen_elasticnet (larsen *l, int maxiter)
 {
 	int		iter = 0;
-	size_t	p = linsys_get_p (l->lsys);
-	double	nrm1 = dasum_ (LINSYS_CINTP (p), l->beta, &ione);
+	size_t	p = linreg_get_p (l->lreg);
+	double	nrm1 = dasum_ (LINREG_CINTP (p), l->beta, &ione);
 	double	lambda1 = larsen_get_lambda1 (l, true);
 
 	/* loop of elastic net regression */
 	while (nrm1 <= lambda1 && !l->stop_loop) {
 		if (!larsen_regression_step (l)) return false;
-		nrm1 = dasum_ (LINSYS_CINTP (p), l->beta, &ione);
+		nrm1 = dasum_ (LINREG_CINTP (p), l->beta, &ione);
 		if (++iter > maxiter) {
 			fprintf (stderr, "number of iterations reaches max tolerance.\nregression stopped.\n");
 			return false;

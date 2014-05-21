@@ -126,7 +126,7 @@ main (int argc, char **argv)
 	double		*y;
 	double		*x;
 
-	linsys		*lsys;
+	linreg		*lreg;
 	penalty	*pen;
 
 	if (!read_params (argc, argv)) usage (argv[0]);
@@ -134,11 +134,11 @@ main (int argc, char **argv)
 
 	/* linear system */
 	read_data (fn, skipheaders, &n, &p, &y, &x);
-	lsys = linsys_alloc (lambda2, n, p, y, x);
+	lreg = linreg_alloc (lambda2, n, p, y, x);
 	free (y);
 	free (x);
-	linsys_centering_y (lsys);
-	linsys_standardizing_x (lsys);
+	linreg_centering_y (lreg);
+	linreg_standardizing_x (lreg);
 
 	/* penalty term: S-Lasso */
 	{
@@ -147,23 +147,23 @@ main (int argc, char **argv)
 		double	*r = (double *) malloc (pj * p * sizeof (double));
 		for (i = 0; i < pj * p; i++) r[i] = 0.;
 		for (i = 0; i < pj; i++) {
-			r[LINSYS_INDEX_OF_MATRIX (i, i, pj)] = 1.;
-			r[LINSYS_INDEX_OF_MATRIX (i, i + 1, pj)] = -1.;
+			r[LINREG_INDEX_OF_MATRIX (i, i, pj)] = 1.;
+			r[LINREG_INDEX_OF_MATRIX (i, i + 1, pj)] = -1.;
 		}
 		pen = penalty_alloc (pj, p, r);
 		free (r);
-		linsys_set_penalty (lsys, 1., 2., pen);
+		linreg_set_penalty (lreg, 1., 2., pen);
 	}
 
 	{
 		clock_t	t1, t2;
 		t1 = clock ();
-		example_elasticnet (lsys, start, dt, stop, gamma_bic, maxiter);
+		example_elasticnet (lreg, start, dt, stop, gamma_bic, maxiter);
 		t2 = clock ();
 		fprintf (stderr, "time = %.2e\n", (double) (t2 - t1) / CLOCKS_PER_SEC);
 	}
 
-	linsys_free (lsys);
+	linreg_free (lreg);
 	penalty_free (pen);
 
 	return EXIT_SUCCESS;

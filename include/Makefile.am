@@ -3,7 +3,7 @@
 liblarsen_includedir = $(pkgincludedir)
 
 liblarsen_include_DATA =\
-	linsys.h\
+	linreg.h\
 	larsen.h
 
 EXTRA_DIST = $(liblarsen_include_DATA)
