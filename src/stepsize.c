@@ -15,8 +15,8 @@
 static void
 calc_gamma_hat (larsen *l, int *index, int *column, double *val)
 {
-	size_t		n = linreg_get_n (l->lreg);
-	size_t		p = linreg_get_p (l->lreg);
+	size_t		n = l->lreg->n;
+	size_t		p = l->lreg->p;
 	int			minplus_idx = -1;
 	double		minplus = LINREG_POSINF;	// (+1. / 0.)
 	int			*Ac = complementA (l);
@@ -25,17 +25,17 @@ calc_gamma_hat (larsen *l, int *index, int *column, double *val)
 		minplus = l->sup_c / l->absA;
 	} else if (p > l->sizeA) {
 		int				i;
-		double			scale = linreg_get_scale (l->lreg);
-		const double	*x = linreg_get_x (l->lreg);
+		double			scale = l->lreg->scale;
+		const double	*x = l->lreg->x;
 		double			*a = (double *) malloc (p * sizeof (double));
 
 		/*** a = scale * X' * u ***/
 		dgemv_ ("T", LINREG_CINTP (n), LINREG_CINTP (p), &scale, x, LINREG_CINTP (n), l->u, &ione, &dzero, a, &ione);
 
 		/*** a += l->lambda2 * l->scale^2 * J' * J(:,A) * w ***/
-		if (!linreg_is_regtype_lasso (l->lreg)) {
+		if (!larsen_is_regtype_lasso (l)) {
 
-			if (linreg_is_regtype_ridge (l->lreg)) {	// Ridge
+			if (larsen_is_regtype_ridge (l)) {	// Ridge
 				/* For elastic net,
 				 *   a += z
 				 *   z = l->lambda2 * l->scale^2 * E' * E(:,A) * w,
@@ -45,9 +45,9 @@ calc_gamma_hat (larsen *l, int *index, int *column, double *val)
 				/* do nothing */
 			} else {
 				/*** a += l->lambda2 * l->scale^2 * J' * J(:,A) * w ***/
-				size_t			pj = linreg_get_pj (l->lreg);
-				const double	*jr = linreg_get_penalty (l->lreg);
-				double			alpha = linreg_get_lambda2 (l->lreg) * linreg_get_scale2 (l->lreg);
+				size_t			pj = l->lreg->pen->pj;
+				const double	*jr = l->lreg->pen->r;
+				double			alpha = l->lreg->lambda2 * l->lreg->scale2;
 				double			*jw = larsen_xa_dot_ya (l, pj, 1., jr, l->w);	// J(:,A) * w
 
 				// J' * (J(:,A) * w)

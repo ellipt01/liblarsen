@@ -24,12 +24,6 @@ extern "C" {
 typedef struct s_linreg		linreg;
 typedef struct s_penalty		penalty;
 
-typedef enum {
-	REGULARIZATION_LASSO			= 0,	// lambda2 < EPS
-	REGULARIZATION_RIDGE			= 1,	// lambda2 > EPS && lreg->pen == NULL
-	REGULARIZATION_USER_DEFINED	= 2		// lambda2 > EPS && lreg->pen != NULL
-} RegularizationType;
-
 /* structure of linear regression model
  *   b = Z * beta,
  *   b = [y; 0]
@@ -57,9 +51,6 @@ struct s_linreg {
 	double					scale2;	// scale2 = 1 / (a + b * lambda2)
 	double					scale;		// scale = sqrt(scale2)
 
-	/* regularization type */
-	RegularizationType	regtype;
-
 	/* penalty term.
 	 * if pen == NULL && lambda2 > 0, ridge regression is assumed. */
 	const penalty			*pen;
@@ -86,21 +77,6 @@ penalty		*penalty_alloc (const size_t p1, const size_t p, const double *r);
 void			penalty_free (penalty *pen);
 
 void			linreg_set_penalty (linreg *lreg, const double a, const double b, const penalty *pen);
-
-bool			linreg_is_regtype_lasso (const linreg *lreg);
-bool			linreg_is_regtype_ridge (const linreg *lreg);
-
-double			linreg_get_lambda2 (const linreg *lreg);
-double			linreg_get_scale (const linreg *lreg);
-double			linreg_get_scale2 (const linreg *lreg);
-
-const size_t	linreg_get_n (const linreg *lreg);
-const size_t	linreg_get_p (const linreg *lreg);
-const size_t	linreg_get_pj (const linreg *lreg);
-
-const double	*linreg_get_x (const linreg *lreg);
-const double	*linreg_get_y (const linreg *lreg);
-const double	*linreg_get_penalty (const linreg *lreg);
 
 #ifdef __cplusplus
 }

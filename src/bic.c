@@ -21,10 +21,10 @@
 static double
 calc_rss (const larsen *l)
 {
-	size_t			n = linreg_get_n (l->lreg);
-	size_t			p = linreg_get_p (l->lreg);
-	const double	*y = linreg_get_y (l->lreg);
-	double			lambda2 = linreg_get_lambda2 (l->lreg);
+	size_t			n = l->lreg->n;
+	size_t			p = l->lreg->p;
+	const double	*y = l->lreg->y;
+	double			lambda2 = l->lreg->lambda2;
 
 	double			rss;
 	double			*r = (double *) malloc (n * sizeof (double));
@@ -40,13 +40,13 @@ calc_rss (const larsen *l)
 	free (r);
 
 	beta = larsen_copy_beta (l, true);	// = scale * beta
-	if (!linreg_is_regtype_lasso (l->lreg)) {
-		if (linreg_is_regtype_ridge (l->lreg))
+	if (!larsen_is_regtype_lasso (l)) {
+		if (larsen_is_regtype_ridge (l))
 			// rss += lambda2 * |beta|^2
 			rss += lambda2 * pow (dnrm2_ (LINREG_CINTP (p), beta, &ione), 2.);
 		else {
-			size_t			pj = linreg_get_pj (l->lreg);
-			const double	*jr = linreg_get_penalty (l->lreg);
+			size_t			pj = l->lreg->pen->pj;
+			const double	*jr = l->lreg->pen->r;
 			double			*jb = (double *) malloc (pj * sizeof (double));
 			// J * beta
 			dgemv_ ("N", LINREG_CINTP (pj), LINREG_CINTP (p), &done, jr, LINREG_CINTP (pj), beta, &ione, &dzero, jb, &ione);
@@ -83,9 +83,9 @@ larsen_eval_bic (const larsen *l, double gamma)
 {
 	double	rss = calc_rss (l);
 	double	df = calc_degree_of_freedom (l);
-	double	n = (double) linreg_get_n (l->lreg);
-	double	p = (double) linreg_get_p (l->lreg);
-	if (!linreg_is_regtype_lasso (l->lreg)) n += p;
+	double	n = (double) l->lreg->n;
+	double	p = (double) l->lreg->p;
+	if (!larsen_is_regtype_lasso (l)) n += p;
 
 	return log (rss) + df * (log (n) + 2. * gamma * log (p)) / n;
 }

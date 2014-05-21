@@ -70,7 +70,7 @@ larsen_alloc (const linreg *lreg, const double lambda1)
 	l->mu_prev = (double *) malloc (l->lreg->n * sizeof (double));
 
 	/* interpolation */
-	l->is_interped = false;
+	l->is_interp = false;
 	l->stepsize_intr = 0.;
 	l->beta_intr = (double *) malloc (l->lreg->p * sizeof (double));
 	l->mu_intr = (double *) malloc (l->lreg->n * sizeof (double));
@@ -105,9 +105,9 @@ larsen_free (larsen *l)
 static double *
 larsen_copy_beta_navie (const larsen *l)
 {
-	size_t	p = linreg_get_p (l->lreg);
+	size_t	p = l->lreg->p;
 	double	*beta = (double *) malloc (p * sizeof (double));
-	if (l->is_interped) dcopy_ (LINREG_CINTP (p), l->beta_intr, &ione, beta, &ione);
+	if (l->is_interp) dcopy_ (LINREG_CINTP (p), l->beta_intr, &ione, beta, &ione);
 	else dcopy_ (LINREG_CINTP (p), l->beta, &ione, beta, &ione);
 	return beta;
 }
@@ -117,10 +117,10 @@ larsen_copy_beta_navie (const larsen *l)
 double *
 larsen_copy_beta (const larsen *l, bool scaling)
 {
-	size_t	p = linreg_get_p (l->lreg);
-	double	scale = linreg_get_scale (l->lreg);
+	size_t	p = l->lreg->p;
+	double	scale = l->lreg->scale;
 	double	*beta = larsen_copy_beta_navie (l);
-	if (scaling && !linreg_is_regtype_lasso (l->lreg)) {
+	if (scaling && !larsen_is_regtype_lasso (l)) {
 		double	alpha = 1. / scale;
 		dscal_ (LINREG_CINTP (p), &alpha, beta, &ione);
 	}
@@ -131,9 +131,9 @@ larsen_copy_beta (const larsen *l, bool scaling)
 static double *
 larsen_copy_mu_navie (const larsen *l)
 {
-	size_t	n = linreg_get_n (l->lreg);
+	size_t	n = l->lreg->n;
 	double	*mu = (double *) malloc (n * sizeof (double));
-	if (l->is_interped) dcopy_ (LINREG_CINTP (n), l->mu_intr, &ione, mu, &ione);
+	if (l->is_interp) dcopy_ (LINREG_CINTP (n), l->mu_intr, &ione, mu, &ione);
 	else dcopy_ (LINREG_CINTP (n), l->mu, &ione, mu, &ione);
 	return mu;
 }
@@ -143,10 +143,10 @@ larsen_copy_mu_navie (const larsen *l)
 double *
 larsen_copy_mu (const larsen *l, bool scaling)
 {
-	size_t	n = linreg_get_n (l->lreg);
-	double	scale2 = linreg_get_scale2 (l->lreg);
+	size_t	n = l->lreg->n;
+	double	scale2 = l->lreg->scale2;
 	double	*mu = larsen_copy_mu_navie (l);
-	if (scaling && !linreg_is_regtype_lasso (l->lreg)) {
+	if (scaling && !larsen_is_regtype_lasso (l)) {
 		double	alpha = 1. / scale2;
 		dscal_ (LINREG_CINTP (n), &alpha, mu, &ione);
 	}
@@ -167,6 +167,21 @@ double
 larsen_get_lambda1 (const larsen *l, bool scaling)
 {
 	double	lambda1 = l->lambda1;
-	if (scaling && !linreg_is_regtype_lasso (l->lreg)) lambda1 *= linreg_get_scale (l->lreg);
+	if (scaling && !larsen_is_regtype_lasso (l)) lambda1 *= l->lreg->scale;
 	return lambda1;
+}
+
+/* lambda2 <= eps, regularization type = lasso */
+bool
+larsen_is_regtype_lasso (const larsen *l)
+{
+	return (l->lreg->lambda2 <= linreg_double_eps ());
+}
+
+/* lambda2 > eps && l->lreg->pen == NULL, regularization type = Ridge */
+bool
+larsen_is_regtype_ridge (const larsen *l)
+{
+	if (larsen_is_regtype_lasso (l)) return false;
+	return (l->lreg->pen == NULL);
 }

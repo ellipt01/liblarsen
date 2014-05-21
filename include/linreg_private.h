@@ -57,6 +57,9 @@ extern const double	dzero;	//  0.
 extern const double	done;	//  1.
 extern const double	dmone;	// -1.
 
+/* return machine double precision epsilon */
+double			linreg_double_eps (void);
+
 /* print error message and terminate program */
 void			linreg_error (const char * function_name, const char *error_msg, const char *file, const int line);
 

@@ -15,11 +15,11 @@
 static void
 update_correlations (larsen *l)
 {
-	size_t			n = linreg_get_n (l->lreg);
-	size_t			p = linreg_get_p (l->lreg);
-	double			scale = linreg_get_scale (l->lreg);
-	const double	*x = linreg_get_x (l->lreg);
-	const double	*y = linreg_get_y (l->lreg);
+	size_t			n = l->lreg->n;
+	size_t			p = l->lreg->p;
+	double			scale = l->lreg->scale;
+	const double	*x = l->lreg->x;
+	const double	*y = l->lreg->y;
 
 	/*
 	 *  c = Z' * (b - Z * beta),  b = [y; 0], Z = scale * [X; sqrt(lambda2) * J]
@@ -38,18 +38,16 @@ update_correlations (larsen *l)
 	free (r);
 
 	/*** c -= scale2 * lambda2 * J' * J * beta ***/
-	if (!linreg_is_regtype_lasso (l->lreg)) {	// lambda2 > 0
-		double		lambda2 = linreg_get_lambda2 (l->lreg);
-		double		scale2 = linreg_get_scale2 (l->lreg);
-		double		alpha = - lambda2 * scale2;
+	if (!larsen_is_regtype_lasso (l)) {	// lambda2 > 0
+		double		alpha = - l->lreg->lambda2 * l->lreg->scale2;
 
-		if (linreg_is_regtype_ridge (l->lreg)) {	// Ridge
+		if (larsen_is_regtype_ridge (l)) {	// Ridge
 			/*** c -= scale2 * lambda2 * E' * E * beta ***/
 			daxpy_ (LINREG_CINTP (p), &alpha, l->beta, &ione, l->c, &ione);
 		} else {
 			/*** c -= scale2 * lambda2 * J' * J * beta ***/
-			size_t			pj = linreg_get_pj (l->lreg);
-			const double	*jr = linreg_get_penalty (l->lreg);
+			size_t			pj = l->lreg->pen->pj;
+			const double	*jr = l->lreg->pen->r;
 			double			*jb = (double *) malloc (pj * sizeof (double));
 			double			*jtjb = (double *) malloc (p * sizeof (double));
 
@@ -80,9 +78,9 @@ update_correlations (larsen *l)
 static void
 update_solutions (larsen *l)
 {
-	size_t		n = linreg_get_n (l->lreg);
-	size_t		p = linreg_get_p (l->lreg);
-	double		stepsize = (!l->is_interped) ? l->stepsize : l->stepsize_intr;
+	size_t		n = l->lreg->n;
+	size_t		p = l->lreg->p;
+	double		stepsize = (!l->is_interp) ? l->stepsize : l->stepsize_intr;
 	double		*beta = (double *) malloc (p * sizeof (double));
 	double		*mu = (double *) malloc (n * sizeof (double));
 
@@ -92,7 +90,7 @@ update_solutions (larsen *l)
 	 *  beta_intr = beta_prev + stepsize_intr * w,
 	 *  mu_intr = mu_prev + stepsize_intr * u
 	 */
-	if (!l->is_interped) {
+	if (!l->is_interp) {
 		dcopy_ (LINREG_CINTP (p), l->beta, &ione, beta, &ione);
 		dcopy_ (LINREG_CINTP (n), l->mu, &ione, mu, &ione);
 	} else {
@@ -102,7 +100,7 @@ update_solutions (larsen *l)
 	larsen_axapy (l, stepsize, l->w, beta);			// beta(A) += stepsize * w(A)
 	daxpy_ (LINREG_CINTP (n), &stepsize, l->u, &ione, mu, &ione);	// mu += stepsize * u
 
-	if (!l->is_interped) {
+	if (!l->is_interp) {
 		dcopy_ (LINREG_CINTP (p), l->beta, &ione, l->beta_prev, &ione);
 		dcopy_ (LINREG_CINTP (n), l->mu, &ione, l->mu_prev, &ione);
 		dcopy_ (LINREG_CINTP (p), beta, &ione, l->beta, &ione);
@@ -120,10 +118,10 @@ update_solutions (larsen *l)
 static void
 update_stop_loop_flag (larsen *l)
 {
-	size_t	n = linreg_get_n (l->lreg);
-	size_t	p = linreg_get_p (l->lreg);
+	size_t	n = l->lreg->n;
+	size_t	p = l->lreg->p;
 	int		size = l->sizeA;
-	int		m = (linreg_is_regtype_lasso (l->lreg)) ? (int) LINREG_MIN (n - 1, p) : (int) p;
+	int		m = (larsen_is_regtype_lasso (l)) ? (int) LINREG_MIN (n - 1, p) : (int) p;
 	if (l->oper.action == ACTIVESET_ACTION_DROP) size--;
 	l->stop_loop = (size >= m) ? true : false;
 	if (!l->stop_loop) l->stop_loop = (l->oper.column_of_X == -1);
@@ -164,7 +162,7 @@ update_stop_loop_flag (larsen *l)
 bool
 larsen_regression_step (larsen *l)
 {
-	l->is_interped = false;
+	l->is_interp = false;
 	l->stop_loop = true;
 
 	update_correlations (l);
@@ -193,16 +191,16 @@ larsen_regression_step (larsen *l)
 bool
 larsen_interpolate (larsen *l)
 {
-	size_t	p = linreg_get_p (l->lreg);
+	size_t	p = l->lreg->p;
 	double	nrm1_prev = dasum_ (LINREG_CINTP (p), l->beta_prev, &ione);
 	double	nrm1 = dasum_ (LINREG_CINTP (p), l->beta, &ione);
 	double	lambda1 = larsen_get_lambda1 (l, true);
 
-	l->is_interped = false;
+	l->is_interp = false;
 	if (nrm1_prev <= lambda1 && lambda1 < nrm1) {
-		l->is_interped = true;
+		l->is_interp = true;
 		l->stepsize_intr = l->absA * (lambda1 - nrm1_prev);
 		update_solutions (l);
 	}
-	return l->is_interped;
+	return l->is_interp;
 }

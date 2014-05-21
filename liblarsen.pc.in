@@ -6,5 +6,5 @@ includedir=@includedir@
 Name: @PACKAGE@
 Description: @LIBLARSEN_DESCRIPTION@
 Version: @VERSION@
-Libs: -L${libdir} -llarsen
+Libs: -L${libdir} -llarsen -llinreg
 Cflags: -I${includedir}/liblarsen

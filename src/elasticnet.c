@@ -30,7 +30,7 @@ bool
 larsen_elasticnet (larsen *l, int maxiter)
 {
 	int		iter = 0;
-	size_t	p = linreg_get_p (l->lreg);
+	size_t	p = l->lreg->p;
 	double	nrm1 = dasum_ (LINREG_CINTP (p), l->beta, &ione);
 	double	lambda1 = larsen_get_lambda1 (l, true);
 

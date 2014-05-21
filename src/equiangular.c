@@ -51,16 +51,16 @@ update_chol (larsen *l)
 		/*** insert a predictor ***/
 		int				j = l->oper.column_of_X;
 		double			*t = (double *) malloc (l->sizeA * sizeof (double));
-		size_t			n = linreg_get_n (l->lreg);
-		const double	*x = linreg_get_x (l->lreg);
+		size_t			n = l->lreg->n;
+		const double	*x = l->lreg->x;
 		const double	*xj = x + LINREG_INDEX_OF_MATRIX (0, j, n);
-		double			scale2 = linreg_get_scale2 (l->lreg);
+		double			scale2 = l->lreg->scale2;
 
 		/*** t = scale^2 * X(:,A)' * X(:,j) ***/
 		t = larsen_xa_transpose_dot_y (l, n, scale2, x, xj);
 
-		if (!linreg_is_regtype_lasso (l->lreg)) {
-			double		lambda2 = linreg_get_lambda2 (l->lreg);
+		if (!larsen_is_regtype_lasso (l)) {
+			double		lambda2 = l->lreg->lambda2;
 			double		alpha = lambda2 * scale2;
 			/* In the case of lambda2 > 0, (now, A is already updated and j \in A)
 			 *
@@ -70,7 +70,7 @@ update_chol (larsen *l)
 			 * So,
 			 *   t += scale^2 * lambda2 * J(:,A)' * J(:,j)
 			 */
-			if (linreg_is_regtype_ridge (l->lreg)) {	// Ridge
+			if (larsen_is_regtype_ridge (l)) {	// Ridge
 				/* In this case, J = E, so
 				 *   t += scale^2 * lambda2 * E(:,A)' * E(:,j)
 				 *      = scale^2 * [E(:,A-1)' * E(:,j) (= 0); E(:,j)' * E(:,j) (= 1)]
@@ -82,8 +82,8 @@ update_chol (larsen *l)
 				t[index] += alpha;
 			} else {
 				/*** t += scale^2 * lambda2 * J(:,A)' * J(:,j) ***/
-				size_t			pj = linreg_get_pj (l->lreg);
-				const double	*jr = linreg_get_penalty (l->lreg);	// J
+				size_t			pj = l->lreg->pen->pj;
+				const double	*jr = l->lreg->pen->r;	// J
 				const double	*jrj = jr + LINREG_INDEX_OF_MATRIX (0, j, pj);	// J(:,j)
 				// J(:,A)' * J(:,j)
 				double			*jtj = larsen_xa_transpose_dot_y (l, pj, 1., jr, jrj);
@@ -153,9 +153,9 @@ update_equiangular_larsen_cholesky (larsen *l)
 	 */
 	if (l->u) free (l->u);
 	{
-		size_t			n = linreg_get_n (l->lreg);
-		double			scale = linreg_get_scale (l->lreg);
-		const double	*x = linreg_get_x (l->lreg);
+		size_t			n = l->lreg->n;
+		double			scale = l->lreg->scale;
+		const double	*x = l->lreg->x;
 		l->u = larsen_xa_dot_ya (l, n, scale, x, l->w);
 	}
 

@@ -67,7 +67,7 @@ struct s_larsen {
 	double					*mu_prev;		// backup of previous mu
 
 	/* interpolation */
-	bool					is_interped;	// interpolation was done or not
+	bool					is_interp;		// interpolation was done or not
 	double					stepsize_intr;
 	double					*beta_intr;	// interpolated beta
 	double					*mu_intr;		// interpolated mu
@@ -85,12 +85,12 @@ void		larsen_linalg_cholesky_delete (const size_t size, double **r, const int in
 /* util.c */
 larsen		*larsen_alloc (const linreg *lreg, const double lambda1);
 void		larsen_free (larsen *l);
-
 double		*larsen_copy_beta (const larsen *l, bool scaling);
 double		*larsen_copy_mu (const larsen *l, bool scaling);
-
 void		larsen_set_lambda1 (larsen *l, double t);
 double		larsen_get_lambda1 (const larsen *l, bool scaling);
+bool		larsen_is_regtype_lasso (const larsen *l);
+bool		larsen_is_regtype_ridge (const larsen *l);
 
 /* data.c */
 double		*larsen_centering (const size_t size1, const size_t size2, double *x);

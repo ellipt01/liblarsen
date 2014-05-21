@@ -17,6 +17,15 @@ const double	dzero =  0.;
 const double	done  =  1.;
 const double	dmone = -1.;
 
+double	_linreg_double_eps_ = -1.;
+
+double
+linreg_double_eps (void)
+{
+	if (_linreg_double_eps_ < 0.) _linreg_double_eps_ = dlamch_ ("e");
+	return _linreg_double_eps_;
+}
+
 /* print an error message and exit */
 void
 linreg_error (const char * function_name, const char *error_msg, const char *file, const int line)
@@ -61,11 +70,9 @@ linreg_alloc (const double lambda2, const size_t n, const size_t p, const double
 
 	/* regression type */
 	if (lambda2 > dlamch_ ("e")) {	// default: ridge regression
-		lreg->regtype = REGULARIZATION_RIDGE;
 		lreg->scale2 = 1. / (1. + lambda2);
 		lreg->scale = sqrt (lreg->scale2);
 	} else {	// lasso
-		lreg->regtype = REGULARIZATION_LASSO;
 		lreg->scale2 = 1. ;
 		lreg->scale = 1.;
 	}
@@ -197,85 +204,9 @@ linreg_set_penalty (linreg *lreg, const double a, const double b, const penalty 
 	if (lreg->p != pen->p)
 		linreg_error ("linreg_set_penalty", "penalty *pen->p must be same as linreg *lreg->p.", __FILE__, __LINE__);
 
-	if (lreg->regtype != REGULARIZATION_LASSO) {
-		lreg->regtype = REGULARIZATION_USER_DEFINED;
+	if (lreg->lambda2 > linreg_double_eps () && lreg->pen == NULL) {
 		lreg->scale2 = 1. / (a + b * lreg->lambda2);
 		lreg->scale = sqrt (lreg->scale2);
 	}
 	lreg->pen = pen;
-}
-
-/* is lasso? : lambda2 <= eps? */
-bool
-linreg_is_regtype_lasso (const linreg *lreg)
-{
-	return (lreg->regtype == REGULARIZATION_LASSO);
-}
-
-/* is Ridge? :
- * lambda2 > eps && default lreg->pen == NULL, i.e. default regression type? */
-bool
-linreg_is_regtype_ridge (const linreg *lreg)
-{
-	return (lreg->regtype == REGULARIZATION_RIDGE);
-}
-
-double
-linreg_get_lambda2 (const linreg *lreg)
-{
-	return lreg->lambda2;
-}
-
-double
-linreg_get_scale (const linreg *lreg)
-{
-	return lreg->scale;
-}
-
-double
-linreg_get_scale2 (const linreg *lreg)
-{
-	return lreg->scale2;
-}
-
-const size_t
-linreg_get_n (const linreg *lreg)
-{
-	return lreg->n;
-}
-
-const size_t
-linreg_get_p (const linreg *lreg)
-{
-	return lreg->p;
-}
-
-/* return number of rows of penalty matrix: lreg->pen->pj */
-const size_t
-linreg_get_pj (const linreg *lreg)
-{
-	if (lreg->pen) return lreg->pen->pj;
-	return lreg->p;
-}
-
-/* return lreg->x */
-const double
-*linreg_get_x (const linreg *lreg)
-{
-	return lreg->x;
-}
-
-/* return lreg->y */
-const double
-*linreg_get_y (const linreg *lreg)
-{
-	return lreg->y;
-}
-
-/* return lreg->pen->r */
-const double
-*linreg_get_penalty (const linreg *lreg)
-{
-	if (lreg->pen) return lreg->pen->r;
-	return NULL;
 }
