@@ -32,7 +32,9 @@ calc_gamma_hat (larsen *l, int *index, int *column, double *val)
 		/*** a = scale * X' * u ***/
 		dgemv_ ("T", LINSYS_CINTP (n), LINSYS_CINTP (p), &scale, x, LINSYS_CINTP (n), l->u, &ione, &dzero, a, &ione);
 
+		/*** a += l->lambda2 * l->scale^2 * J' * J(:,A) * w ***/
 		if (!linsys_is_regtype_lasso (l->lsys)) {
+
 			if (linsys_is_regtype_ridge (l->lsys)) {	// Ridge
 				/* For elastic net,
 				 *   a += z
@@ -58,6 +60,7 @@ calc_gamma_hat (larsen *l, int *index, int *column, double *val)
 
 			}
 		}
+
 		for (i = 0; i < p - l->sizeA; i++) {
 			int		j = Ac[i];
 			double	cj = l->c[j];

@@ -121,7 +121,7 @@ static void
 update_stop_loop_flag (larsen *l)
 {
 	size_t	n = linsys_get_n (l->lsys);
-	size_t	p = linsys_get_pj (l->lsys);
+	size_t	p = linsys_get_p (l->lsys);
 	int		size = l->sizeA;
 	int		m = (linsys_is_regtype_lasso (l->lsys)) ? (int) LINSYS_MIN (n - 1, p) : (int) p;
 	if (l->oper.action == ACTIVESET_ACTION_DROP) size--;

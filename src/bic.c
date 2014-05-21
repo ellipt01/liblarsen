@@ -12,9 +12,9 @@
 #include "larsen_private.h"
 
 /*
- *   Bayesian Information Criterion for L2 reguralized
- *   linear regression model b = Z * beta
- *   where b = [l->y ; 0], Z = [l->x ; sqrt(l->lambda2) * E]
+ *   Bayesian Information Criterion for a linear regression model
+ *   b = Z * beta
+ *   where b = [y ; 0], Z = [X ; sqrt(l->lambda2) * J]
  */
 
 /* residual sum of squares | b - Z * beta |^2 */
@@ -40,7 +40,21 @@ calc_rss (const larsen *l)
 	free (r);
 
 	beta = larsen_copy_beta (l, true);	// = scale * beta
-	if (!linsys_is_regtype_lasso (l->lsys)) rss += lambda2 * pow (dnrm2_ (LINSYS_CINTP (p), beta, &ione), 2.);
+	if (!linsys_is_regtype_lasso (l->lsys)) {
+		if (linsys_is_regtype_ridge (l->lsys))
+			// rss += lambda2 * |beta|^2
+			rss += lambda2 * pow (dnrm2_ (LINSYS_CINTP (p), beta, &ione), 2.);
+		else {
+			size_t			pj = linsys_get_pj (l->lsys);
+			const double	*jr = linsys_get_penalty (l->lsys);
+			double			*jb = (double *) malloc (pj * sizeof (double));
+			// J * beta
+			dgemv_ ("N", LINSYS_CINTP (pj), LINSYS_CINTP (p), &done, jr, LINSYS_CINTP (pj), beta, &ione, &dzero, jb, &ione);
+			// rss += lambda2 * |J * beta|^2
+			rss += lambda2 * pow (dnrm2_ (LINSYS_CINTP (p), jb, &ione), 2.);
+			free (jb);
+		}
+	}
 	free (beta);
 
 	return rss;
