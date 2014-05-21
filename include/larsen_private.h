@@ -20,7 +20,7 @@
 extern void	dpotrs_ (const char *uplo, const int *n, const int *nrhs, const double *a, const int *lda, double *b, const int *ldb, int *info);
 #endif
 
-/* qrupdate: choesky linsert/delete */
+/* qrupdate: chlinsert / delete */
 #ifdef HAVE_QRUPDATE_H
 #include <qrupdate.h>
 #else

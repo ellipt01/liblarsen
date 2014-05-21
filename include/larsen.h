@@ -42,8 +42,8 @@ struct s_larsen {
 	double					lambda1;
 
 	/* correlation */
-	double					sup_c;	// sign: sup(abs(c))
-	double					*c;		// colleration: = X' * (y - mu)
+	double					sup_c;	// sign : sup(abs(c))
+	double					*c;		// correlation : = X' * (y - mu)
 
 	/* active set */
 	activeset_operation	oper;
@@ -63,7 +63,7 @@ struct s_larsen {
 	double					*mu;	// estimation of the response y
 
 	/* previous beta and mu */
-	double					*beta_prev;	// backup of previouse beta
+	double					*beta_prev;	// backup of previous beta
 	double					*mu_prev;		// backup of previous mu
 
 	/* interpolation */

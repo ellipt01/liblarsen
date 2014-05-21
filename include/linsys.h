@@ -25,9 +25,9 @@ typedef struct s_linsys		linsys;
 typedef struct s_penalty		penalty;
 
 typedef enum {
-	REGULARIZATION_LASSO			= 0,
-	REGULARIZATION_RIDGE			= 1,
-	REGULARIZATION_USER_DEFINED	= 2
+	REGULARIZATION_LASSO			= 0,	// lambda2 < EPS
+	REGULARIZATION_RIDGE			= 1,	// lambda2 > EPS && lsys->pen == NULL
+	REGULARIZATION_USER_DEFINED	= 2		// lambda2 > EPS && lsys->pen != NULL
 } RegularizationType;
 
 /* structure for linear system of regression equations */
@@ -53,8 +53,9 @@ struct s_linsys {
 	double					scale2;	// scale2 = 1 / (a + b * lambda2)
 	double					scale;		// scale = sqrt(scale2)
 
-	/* use default regularization type (= ridge regression) */
+	/* regularization type */
 	RegularizationType	regtype;
+
 	/* penalty term.
 	 * if pen == NULL && lambda2 > 0, ridge regression is assumed. */
 	const penalty			*pen;
@@ -64,7 +65,7 @@ struct s_linsys {
 /* penalty term */
 struct s_penalty {
 	size_t					pj;		// rows of r
-	size_t					p;		// cols of r
+	size_t					p;		// columns of r
 	double					*r;		// pj x p penalty matrix
 };
 
