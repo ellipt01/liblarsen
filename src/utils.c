@@ -171,17 +171,17 @@ larsen_get_lambda1 (const larsen *l, bool scaling)
 	return lambda1;
 }
 
-/* lambda2 <= eps, regularization type = lasso */
+/* lambda2 <= eps, regression type = lasso */
 bool
 larsen_is_regtype_lasso (const larsen *l)
 {
-	return (l->lreg->lambda2 <= linreg_double_eps ());
+	return (l->lreg->pentype == NO_PENALTY);
 }
 
-/* lambda2 > eps && l->lreg->pen == NULL, regularization type = Ridge */
+/* lambda2 > eps && l->lreg->pen == NULL, regression type = Ridge */
 bool
 larsen_is_regtype_ridge (const larsen *l)
 {
 	if (larsen_is_regtype_lasso (l)) return false;
-	return (l->lreg->pen == NULL);
+	return (l->lreg->pentype == PENALTY_RIDGE);
 }

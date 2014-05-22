@@ -19,7 +19,7 @@ const double	dmone = -1.;
 
 double	_linreg_double_eps_ = -1.;
 
-double
+static double
 linreg_double_eps (void)
 {
 	if (_linreg_double_eps_ < 0.) _linreg_double_eps_ = dlamch_ ("e");
@@ -35,12 +35,11 @@ linreg_error (const char * function_name, const char *error_msg, const char *fil
 }
 
 linreg *
-linreg_alloc (const double lambda2, const size_t n, const size_t p, const double *y, const double *x)
+linreg_alloc (const size_t n, const size_t p, const double *y, const double *x)
 {
 	size_t		np;
 	linreg		*lreg;
 
-	if (lambda2 < 0.) linreg_error ("lisys_alloc", "lambda2 must be >= 0.", __FILE__, __LINE__);
 	if (!y) linreg_error ("lisys_alloc", "vector *y is empty.", __FILE__, __LINE__);
 	if (!x) linreg_error ("lisys_alloc", "matrix *x is empty.", __FILE__, __LINE__);
 	if (n <= 0) linreg_error ("lisys_alloc", "n must be > 0.", __FILE__, __LINE__);
@@ -66,16 +65,12 @@ linreg_alloc (const double lambda2, const size_t n, const size_t p, const double
 	lreg->xcentered = false;
 	lreg->xnormalized = false;
 
-	lreg->lambda2 = lambda2;
+	lreg->pentype = NO_PENALTY;
 
-	/* regression type */
-	if (lambda2 > dlamch_ ("e")) {	// default: Ridge regression
-		lreg->scale2 = 1. / (1. + lambda2);
-		lreg->scale = sqrt (lreg->scale2);
-	} else {	// Lasso
-		lreg->scale2 = 1. ;
-		lreg->scale = 1.;
-	}
+	lreg->lambda2 = 0.;
+	lreg->scale2 = 1. ;
+	lreg->scale = 1.;
+
 	lreg->pen = NULL;
 
 	return lreg;
@@ -198,15 +193,23 @@ penalty_free (penalty *pen)
 
 /* set lreg->pen = pen, and set lreg->scale2 = 1 / (a + b * lambda2) */
 void
-linreg_set_penalty (linreg *lreg, const double a, const double b, const penalty *pen)
+linreg_set_penalty (linreg *lreg, const double lambda2, const double a, const penalty *pen)
 {
-	if (!pen) linreg_error ("linreg_set_penalty", "penalty *pen is empty.", __FILE__, __LINE__);
-	if (lreg->p != pen->p)
+	if (pen && lreg->p != pen->p)
 		linreg_error ("linreg_set_penalty", "penalty *pen->p must be same as linreg *lreg->p.", __FILE__, __LINE__);
 
-	if (lreg->lambda2 > linreg_double_eps () && lreg->pen == NULL) {
-		lreg->scale2 = 1. / (a + b * lreg->lambda2);
-		lreg->scale = sqrt (lreg->scale2);
+	if (lambda2 > linreg_double_eps ()) {
+		lreg->lambda2 = lambda2;
+		if (pen == NULL) {
+			lreg->pentype = PENALTY_RIDGE;
+			lreg->scale2 = 1. / (1. + lreg->lambda2);
+			lreg->scale = sqrt (lreg->scale2);
+		} else {
+			lreg->pentype = PENALTY_USERDEF;
+			lreg->scale2 = 1. / (1. + a * lreg->lambda2);
+			lreg->scale = sqrt (lreg->scale2);
+		}
 	}
 	lreg->pen = pen;
+	return;
 }

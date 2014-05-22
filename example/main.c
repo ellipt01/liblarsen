@@ -134,7 +134,7 @@ main (int argc, char **argv)
 
 	/* linear system */
 	read_data (fn, skipheaders, &n, &p, &y, &x);
-	lreg = linreg_alloc (lambda2, n, p, y, x);
+	lreg = linreg_alloc (n, p, y, x);
 	free (y);
 	free (x);
 	linreg_centering_y (lreg);
@@ -152,7 +152,7 @@ main (int argc, char **argv)
 		}
 		pen = penalty_alloc (pj, p, r);
 		free (r);
-		linreg_set_penalty (lreg, 1., 2., pen);
+		linreg_set_penalty (lreg, lambda2, 2., pen);
 	}
 
 	{

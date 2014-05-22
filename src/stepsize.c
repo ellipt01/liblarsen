@@ -48,8 +48,8 @@ calc_gamma_hat (larsen *l, int *index, int *column, double *val)
 				size_t			pj = l->lreg->pen->pj;
 				const double	*jr = l->lreg->pen->r;
 				double			alpha = l->lreg->lambda2 * l->lreg->scale2;
-				double			*jw = larsen_xa_dot_ya (l, pj, 1., jr, l->w);	// J(:,A) * w
-
+				// J(:,A) * w
+				double			*jw = larsen_xa_dot_ya (l, pj, 1., jr, l->w);
 				// J' * (J(:,A) * w)
 				double			*jtjw = (double *) malloc (p * sizeof (double));
 				dgemv_ ("T", LINREG_CINTP (pj), LINREG_CINTP (p), &done, jr, LINREG_CINTP (pj), jw, &ione, &dzero, jtjw, &ione);

@@ -17,6 +17,12 @@ extern "C" {
 #include <stddef.h>
 #include <stdbool.h>
 
+typedef enum {
+	NO_PENALTY			= 0,
+	PENALTY_RIDGE		= 1,
+	PENALTY_USERDEF	= 2
+} LinegPenaltyType;
+
 #ifndef LINREG_INDEX_OF_MATRIX
 #define LINREG_INDEX_OF_MATRIX(i, j, lda) ((i) + (j) * (lda))
 #endif
@@ -44,6 +50,9 @@ struct s_linreg {
 	double					*meanx;	// meanx[j] = mean( X(:,j) )
 	double					*normx;	// normx[j] = norm( X(:,j) )
 
+	/* penalty type */
+	LinegPenaltyType		pentype;
+
 	/* threshold for L2 penalty */
 	double					lambda2;
 
@@ -65,7 +74,7 @@ struct s_penalty {
 };
 
 /* linreg.c */
-linreg			*linreg_alloc (const double lambda2, const size_t n, const size_t p, const double *y, const double *x);
+linreg			*linreg_alloc (const size_t n, const size_t p, const double *y, const double *x);
 void			linreg_free (linreg *l);
 
 void			linreg_centering_y (linreg *lreg);
@@ -76,7 +85,7 @@ void			linreg_standardizing_x (linreg *lreg);
 penalty		*penalty_alloc (const size_t p1, const size_t p, const double *r);
 void			penalty_free (penalty *pen);
 
-void			linreg_set_penalty (linreg *lreg, const double a, const double b, const penalty *pen);
+void			linreg_set_penalty (linreg *lreg, const double lambda2, const double a, const penalty *pen);
 
 #ifdef __cplusplus
 }
