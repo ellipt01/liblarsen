@@ -20,7 +20,7 @@ array_set_all (const size_t size, double *x, double val)
 }
 
 larsen *
-larsen_alloc (const linreg *lreg, const double lambda1)
+larsen_alloc (const linreg *lreg, const double lambda1, LarsenSolverType solvertype)
 {
 	larsen	*l;
 
@@ -75,8 +75,11 @@ larsen_alloc (const linreg *lreg, const double lambda1)
 	l->beta_intr = (double *) malloc (l->lreg->p * sizeof (double));
 	l->mu_intr = (double *) malloc (l->lreg->n * sizeof (double));
 
+	l->solvertype = solvertype;
+
 	/* Cholesky factorization of Z(:,A)' * Z(:,A) */
-	l->chol = NULL;
+	l->factor_left = NULL;
+	l->factor_right = NULL;
 
 	return l;
 }
@@ -95,7 +98,6 @@ larsen_free (larsen *l)
 		if (l->mu_prev) free (l->mu_prev);
 		if (l->beta_intr) free (l->beta_intr);
 		if (l->mu_intr) free (l->mu_intr);
-		if (l->chol) free (l->chol);
 		free (l);
 	}
 	return;

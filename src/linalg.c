@@ -190,3 +190,104 @@ larsen_linalg_cholesky_delete (const size_t size, double **r, const int index)
 
 	return;
 }
+
+/* Rsolve for economy mode: solve R * x = Q^T * y */
+int
+larsen_linalg_QR_Rsolve (const size_t size, double *r, double *qty)
+{
+	int		info;
+	if (r == NULL) linreg_error ("c_linalg_QR_Rsolve", "matrix is empty.", __FILE__, __LINE__);
+	if (qty == NULL) linreg_error ("c_linalg_QR_Rsolve", "vector is empty.", __FILE__, __LINE__);
+	dtrtrs_ ("U", "N", "N", LINREG_CINTP (size), &ione, r, LINREG_CINTP (size), qty, LINREG_CINTP (size), &info);
+	return info;
+}
+
+/* RTsolve for economy mode: solve R^T * (Q^T * x) = y */
+int
+larsen_linalg_QR_RTsolve (const size_t size, double *r, double *y)
+{
+	int		info;
+	if (r == NULL) linreg_error ("c_linalg_QR_RTsolve", "matrix is empty.", __FILE__, __LINE__);
+	if (y == NULL) linreg_error ("c_linalg_QR_RTsolve", "vector is empty.", __FILE__, __LINE__);
+	dtrtrs_ ("U", "T", "N", LINREG_CINTP (size), &ione, r, LINREG_CINTP (size), y, LINREG_CINTP (size), &info);
+	return info;
+}
+
+/* QR insert for economy mode */
+void
+larsen_linalg_QR_colinsert (const size_t m, const size_t n, double **q, double **r, const int index, const double *u)
+{
+	int			j;
+	int			k;
+	int			ldr;
+	int			ldq;
+	double		*w;
+
+	if (u == NULL) linreg_error ("larsen_linalg_QR_colinsert", "vector *u is empty.", __FILE__, __LINE__);
+	if (index < 0 || n < index) linreg_error ("larsen_linalg_QR_colinsert", "index out of range.", __FILE__, __LINE__);
+
+	k = (m <= n) ? (int) m : (int) n;
+	ldq = (int) m;
+	ldr = (m <= n + 1) ? (int) m : (int) (n + 1);
+	if (m > n) {
+		/*-
+		 *- 	| Q11 Q12 |    | Q11 Q12 D0 |
+		 *- 	| Q21 Q22 | -> | Q21 Q22 D0 |
+		 *- 	| Q31 Q32 |    | Q31 Q32 D0 |
+		 *-
+		 *- 	| R11 R12 |    | R11 R12 D0 |
+		 *- 	| D0  R22 | -> | D0  R22 D0 |
+		 *- 	               | D0  D0  D0 |
+		 */
+		matrix_add_rowcols (m, n, q, 0, 1);
+		matrix_add_rowcols (n, n, r, 1, 1);
+	} else matrix_add_rowcols (m, n, r, 0, 1);
+
+	j = index + 1;	// differ of fortran and C
+
+	w = (double *) malloc (k * sizeof (double));
+	dqrinc_ (LINREG_CINTP (m), LINREG_CINTP (n), &k, *q, &ldq, *r, &ldr, &j, u, w);
+	free (w);
+
+	return;
+}
+
+/* QR delete for economy mode */
+void
+larsen_linalg_QR_coldelete (const size_t m, const size_t n, double **q, double **r, const int index)
+{
+	int			j;
+	int			k;
+	int			ldr;
+	int			ldq;
+	double		*w;
+
+	if (index < 0 || n <= index) linreg_error ("larsen_linalg_QR_coldelete", "index out of range.", __FILE__, __LINE__);
+
+
+	k = (m <= n) ? (int) m : (int) n;
+	ldq = (int) m;
+	ldr = k;
+
+	j = index + 1;	// differ of fortran and C
+
+	w = (double *) malloc ((k - j) * sizeof (double));
+	dqrdec_ (LINREG_CINTP (m), LINREG_CINTP (n), &k, *q, &ldq, *r, &ldr, &j, w);
+	free (w);
+
+	if (m >= n) {
+		/*
+		 *- | Q11 Q12 Q13 |    | Q11 Q12 |
+		 *- | Q21 Q22 Q23 | -> | Q21 Q22 |
+		 *- | Q31 Q32 Q33 |    | Q31 Q32 |
+		 *-
+		 *- | R11 R12 R13 |    | R11 R12 |
+		 *- | D0  R22 R23 | -> | D0  R22 |
+		 *- | D0  D0  R33 |
+		 */
+		matrix_remove_rowcols (m, n, q, 0, 1);
+		matrix_remove_rowcols (n, n, r, 1, 1);
+	} else matrix_remove_rowcols (m, n, r, 0, 1);
+
+	return;
+}

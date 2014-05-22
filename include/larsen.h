@@ -15,6 +15,13 @@ extern "C" {
 
 #include <linreg.h>
 
+typedef struct s_larsen	larsen;
+
+typedef enum {
+	LARSEN_SOLVER_TYPE_CHOLESKY,
+	LARSEN_SOLVER_TYPE_QR,
+} LarsenSolverType;
+
 typedef enum {
 	ACTIVESET_ACTION_NONE	= -1,
 	ACTIVESET_ACTION_ADD		=  0,	// add new variable to the active set
@@ -27,8 +34,6 @@ typedef struct {
 	int						index_of_A;	// position of A
 	int						column_of_X;	// operand column of matrix X
 } activeset_operation;
-
-typedef struct s_larsen	larsen;
 
 struct s_larsen {
 
@@ -73,7 +78,9 @@ struct s_larsen {
 	double					*mu_intr;		// interpolated mu
 
 	/* cholesky factorization */
-	double					*chol;	// = chol(XA' * XA), where XA = X(A)
+	LarsenSolverType		solvertype;
+	double					*factor_left;	// = chol(XA' * XA), where XA = X(A)
+	double					*factor_right;	// = chol(XA' * XA), where XA = X(A)
 
 };
 
@@ -82,8 +89,13 @@ int			larsen_linalg_cholesky_svx (const size_t size, double *l, const size_t lda
 int			larsen_linalg_cholesky_insert (const size_t n, double **r, const int index, double *u);
 void		larsen_linalg_cholesky_delete (const size_t size, double **r, const int index);
 
+int			larsen_linalg_QR_Rsolve (const size_t size, double *r, double *qty);
+int			larsen_linalg_QR_RTsolve (const size_t size, double *r, double *y);
+void		larsen_linalg_QR_colinsert (const size_t m, const size_t n, double **q, double **r, const int index, const double *u);
+void		larsen_linalg_QR_coldelete (const size_t m, const size_t n, double **q, double **r, const int index);
+
 /* util.c */
-larsen		*larsen_alloc (const linreg *lreg, const double lambda1);
+larsen		*larsen_alloc (const linreg *lreg, const double lambda1, LarsenSolverType solvertype);
 void		larsen_free (larsen *l);
 double		*larsen_copy_beta (const larsen *l, bool scaling);
 double		*larsen_copy_mu (const larsen *l, bool scaling);

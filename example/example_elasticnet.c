@@ -18,7 +18,7 @@ example_elasticnet (const linreg *sys, double start, double dt, double stop, dou
 {
 	int			iter = 0;
 	double		t = start;
-	larsen		*l = larsen_alloc (sys, t);
+	larsen		*l = larsen_alloc (sys, t, LARSEN_SOLVER_TYPE_CHOLESKY);
 
 	if (l == NULL) return;
 

@@ -18,6 +18,7 @@
 #include <lapack.h>
 #else
 extern void	dpotrs_ (const char *uplo, const int *n, const int *nrhs, const double *a, const int *lda, double *b, const int *ldb, int *info);
+extern void	dtrtrs_ (const char *uplo, const char *trans, const char *diag, const int *n, const int *nrhs, const double *a, const int *lda, double *b, const int *lbd, const int *info);
 #endif
 
 /* qrupdate: chlinsert / delete */
@@ -26,6 +27,8 @@ extern void	dpotrs_ (const char *uplo, const int *n, const int *nrhs, const doub
 #else
 extern void	dchinx_ (const int *n, double *R, const int *ldr, const int *j, const double *u, double *w, int *info);
 extern void	dchdex_ (const int *n, double *R, const int *ldr, const int *j, double *w);
+extern void	dqrinc_ (const int *m, const int *n, int *k, double *Q, int *ldq, double *R, const int *ldr, const int *j, const double *x, double *w);
+extern void	dqrdec_ (const int *m, const int *n, int *k, double *Q, int *ldq, double *R, const int *ldr, const int *j, double *w);
 #endif
 
 /* linalg.c */

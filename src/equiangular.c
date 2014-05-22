@@ -93,12 +93,12 @@ update_chol (larsen *l)
 			}
 		}
 		/*** insert t ***/
-		info = larsen_linalg_cholesky_insert (l->sizeA - 1, &l->chol, index, t);
+		info = larsen_linalg_cholesky_insert (l->sizeA - 1, &l->factor_left, index, t);
 		free (t);
 
 	} else if (l->oper.action == ACTIVESET_ACTION_DROP) {
 		/*** delete a predictor ***/
-		larsen_linalg_cholesky_delete (l->sizeA + 1, &l->chol, index);
+		larsen_linalg_cholesky_delete (l->sizeA + 1, &l->factor_left, index);
 	}
 
 	return info;
@@ -114,6 +114,10 @@ update_equiangular_larsen_cholesky (larsen *l)
 
 	if (l->sizeA <= 0) return false;
 
+	/* Cholesky update and solve equiangular equation */
+	info = update_chol (l);
+	if (!check_info ("update_chol", info)) return false;
+
 	/* s = sign (c) */
 	s = update_sign (l);
 
@@ -121,14 +125,7 @@ update_equiangular_larsen_cholesky (larsen *l)
 	l->w = (double *) malloc (l->sizeA * sizeof (double));
 	dcopy_ (LINREG_CINTP (l->sizeA), s, &ione, l->w, &ione);
 
-	/* Cholesky update and solve equiangular equation
-	 * TODO: create new methods to solve equiangular equation (using QR, SVD etc.)
-	 * and switch them in the following line
-	 */
-	info = update_chol (l);
-	if (!check_info ("update_chol", info)) return false;
-
-	info = larsen_linalg_cholesky_svx (l->sizeA, l->chol, l->sizeA, l->w);
+	info = larsen_linalg_cholesky_svx (l->sizeA, l->factor_left, l->sizeA, l->w);
 	if (!check_info ("cholesky_svx", info)) return false;
 	/* end */
 
@@ -162,10 +159,107 @@ update_equiangular_larsen_cholesky (larsen *l)
 	return true;
 }
 
-/* call equiangular vector updater
- * if another routine is implemented, switch them in here */
+static void
+update_qr (larsen *l)
+{
+	size_t		n = l->lreg->n;
+	size_t		pj = l->lreg->pen->pj;
+	int			np = (larsen_is_regtype_lasso (l)) ? (int) n : (int) (n + pj);
+	int			index = l->oper.index_of_A;
+
+	if (l->oper.action == ACTIVESET_ACTION_ADD) {
+		/*** insert a predictor ***/
+		int				i;
+		int				j = l->oper.column_of_X;
+		const double	*x = l->lreg->x;
+		const double	*xj = x + LINREG_INDEX_OF_MATRIX (0, j, n);
+		double			*t = (double *) malloc (np * sizeof (double));
+		double			scale = l->lreg->scale;
+
+		/*** t = scale * [X(:,j); sqrt(lambda2) * J(:,j)] ***/
+		// t(0:n-1) = scale * X(:,j)
+		for (i = 0; i < np; i++) t[i] = 0.;
+		daxpy_ (LINREG_CINTP (n), &scale, xj, &ione, t, &ione);
+
+		if (!larsen_is_regtype_lasso (l)) {
+			// t(n:end) = scale * sqrt(lambda2) * J(:,j)
+			double		lambda2 = l->lreg->lambda2;
+			double		alpha = sqrt(lambda2) * scale;
+			if (larsen_is_regtype_ridge (l)) {
+				// t(n:end) = scale * sqrt(lambda2) * E(:, j)
+				t[n + j] = alpha;
+			} else {
+				// t(n:end) = scale * sqrt(lambda2) * J(:, j)
+				const double	*jrj = l->lreg->pen->r + LINREG_INDEX_OF_MATRIX (0, j, pj);	// J(:,j)
+				daxpy_ (LINREG_CINTP (pj), &alpha, jrj, &ione, t + n, &ione);
+			}
+		}
+		/*** insert t ***/
+		larsen_linalg_QR_colinsert (np, l->sizeA - 1, &l->factor_left, &l->factor_right, index, t);
+		free (t);
+
+	} else if (l->oper.action == ACTIVESET_ACTION_DROP) {
+		/*** delete a predictor ***/
+		larsen_linalg_QR_coldelete (np, l->sizeA + 1, &l->factor_left, &l->factor_right, index);
+	}
+
+	return;
+}
+
+/* update equiangular vector and its relevant (l->u, l->w and l->absA)
+ * for current active set using QR colinsert / coldelete routine for economy mode */
+static bool
+update_equiangular_larsen_qr (larsen *l)
+{
+	size_t		n = l->lreg->n;
+	size_t		pj = l->lreg->pen->pj;
+	int			np = (!larsen_is_regtype_lasso (l)) ? (int) (n + pj) : (int) n;
+	double		alpha;
+	double		*w;
+	double		*u;
+	double		*s;
+
+	if (l->sizeA <= 0) return false;
+
+	update_qr (l);
+
+	/* s = sign (c) */
+	s = update_sign (l);
+
+	/* w = (R^T)^-1 * sign */
+	w = (double *) malloc (l->sizeA * sizeof (double));
+	dcopy_ (LINREG_CINTP (l->sizeA), s, &ione, w, &ione);
+	larsen_linalg_QR_RTsolve (l->sizeA, l->factor_right, w);
+
+	/* u = Q * w */
+	u = (double *) malloc (np * sizeof (double));
+	dgemv_ ("N", &np, LINREG_CINTP (l->sizeA), &done, l->factor_left, &np, w, &ione, &dzero, u, &ione);
+	free (w);
+
+	/* l->u = (u / |u|)[1:n] */
+	alpha = 1. / dnrm2_ (&np, u, &ione);
+	dscal_ (&np, &alpha, u, &ione);
+	if (!l->u) l->u = (double *) malloc (n * sizeof (double));
+	dcopy_ (LINREG_CINTP (n), u, &ione, l->u, &ione);
+
+	/* w = R^-1 * (Q^T * u) */
+	if (l->w) free (l->w);
+	l->w = (double *) malloc (l->sizeA * sizeof (double));
+	dgemv_ ("T", &np, LINREG_CINTP (l->sizeA), &done, l->factor_left, &np, u, &ione, &dzero, l->w, &ione);
+	free (u);
+	larsen_linalg_QR_Rsolve (l->sizeA, l->factor_right, l->w);
+
+	l->absA = 1. / ddot_ (LINREG_CINTP (l->sizeA), s, &ione, l->w, &ione);
+	free (s);
+
+	return true;
+}
+
+/* call equiangular vector updater */
 bool
 update_equiangular (larsen *l)
 {
+	if (l->solvertype == LARSEN_SOLVER_TYPE_QR) return update_equiangular_larsen_qr (l);
+	// default solver type
 	return update_equiangular_larsen_cholesky (l);
 }
