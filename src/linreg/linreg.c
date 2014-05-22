@@ -58,7 +58,7 @@ linreg_alloc (const double lambda2, const size_t n, const size_t p, const double
 	dcopy_ (LINREG_CINTP (n), y, &ione, lreg->y, &ione);
 	dcopy_ (LINREG_CINTP (np), x, &ione, lreg->x, &ione);
 
-	/* By default, data is assumed to be not normalized and not standardized */
+	/* By default, data is assumed to be not centered or standardized */
 	lreg->meany = NULL;
 	lreg->meanx = NULL;
 	lreg->normx = NULL;
@@ -69,10 +69,10 @@ linreg_alloc (const double lambda2, const size_t n, const size_t p, const double
 	lreg->lambda2 = lambda2;
 
 	/* regression type */
-	if (lambda2 > dlamch_ ("e")) {	// default: ridge regression
+	if (lambda2 > dlamch_ ("e")) {	// default: Ridge regression
 		lreg->scale2 = 1. / (1. + lambda2);
 		lreg->scale = sqrt (lreg->scale2);
-	} else {	// lasso
+	} else {	// Lasso
 		lreg->scale2 = 1. ;
 		lreg->scale = 1.;
 	}
@@ -97,7 +97,7 @@ linreg_free (linreg *lreg)
 	return;
 }
 
-/* Centering each column of matrix:
+/* centering each column of matrix:
  * x(:, j) -> x(:, j) - mean(x(:, j)) */
 static double *
 centering (const size_t size1, const size_t size2, double *x)
@@ -114,7 +114,7 @@ centering (const size_t size1, const size_t size2, double *x)
 	return mean;
 }
 
-/* Normalizing each column of matrix:
+/* normalizing each column of matrix:
  * x(:, j) -> x(:, j) / norm(x(:, j)) */
 static double *
 normalizing (const size_t size1, const size_t size2, double *x)
