@@ -35,7 +35,7 @@ linreg_error (const char * function_name, const char *error_msg, const char *fil
 }
 
 linreg *
-linreg_alloc (const size_t n, const size_t p, const double *y, const double *x)
+linreg_alloc (const size_t n, const size_t p, double *y, double *x)
 {
 	size_t		np;
 	linreg		*lreg;
@@ -51,11 +51,8 @@ linreg_alloc (const size_t n, const size_t p, const double *y, const double *x)
 	lreg->p = p;
 	np = lreg->n * lreg->p;
 
-	lreg->y = (double *) malloc (lreg->n * sizeof (double));
-	lreg->x = (double *) malloc (np * sizeof (double));
-
-	dcopy_ (LINREG_CINTP (n), y, &ione, lreg->y, &ione);
-	dcopy_ (LINREG_CINTP (np), x, &ione, lreg->x, &ione);
+	lreg->y = y;
+	lreg->x = x;
 
 	/* By default, data is assumed to be not centered or standardized */
 	lreg->meany = NULL;
@@ -80,13 +77,9 @@ void
 linreg_free (linreg *lreg)
 {
 	if (lreg) {
-		if (lreg->y) free (lreg->y);
-		if (lreg->x) free (lreg->x);
-
 		if (lreg->meany) free (lreg->meany);
 		if (lreg->meanx) free (lreg->meanx);
 		if (lreg->normx) free (lreg->normx);
-
 		free (lreg);
 	}
 	return;
@@ -118,10 +111,12 @@ normalizing (const size_t size1, const size_t size2, double *x)
 	double	*nrm = (double *) malloc (size2 * sizeof (double));
 	for (j = 0; j < size2; j++) {
 		double	alpha;
+		double	nrmj;
 		double	*xj = x + LINREG_INDEX_OF_MATRIX (0, j, size1);
-		nrm[j] = dnrm2_ (LINREG_CINTP (size1), xj, &ione);
-		alpha = 1. / nrm[j];
+		nrmj = dnrm2_ (LINREG_CINTP (size1), xj, &ione);
+		alpha = 1. / nrmj;
 		dscal_ (LINREG_CINTP (size1), &alpha, xj, &ione);
+		nrm[j] = nrmj;
 	}
 	return nrm;
 }
@@ -169,25 +164,19 @@ penalty *
 penalty_alloc (const size_t pj, const size_t p, const double *r)
 {
 	penalty	*pen;
-	size_t		t;
 
 	if (!r) linreg_error ("penalty_alloc", "matrix *r is empty.", __FILE__, __LINE__);
 	pen = (penalty *) malloc (sizeof (penalty));
-	t = pj * p;
 	pen->pj = pj;
 	pen->p = p;
-	pen->r = (double *) malloc (t * sizeof (double));
-	dcopy_ (LINREG_CINTP (t), r, &ione, pen->r, &ione);
+	pen->r = r;
 	return pen;
 }
 
 void
 penalty_free (penalty *pen)
 {
-	if (pen) {
-		if (pen->r) free (pen->r);
-		free (pen);
-	}
+	if (pen) free (pen);
 	return;
 }
 

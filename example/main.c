@@ -125,8 +125,10 @@ main (int argc, char **argv)
 	size_t		p;
 	double		*y;
 	double		*x;
-
 	linreg		*lreg;
+
+	size_t		pj;
+	double		*r;
 	penalty	*pen;
 
 	if (!read_params (argc, argv)) usage (argv[0]);
@@ -135,23 +137,20 @@ main (int argc, char **argv)
 	/* linear system */
 	read_data (fn, skipheaders, &n, &p, &y, &x);
 	lreg = linreg_alloc (n, p, y, x);
-	free (y);
-	free (x);
 	linreg_centering_y (lreg);
 	linreg_standardizing_x (lreg);
 
 	/* penalty term: S-Lasso */
 	{
 		int		i;
-		size_t	pj = p - 1;
-		double	*r = (double *) malloc (pj * p * sizeof (double));
+		pj = p - 1;
+		r = (double *) malloc (pj * p * sizeof (double));
 		for (i = 0; i < pj * p; i++) r[i] = 0.;
 		for (i = 0; i < pj; i++) {
 			r[LINREG_INDEX_OF_MATRIX (i, i, pj)] = 1.;
 			r[LINREG_INDEX_OF_MATRIX (i, i + 1, pj)] = -1.;
 		}
 		pen = penalty_alloc (pj, p, r);
-		free (r);
 		linreg_set_penalty (lreg, lambda2, 2., pen);
 	}
 
@@ -165,6 +164,9 @@ main (int argc, char **argv)
 
 	linreg_free (lreg);
 	penalty_free (pen);
+	free (x);
+	free (y);
+	free (r);
 
 	return EXIT_SUCCESS;
 }

@@ -70,11 +70,11 @@ struct s_linreg {
 struct s_penalty {
 	size_t					pj;		// rows of r
 	size_t					p;		// columns of r
-	double					*r;		// pj x p penalty matrix
+	const double			*r;		// pj x p penalty matrix
 };
 
 /* linreg.c */
-linreg			*linreg_alloc (const size_t n, const size_t p, const double *y, const double *x);
+linreg			*linreg_alloc (const size_t n, const size_t p, double *y, double *x);
 void			linreg_free (linreg *l);
 
 void			linreg_centering_y (linreg *lreg);
