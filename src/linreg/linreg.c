@@ -93,11 +93,12 @@ centering (const size_t size1, const size_t size2, double *x)
 	int		i, j;
 	double	*mean = (double *) malloc (size2 * sizeof (double));
 	for (j = 0; j < size2; j++) {
+		double	meanj = 0.;
 		double	*xj = x + LINREG_INDEX_OF_MATRIX (0, j, size1);
-		mean[j] = 0.;
-		for (i = 0; i < size1; i++) mean[j] += xj[i];
-		mean[j] /= (double) size1;
-		for (i = 0; i < size1; i++) xj[i] -= mean[j];
+		for (i = 0; i < size1; i++) meanj += xj[i];
+		meanj /= (double) size1;
+		for (i = 0; i < size1; i++) xj[i] -= meanj;
+		mean[j] = meanj;
 	}
 	return mean;
 }
