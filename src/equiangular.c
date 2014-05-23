@@ -177,14 +177,14 @@ update_qr (larsen *l)
 		double			scale = l->lreg->scale;
 
 		/*** t = scale * [X(:,j); sqrt(lambda2) * J(:,j)] ***/
-		// t(0:n-1) = scale * X(:,j)
-		for (i = 0; i < np; i++) t[i] = 0.;
-		daxpy_ (LINREG_CINTP (n), &scale, xj, &ione, t, &ione);
+		// t(0:n-1) = X(:,j)
+		dcopy_ (LINREG_CINTP (n), xj, &ione, t, &ione);
 
 		if (!larsen_is_regtype_lasso (l)) {
 			// t(n:end) = scale * sqrt(lambda2) * J(:,j)
 			double		lambda2 = l->lreg->lambda2;
-			double		alpha = sqrt(lambda2) * scale;
+			double		alpha = sqrt(lambda2);
+			for (i = 0; i < pj; i++) t[n + i] = 0.;
 			if (larsen_is_regtype_ridge (l)) {
 				// t(n:end) = scale * sqrt(lambda2) * E(:, j)
 				t[n + j] = alpha;
@@ -194,6 +194,9 @@ update_qr (larsen *l)
 				daxpy_ (LINREG_CINTP (pj), &alpha, jrj, &ione, t + n, &ione);
 			}
 		}
+
+		// t *= scale
+		dscal_ (LINREG_CINTP (np), &scale, t, &ione);
 		/*** insert t ***/
 		larsen_linalg_QR_colinsert (np, l->sizeA - 1, &l->factor_left, &l->factor_right, index, t);
 		free (t);
