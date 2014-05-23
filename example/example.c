@@ -88,6 +88,7 @@ output_solutionpath (int iter, larsen *l)
 	char		fn[80];
 	FILE		*fp;
 	size_t		p = l->lreg->p;
+	double		lambda1 = larsen_get_lambda1 (l, false);
 	double		*beta = larsen_copy_beta (l, true);
 
 	for (i = 0; i < p; i++) {
@@ -98,7 +99,7 @@ output_solutionpath (int iter, larsen *l)
 		else fp = fopen (fn, "aw");
 		if (fp == NULL) continue;
 
-		fprintf (fp, "%d\t%.4e\t%.4e\n", iter, l->lambda1, beta[i]);
+		fprintf (fp, "%d\t%.4e\t%.4e\n", iter, lambda1, beta[i]);
 		fclose (fp);
 	}
 	free (beta);

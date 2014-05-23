@@ -15,10 +15,7 @@ void
 larsen_axapy (larsen *l, double alpha, double *xa, double *y)
 {
 	int		i;
-	for (i = 0; i < l->sizeA; i++) {
-		int		j = l->A[i];
-		y[j] += alpha * xa[i];
-	}
+	for (i = 0; i < l->sizeA; i++) y[l->A[i]] += alpha * xa[i];
 	return;
 }
 
@@ -30,10 +27,10 @@ larsen_xa_dot_ya (larsen *l, const size_t n, double alpha, const double *x, cons
 	size_t	p = l->lreg->p;
 	double	*z = (double *) malloc (n * sizeof (double));
 	double	*y = (double *) malloc (p * sizeof (double));
-	/* y(j) = ya(j) for j in A, else = 0 for j not in A */
+	// y(j) = ya(j) for j in A, else = 0 for j not in A
 	for (j = 0; j < p; j++) y[j] = 0.;
 	for (j = 0; j < l->sizeA; j++) y[l->A[j]] = ya[j];
-	/* z = X * y = X(:, A) * z(A) + X(:, Ac) * 0 */
+	// z = X * y = X(:, A) * z(A) + X(:, Ac) * 0
 	dgemv_ ("N", LINREG_CINTP (n), LINREG_CINTP (p), &alpha, x, LINREG_CINTP (n), y, &ione, &dzero, z, &ione);
 	free (y);
 
@@ -46,14 +43,15 @@ larsen_xa_transpose_dot_y (larsen *l, const size_t n, const double alpha, const 
 {
 	int		j;
 	double	*z = (double *) malloc (l->sizeA * sizeof (double));
-
 	/* Evaluate X(:,A)' * y */
 	/* another version with dgemv_
 	 *
-	 *   double	*yp = (double *) malloc (l->p * sizeof (double));
-	 *   dgemv_ ("T", CINTP (l->n), CINTP (l->p), &alpha, l->x, CINTP (l->n), z, &ione, &dzero, yp, &ione);
-	 *   for (j = 0; j < l->sizeA; j++) y[j] = yp[l->A[j]];
-	 *   free (yp);
+	 *   size_t	p = l->lreg->p;
+	 *   double	*zp = (double *) malloc (p * sizeof (double));
+	 *   // zp = X * y
+	 *   dgemv_ ("T", CINTP (n), CINTP (p), &alpha, x, CINTP (n), y, &ione, &dzero, zp, &ione);
+	 *   for (j = 0; j < l->sizeA; j++) z[j] = zp[l->A[j]];	// z = zp(A)
+	 *   free (zp);
 	 */
 	/* The following is faster when l->sizeA is not huge */
 	for (j = 0; j < l->sizeA; j++) {
