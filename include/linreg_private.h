@@ -44,11 +44,8 @@ extern double	dlamch_ (const char *cmach);
 #endif
 
 /* min(a, b) */
-#define LINREG_MIN(a, b)	(((a) > (b)) ? (b) : (a))
-
-/* posinf = +1. / 0. */
-#ifndef LINREG_POSINF
-#define LINREG_POSINF	(+1. / 0.)	// + infinity
+#ifndef LINREG_MIN
+#define LINREG_MIN(a, b)	(((a) <= (b)) ? (a) : (b))
 #endif
 
 /* following constants are set in linreg.c */
