@@ -69,12 +69,6 @@ larsen_alloc (const linreg *lreg, const double lambda1)
 	l->beta_prev = (double *) malloc (l->lreg->p * sizeof (double));
 	l->mu_prev = (double *) malloc (l->lreg->n * sizeof (double));
 
-	/* interpolation */
-	l->is_interp = false;
-	l->stepsize_intr = 0.;
-	l->beta_intr = (double *) malloc (l->lreg->p * sizeof (double));
-	l->mu_intr = (double *) malloc (l->lreg->n * sizeof (double));
-
 	/* Cholesky factorization of Z(:,A)' * Z(:,A) */
 	l->chol = NULL;
 
@@ -93,8 +87,6 @@ larsen_free (larsen *l)
 		if (l->mu) free (l->mu);
 		if (l->beta_prev) free (l->beta_prev);
 		if (l->mu_prev) free (l->mu_prev);
-		if (l->beta_intr) free (l->beta_intr);
-		if (l->mu_intr) free (l->mu_intr);
 		if (l->chol) free (l->chol);
 		free (l);
 	}
@@ -107,8 +99,15 @@ larsen_copy_beta_navie (const larsen *l)
 {
 	size_t	p = l->lreg->p;
 	double	*beta = (double *) malloc (p * sizeof (double));
-	if (l->is_interp) dcopy_ (LINREG_CINTP (p), l->beta_intr, &ione, beta, &ione);
-	else dcopy_ (LINREG_CINTP (p), l->beta, &ione, beta, &ione);
+
+	if (larsen_does_need_interpolation (l)) {
+		double	stepsize = l->absA * (larsen_get_lambda1 (l, true) - l->nrm1_prev);
+		dcopy_ (LINREG_CINTP (p), l->beta_prev, &ione, beta, &ione);
+		update_beta (l, stepsize, beta);
+	} else {
+		dcopy_ (LINREG_CINTP (p), l->beta, &ione, beta, &ione);
+	}
+
 	return beta;
 }
 
@@ -133,8 +132,15 @@ larsen_copy_mu_navie (const larsen *l)
 {
 	size_t	n = l->lreg->n;
 	double	*mu = (double *) malloc (n * sizeof (double));
-	if (l->is_interp) dcopy_ (LINREG_CINTP (n), l->mu_intr, &ione, mu, &ione);
-	else dcopy_ (LINREG_CINTP (n), l->mu, &ione, mu, &ione);
+
+	if (larsen_does_need_interpolation (l)) {
+		double	stepsize = l->absA * (larsen_get_lambda1 (l, true) - l->nrm1_prev);
+		dcopy_ (LINREG_CINTP (n), l->mu_prev, &ione, mu, &ione);
+		update_mu (l, stepsize, mu);
+	} else {
+		dcopy_ (LINREG_CINTP (n), l->mu, &ione, mu, &ione);
+	}
+
 	return mu;
 }
 

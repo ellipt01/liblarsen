@@ -22,22 +22,18 @@
  *  beta = argmin | [l->y; 0] - l->scale * [l->x; sqrt(l->lambda2) * E] * beta |^2
  *  subject to | l->beta | <= l->lambda1
  *
- *  The optimal beta corresponding to a designed l->lambda1 is stored
- *  if l->interp == false, in l->beta, else in l->beta_interp.
- *  Its value (elastic net solution) can be obtained by a function larsen_get_beta (larsen *l).
+ *  The beta that firstly satisfy lambda1 < sum |beta| is stored in l->beta.
+ *  Its value (navie and elastic net solution) can be obtained by a function larsen_get_beta().
  */
 bool
 larsen_elasticnet (larsen *l, int maxiter)
 {
 	int		iter = 0;
-	size_t	p = l->lreg->p;
-	double	nrm1 = dasum_ (LINREG_CINTP (p), l->beta, &ione);
 	double	lambda1 = larsen_get_lambda1 (l, true);
 
 	/* loop of elastic net regression */
-	while (nrm1 <= lambda1 && !l->stop_loop) {
+	while (l->nrm1 <= lambda1 && !l->stop_loop) {
 		if (!larsen_regression_step (l)) return false;
-		nrm1 = dasum_ (LINREG_CINTP (p), l->beta, &ione);
 		if (++iter > maxiter) {
 			fprintf (stderr, "number of iterations reaches max tolerance.\nregression stopped.\n");
 			return false;
@@ -46,8 +42,7 @@ larsen_elasticnet (larsen *l, int maxiter)
 
 	/* when reached OLS but specified lambda1 is greater than |beta_ols|,
 	 * stop regression */
-	if (l->stop_loop && nrm1 < lambda1) return false;
+	if (l->stop_loop && l->nrm1 < lambda1) return false;
 
-	larsen_interpolate (l);
 	return true;
 }

@@ -29,9 +29,13 @@ extern void	dchdex_ (const int *n, double *R, const int *ldr, const int *j, doub
 #endif
 
 /* linalg.c */
-void			larsen_axapy (larsen *l, double alpha, double *xa, double *y);
+void			larsen_axapy (const larsen *l, double alpha, double *xa, double *y);
 double			*larsen_xa_dot_ya (larsen *l, const size_t n, double alpha, const double *x, const double *ya);
 double			*larsen_xa_transpose_dot_y (larsen *l, const size_t n, const double alpha, const double *x, const double *y);
+
+/* larsen.c */
+void			update_beta (const larsen *l, const double stepsize, double *beta);
+void			update_mu (const larsen *l, const double stepsize, double *mu);
 
 /* active_set.c */
 int				*complementA (larsen *l);

@@ -12,7 +12,7 @@
 
 /* y(A(i)) = alpha * xa(i) + y(A(i)) */
 void
-larsen_axapy (larsen *l, double alpha, double *xa, double *y)
+larsen_axapy (const larsen *l, double alpha, double *xa, double *y)
 {
 	int		i;
 	for (i = 0; i < l->sizeA; i++) y[l->A[i]] += alpha * xa[i];

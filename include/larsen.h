@@ -59,18 +59,14 @@ struct s_larsen {
 	double					stepsize;	// step size which beta will be progress
 
 	/* solution */
+	double					nrm1;	// sum_j |beta(j)|
 	double					*beta;	// regression coefficients
 	double					*mu;	// estimation of the response y
 
 	/* previous beta and mu */
+	double					nrm1_prev;		// sum_j |beta_prev(j)|
 	double					*beta_prev;	// backup of previous beta
 	double					*mu_prev;		// backup of previous mu
-
-	/* interpolation */
-	bool					is_interp;		// interpolation was done or not
-	double					stepsize_intr;
-	double					*beta_intr;	// interpolated beta
-	double					*mu_intr;		// interpolated mu
 
 	/* cholesky factorization */
 	double					*chol;	// = chol(XA' * XA), where XA = X(A)
@@ -98,7 +94,7 @@ double		*larsen_normalizing (const size_t size1, const size_t size2, double *x);
 
 /* larsen.c */
 bool		larsen_regression_step (larsen *l);
-bool		larsen_interpolate (larsen *l);
+bool		larsen_does_need_interpolation (const larsen *l);
 
 /* elasticnet.c */
 bool		larsen_elasticnet (larsen *l, int maxiter);

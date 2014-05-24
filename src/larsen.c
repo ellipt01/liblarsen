@@ -74,43 +74,39 @@ update_correlations (larsen *l)
 	return;
 }
 
+/* update beta: beta += stepsize * l->w */
+void
+update_beta (const larsen *l, const double stepsize, double *beta)
+{
+	larsen_axapy (l, stepsize, l->w, beta);	// beta(A) += stepsize * w(A)
+	return;
+}
+
+/* update mu: mu += stepsize * l->u */
+void
+update_mu (const larsen *l, const double stepsize, double *mu)
+{
+	int		n = (int) l->lreg->n;
+	daxpy_ (&n, &stepsize, l->u, &ione, mu, &ione);	// mu += stepsize * u
+	return;
+}
+
 /* Update beta and mu. beta += stepsize * w, mu += stepsze * u */
 static void
 update_solutions (larsen *l)
 {
 	size_t		n = l->lreg->n;
 	size_t		p = l->lreg->p;
-	double		stepsize = (!l->is_interp) ? l->stepsize : l->stepsize_intr;
-	double		*beta = (double *) malloc (p * sizeof (double));
-	double		*mu = (double *) malloc (n * sizeof (double));
 
-	/*
-	 *  in the case of l->interp == true, i.e.,
-	 *  to calculate interpolated solution,
-	 *  beta_intr = beta_prev + stepsize_intr * w,
-	 *  mu_intr = mu_prev + stepsize_intr * u
-	 */
-	if (!l->is_interp) {
-		dcopy_ (LINREG_CINTP (p), l->beta, &ione, beta, &ione);
-		dcopy_ (LINREG_CINTP (n), l->mu, &ione, mu, &ione);
-	} else {
-		dcopy_ (LINREG_CINTP (p), l->beta_prev, &ione, beta, &ione);
-		dcopy_ (LINREG_CINTP (n), l->mu_prev, &ione, mu, &ione);
-	}
-	larsen_axapy (l, stepsize, l->w, beta);			// beta(A) += stepsize * w(A)
-	daxpy_ (LINREG_CINTP (n), &stepsize, l->u, &ione, mu, &ione);	// mu += stepsize * u
+	// backup previous results
+	l->nrm1_prev = l->nrm1;
+	dcopy_ (LINREG_CINTP (p), l->beta, &ione, l->beta_prev, &ione);
+	dcopy_ (LINREG_CINTP (n), l->mu, &ione, l->mu_prev, &ione);
 
-	if (!l->is_interp) {
-		dcopy_ (LINREG_CINTP (p), l->beta, &ione, l->beta_prev, &ione);
-		dcopy_ (LINREG_CINTP (n), l->mu, &ione, l->mu_prev, &ione);
-		dcopy_ (LINREG_CINTP (p), beta, &ione, l->beta, &ione);
-		dcopy_ (LINREG_CINTP (n), mu, &ione, l->mu, &ione);
-	} else {
-		dcopy_ (LINREG_CINTP (p), beta, &ione, l->beta_intr, &ione);
-		dcopy_ (LINREG_CINTP (n), mu, &ione, l->mu_intr, &ione);
-	}
-	free (beta);
-	free (mu);
+	// update beta and mu
+	update_beta (l, l->stepsize, l->beta);
+	update_mu (l, l->stepsize, l->mu);
+	l->nrm1 = dasum_ (LINREG_CINTP (p), l->beta, &ione);
 
 	return;
 }
@@ -162,7 +158,6 @@ update_stop_loop_flag (larsen *l)
 bool
 larsen_regression_step (larsen *l)
 {
-	l->is_interp = false;
 	l->stop_loop = true;
 
 	update_correlations (l);
@@ -180,27 +175,13 @@ larsen_regression_step (larsen *l)
 	return true;
 }
 
-/* Interpolation
- * In the case of l->lambda1 < | beta | after larsen_regression_step (),
- * the solution corresponding to a designed lambda1 is obtained by the
- * following interpolation:
- * beta_intr = beta_prev + l->stepsize_intr * w
- * mu_intr = mu_prev + l->stepsize_intr * u
- * where l->stepsize_intr = l->absA * (l->lambda1 - | beta_prev |)
+/*
+ * check whether interpolation does need.
+ * if nrm1_prev <= scale * lambda < nrm1, need interpolation
  */
 bool
-larsen_interpolate (larsen *l)
+larsen_does_need_interpolation (const larsen *l)
 {
-	size_t	p = l->lreg->p;
-	double	nrm1_prev = dasum_ (LINREG_CINTP (p), l->beta_prev, &ione);
-	double	nrm1 = dasum_ (LINREG_CINTP (p), l->beta, &ione);
 	double	lambda1 = larsen_get_lambda1 (l, true);
-
-	l->is_interp = false;
-	if (nrm1_prev <= lambda1 && lambda1 < nrm1) {
-		l->is_interp = true;
-		l->stepsize_intr = l->absA * (lambda1 - nrm1_prev);
-		update_solutions (l);
-	}
-	return l->is_interp;
+	return (l->nrm1_prev <= lambda1 && lambda1 < l->nrm1);
 }
