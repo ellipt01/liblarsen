@@ -101,6 +101,7 @@ larsen_copy_beta_navie (const larsen *l)
 	double	*beta = (double *) malloc (p * sizeof (double));
 
 	if (larsen_does_need_interpolation (l)) {
+		// interpolation of beta
 		double	stepsize = l->absA * (larsen_get_lambda1 (l, true) - l->nrm1_prev);
 		dcopy_ (LINREG_CINTP (p), l->beta_prev, &ione, beta, &ione);
 		update_beta (l, stepsize, beta);
@@ -134,6 +135,7 @@ larsen_copy_mu_navie (const larsen *l)
 	double	*mu = (double *) malloc (n * sizeof (double));
 
 	if (larsen_does_need_interpolation (l)) {
+		// interpolation of mu
 		double	stepsize = l->absA * (larsen_get_lambda1 (l, true) - l->nrm1_prev);
 		dcopy_ (LINREG_CINTP (n), l->mu_prev, &ione, mu, &ione);
 		update_mu (l, stepsize, mu);

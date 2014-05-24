@@ -10,11 +10,11 @@
 #include "example.h"
 
 /*
- * Calculate lasso or elastic net solution path for lambda1 in [start : dt : stop].
+ * Calculate solution path of L-1 or L-1 and L-n competitive penalized regression [start : dt : stop].
  * The value of extended BIC (Chen and Chen, 2008) are also calculated for each lambda1.
  */
 void
-example_elasticnet (const linreg *sys, double start, double dt, double stop, double gamma, int maxiter)
+example_estimator (const linreg *sys, double start, double dt, double stop, double gamma, int maxiter)
 {
 	int			iter = 0;
 	double		t = start;
@@ -22,7 +22,7 @@ example_elasticnet (const linreg *sys, double start, double dt, double stop, dou
 
 	if (l == NULL) return;
 
-	while (larsen_elasticnet (l, maxiter)) {
+	while (larsen_estimator (l, maxiter)) {
 		output_solutionpath (iter++, l);
 		fprintf (stdout, "%d : lambda1 = %f, bic(%.2f) = %f", iter, larsen_get_lambda1 (l, false), gamma, larsen_eval_bic (l, gamma));
 		fprintf (stdout, ", df = %d\n", l->sizeA);

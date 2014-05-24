@@ -11,7 +11,8 @@
 #include "larsen_private.h"
 
 /*
- *  Evaluate lasso (l->lambda2 = 0) or elastic net (l->lambda2 != 0) estimator.
+ *  Evaluate solution for L-1 (l->lambda2 = 0) or L-1 and L-n competitive (l->lambda2 != 0)
+ *  penalized regression.
  *
  *  <input>
  *  larsen	*l		:	structure larsen.
@@ -26,7 +27,7 @@
  *  Its value (navie and elastic net solution) can be obtained by a function larsen_get_beta().
  */
 bool
-larsen_elasticnet (larsen *l, int maxiter)
+larsen_estimator (larsen *l, int maxiter)
 {
 	int		iter = 0;
 	double	lambda1 = larsen_get_lambda1 (l, true);
