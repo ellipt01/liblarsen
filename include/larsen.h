@@ -56,7 +56,7 @@ struct s_larsen {
 	double					*w;
 
 	/* step_size */
-	double					stepsize;	// step size which beta will be progress
+	double					stepsize;	// step size which beta and mu will be progress
 
 	/* solution */
 	double					nrm1;	// sum_j |beta(j)|
@@ -96,8 +96,8 @@ double		*larsen_normalizing (const size_t size1, const size_t size2, double *x);
 bool		larsen_regression_step (larsen *l);
 bool		larsen_does_need_interpolation (const larsen *l);
 
-/* elasticnet.c */
-bool		larsen_elasticnet (larsen *l, int maxiter);
+/* estimator.c */
+bool		larsen_estimator (larsen *l, int maxiter);
 
 /* bic.c */
 double		larsen_eval_bic (const larsen *l, double gamma);

@@ -157,7 +157,7 @@ main (int argc, char **argv)
 	{
 		clock_t	t1, t2;
 		t1 = clock ();
-		example_elasticnet (lreg, start, dt, stop, gamma_bic, maxiter);
+		example_estimator (lreg, start, dt, stop, gamma_bic, maxiter);
 		t2 = clock ();
 		fprintf (stderr, "time = %.2e\n", (double) (t2 - t1) / CLOCKS_PER_SEC);
 	}

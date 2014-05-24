@@ -15,7 +15,7 @@ liblarsen_la_SOURCES = \
 	larsen.c\
 	stepsize.c\
 	utils.c\
-	elasticnet.c\
+	estimator.c\
 	bic.c
 
 liblarsen_la_CPPFLAGS = -I$(top_srcdir)/include

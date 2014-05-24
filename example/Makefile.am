@@ -9,7 +9,7 @@ noinst_HEADERS = example.h
 
 liblarsenexample_la_SOURCES =\
 	example.c\
-	example_elasticnet.c
+	example_estimator.c
 
 liblarsenexample_la_CPPFLAGS =\
 	-I$(top_srcdir)/include\

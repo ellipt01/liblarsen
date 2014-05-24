@@ -13,7 +13,7 @@ void	read_data (char *fn, int skip_header, size_t *n, size_t *p, double **y, dou
 void	output_solutionpath (int iter, larsen *l);
 void	fprintf_beta (FILE *stream, int iter, larsen *l);
 
-/* example_elasticnet.c */
-void	example_elasticnet (const linreg *sys, double start, double dt, double stop, double gamma, int maxiter);
+/* example_estimator.c */
+void	example_estimator (const linreg *lreg, double start, double dt, double stop, double gamma, int maxiter);
 
 #endif /* EXAMPLE_H_ */
