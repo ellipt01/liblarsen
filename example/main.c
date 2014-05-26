@@ -11,10 +11,12 @@
 #include <math.h>
 
 #include <larsen.h>
+#include <cdescent.h>
 #include "example.h"
 
 char		fn[80] = "\0";
 size_t		skipheaders = 0;
+int			solver = 0;
 double		lambda2 = 0.;
 double		start = 0.;
 double		stop = 100.;
@@ -52,6 +54,10 @@ read_params (int argc, char **argv)
 		if (argv[i][0] == '-') {
 
 			switch (argv[i][1]) {
+
+				case 's':
+					solver = atoi(argv[++i]);
+					break;
 
 				case 'f':
 					p = strrchr (argv[++i], ':');
@@ -108,6 +114,8 @@ void
 fprintf_params (void)
 {
 	fprintf (stderr, "###########################################################\n\n");
+	fprintf (stderr, "solver type = ");
+	fprintf (stderr, (solver == 0) ? "larsen\n" : "coordinate descent\n");
 	fprintf (stderr, "read file: \t\"%s\" (skip headers = %d)\n", fn, (int) skipheaders);
 	fprintf (stderr, "lambda1 :\t[%.2f : %.2f : %.2f]\n", start, dt, stop);
 	fprintf (stderr, "lambda2 :\t%.2f\n", lambda2);
@@ -152,12 +160,14 @@ main (int argc, char **argv)
 		}
 		pen = penalty_alloc (pj, p, r);
 		linreg_set_penalty (lreg, lambda2, 2., pen);
+//		linreg_set_penalty (lreg, lambda2, 1., NULL);
 	}
 
 	{
 		clock_t	t1, t2;
 		t1 = clock ();
-		example_l1regression (lreg, start, dt, stop, gamma_bic, maxiter);
+		if (solver == 0) example_larsen (lreg, start, dt, stop, gamma_bic, maxiter);
+		else example_cdescent_cyclick (lreg, start, dt, stop, 1.e-3, 1000);
 		t2 = clock ();
 		fprintf (stderr, "time = %.2e\n", (double) (t2 - t1) / CLOCKS_PER_SEC);
 	}

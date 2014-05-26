@@ -1,31 +1,33 @@
 ## Process this file with automake to produce Makefile.in
 
 # sample program
-noinst_PROGRAMS = larsen-example
+noinst_PROGRAMS = l1reg_example
 
-noinst_LTLIBRARIES = liblarsenexample.la 
+noinst_LTLIBRARIES = libexample.la 
 
 noinst_HEADERS = example.h
 
-liblarsenexample_la_SOURCES =\
+libexample_la_SOURCES =\
 	example.c\
-	example_l1regression.c
+	example_larsen.c\
+	example_cdescent.c
 
-liblarsenexample_la_CPPFLAGS =\
+libexample_la_CPPFLAGS =\
 	-I$(top_srcdir)/include\
 	-I$(top_srcdir)/example
 
-liblarsenexample_la_LDFLAGS =\
-	-L$(top_srcdir)/src\
-	-L$(top_srcdir)/src/linreg
+libexample_la_LDFLAGS =\
+	-L$(top_srcdir)/src/linreg\
+	-L$(top_srcdir)/src/cdescent\
+	-L$(top_srcdir)/src/larsen
 
-liblarsenexample_la_LIBADD = -llinreg -llarsen
+libexample_la_LIBADD = -llinreg -llarsen -lcdescent
 
 # sample program
-larsen_example_SOURCES = main.c
-larsen_example_CPPFLAGS =\
+l1reg_example_SOURCES = main.c
+l1reg_example_CPPFLAGS =\
 	-I$(top_srcdir)/include\
 	-I$(top_srcdir)/example
 
-larsen_example_LDADD =\
-	$(top_srcdir)/example/liblarsenexample.la
+l1reg_example_LDADD =\
+	$(top_srcdir)/example/libexample.la

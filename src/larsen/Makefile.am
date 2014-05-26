@@ -8,7 +8,7 @@ AM_CFLAGS =\
 
 lib_LTLIBRARIES = liblarsen.la
 
-liblarsen_la_SOURCES = \
+liblarsen_la_SOURCES =\
 	linalg.c\
 	activeset.c\
 	equiangular.c\

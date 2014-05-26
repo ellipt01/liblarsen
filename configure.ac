@@ -58,7 +58,8 @@ AC_CONFIG_FILES([liblarsen.pc:liblarsen.pc.in])
 AC_CONFIG_FILES([Makefile
                  include/Makefile
                  src/linreg/Makefile
-                 src/Makefile
+                 src/cdescent/Makefile
+                 src/larsen/Makefile
                  example/Makefile
                  test/Makefile])
 AC_OUTPUT

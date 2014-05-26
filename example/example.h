@@ -10,10 +10,12 @@
 
 /* example.c */
 void	read_data (char *fn, int skip_header, size_t *n, size_t *p, double **y, double **x);
-void	output_solutionpath (int iter, larsen *l);
 void	fprintf_beta (FILE *stream, int iter, larsen *l);
 
-/* example_estimator.c */
-void	example_l1regression (const linreg *lreg, double start, double dt, double stop, double gamma, int maxiter);
+/* example_larsen.c */
+void	example_larsen (const linreg *lreg, double start, double dt, double stop, double gamma, int maxiter);
+
+/* example_cdescent.c */
+void	example_cdescent_cyclick (const linreg *lreg, double start, double dt, double stop, double tol, int maxiter);
 
 #endif /* EXAMPLE_H_ */

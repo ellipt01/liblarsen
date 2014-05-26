@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 
-SUBDIRS = src/linreg src include example test
+SUBDIRS = src/linreg src/cdescent src/larsen include example test
 
 liblarsendocdir = ${prefix}/doc/larsen
 liblarsendoc_DATA = \
