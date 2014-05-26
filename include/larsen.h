@@ -97,7 +97,7 @@ bool		larsen_regression_step (larsen *l);
 bool		larsen_does_need_interpolation (const larsen *l);
 
 /* estimator.c */
-bool		larsen_estimator (larsen *l, int maxiter);
+bool		larsen_estimater (larsen *l, int maxiter);
 
 /* bic.c */
 double		larsen_eval_bic (const larsen *l, double gamma);

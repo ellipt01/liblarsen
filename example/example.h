@@ -14,6 +14,6 @@ void	output_solutionpath (int iter, larsen *l);
 void	fprintf_beta (FILE *stream, int iter, larsen *l);
 
 /* example_estimator.c */
-void	example_estimator (const linreg *lreg, double start, double dt, double stop, double gamma, int maxiter);
+void	example_l1regression (const linreg *lreg, double start, double dt, double stop, double gamma, int maxiter);
 
 #endif /* EXAMPLE_H_ */

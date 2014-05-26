@@ -27,7 +27,7 @@
  *  Its value (navie and elastic net solution) can be obtained by a function larsen_get_beta().
  */
 bool
-larsen_estimator (larsen *l, int maxiter)
+larsen_estimater (larsen *l, int maxiter)
 {
 	int		iter = 0;
 	double	lambda1 = larsen_get_lambda1 (l, true);
