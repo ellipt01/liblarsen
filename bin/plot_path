@@ -15,7 +15,7 @@ if [ -n "$2" ]; then
 fi
 echo "\""  >> tmp.gnuplot
 
-echo "set xlabel \"{/Symbol l}_1\"" >> tmp.gnuplot
+echo "set xlabel \"{/Symbol S}_j|{/Symbol b}_j|\"" >> tmp.gnuplot
 echo "set ylabel \"{/Symbol b}\"" >> tmp.gnuplot
 
 echo -n "plot $3 $4 0 linetype 0 linewidth 2, " >> tmp.gnuplot
