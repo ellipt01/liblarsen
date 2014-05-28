@@ -30,7 +30,7 @@ test_linalg_cholesky_decomp (const size_t size, double *a, const size_t lda)
 	int		n;
 	int		_lda;
 
-	if (!a) larsen_linalg_error ("larsen_linalg_cholesky_decomp", "matrix is empty.");
+	if (!a) larsen_error ("larsen_linalg_cholesky_decomp", "matrix is empty.");
 
 	uplo = 'U';
 	n = (int) size;

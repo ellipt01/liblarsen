@@ -12,6 +12,14 @@
 
 #include "larsen_private.h"
 
+/* print an error message and exit */
+void
+larsen_error (const char * function_name, const char *error_msg)
+{
+	fprintf (stderr, "ERROR: %s: %s\n", function_name, error_msg);
+	exit (1);
+}
+
 static double
 larsen_double_eps (void)
 {
@@ -89,12 +97,6 @@ larsen_alloc (const size_t n, const size_t p, const double *y, const double *x, 
 	l->beta_prev = (double *) malloc (l->p * sizeof (double));
 	l->mu_prev = (double *) malloc (l->n * sizeof (double));
 
-	/* interpolation */
-	l->interp = false;
-	l->stepsize_intr = 0.;
-	l->beta_intr = (double *) malloc (l->p * sizeof (double));
-	l->mu_intr = (double *) malloc (l->n * sizeof (double));
-
 	/* cholesky factorization */
 	l->chol = NULL;
 
@@ -113,8 +115,6 @@ larsen_free (larsen *l)
 		if (l->mu) free (l->mu);
 		if (l->beta_prev) free (l->beta_prev);
 		if (l->mu_prev) free (l->mu_prev);
-		if (l->beta_intr) free (l->beta_intr);
-		if (l->mu_intr) free (l->mu_intr);
 		if (l->chol) free (l->chol);
 		free (l);
 	}
@@ -122,21 +122,29 @@ larsen_free (larsen *l)
 }
 
 /* return copy of navie solution: beta_navie = l->beta */
-double *
+static double *
 larsen_copy_beta_navie (const larsen *l)
 {
-	double	*beta = (double *) malloc (l->p * sizeof (double));
-	if (!l->interp) dcopy_ (CINTP (l->p), l->beta, &ione, beta, &ione);
-	else dcopy_ (CINTP (l->p), l->beta_intr, &ione, beta, &ione);
+	size_t	p = l->p;
+	double	*beta = (double *) malloc (p * sizeof (double));
+
+	if (larsen_does_need_interpolation (l)) {
+		// interpolation of beta
+		double	stepsize = l->absA * (larsen_get_lambda1 (l, true) - l->nrm1_prev);
+		dcopy_ (CINTP (p), l->beta_prev, &ione, beta, &ione);
+		larsen_awpy (l, stepsize, l->w, beta);	// beta(A) += stepsize * w(A)
+	} else {
+		dcopy_ (CINTP (p), l->beta, &ione, beta, &ione);
+	}
 	return beta;
 }
 
 /* return copy of elastic net solution: beta_elnet = beta_navie / scale */
 double *
-larsen_copy_beta_elasticnet (const larsen *l)
+larsen_copy_beta (const larsen *l, bool scale)
 {
 	double	*beta = larsen_copy_beta_navie (l);
-	if (!l->is_lasso) {
+	if (scale && !l->is_lasso) {
 		double	alpha = 1. / l->scale;
 		dscal_ (CINTP (l->p), &alpha, beta, &ione);
 	}
@@ -144,21 +152,29 @@ larsen_copy_beta_elasticnet (const larsen *l)
 }
 
 /* return copy of navie solution: mu_navie = l->mu */
-double *
+static double *
 larsen_copy_mu_navie (const larsen *l)
 {
+	size_t	n = l->n;
 	double	*mu = (double *) malloc (l->n * sizeof (double));
-	if (!l->interp) dcopy_ (CINTP (l->n), l->mu, &ione, mu, &ione);
-	else dcopy_ (CINTP (l->n), l->mu_intr, &ione, mu, &ione);
+
+	if (larsen_does_need_interpolation (l)) {
+		// interpolation of beta
+		double	stepsize = l->absA * (larsen_get_lambda1 (l, true) - l->nrm1_prev);
+		dcopy_ (CINTP (n), l->mu_prev, &ione, mu, &ione);
+		daxpy_ (CINTP (n), &stepsize, l->u, &ione, mu, &ione);	// mu += stepsize * u
+	} else {
+		dcopy_ (CINTP (n), l->mu, &ione, mu, &ione);
+	}
 	return mu;
 }
 
 /* return copy of elastic net solution: mu_elnet = mu_navie / scale^2 */
 double *
-larsen_copy_mu_elasticnet (const larsen *l)
+larsen_copy_mu (const larsen *l, bool scale)
 {
 	double	*mu = larsen_copy_mu_navie (l);
-	if (!l->is_lasso) {
+	if (scale && !l->is_lasso) {
 		double	alpha = 1. / l->scale2;
 		dscal_ (CINTP (l->n), &alpha, mu, &ione);
 	}
@@ -171,4 +187,13 @@ larsen_set_lambda1 (larsen *l, double t)
 {
 	l->lambda1 = t;
 	return;
+}
+
+/* return l->lambda1 */
+double
+larsen_get_lambda1 (const larsen *l, bool scaling)
+{
+	double	lambda1 = l->lambda1;
+	if (scaling && !l->is_lasso) lambda1 *= l->scale;
+	return lambda1;
 }

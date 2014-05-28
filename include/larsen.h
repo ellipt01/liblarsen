@@ -15,7 +15,10 @@ extern "C" {
 
 #include <stddef.h>
 #include <stdbool.h>
-#include <larsen_linalg.h>
+
+#ifndef LARSEN_INDEX_OF_MATRIX
+#define LARSEN_INDEX_OF_MATRIX(i, j, lda) ((i) + (j) * (lda))
+#endif
 
 typedef enum {
 	ACTIVESET_ACTION_NONE	= -1,
@@ -74,18 +77,14 @@ struct s_larsen {
 	double					stepsize;	// step size which beta will be progress
 
 	/* solution */
+	double					nrm1;
 	double					*beta;	// regression coefficients
 	double					*mu;	// estimated response
 
 	/* previous beta and mu */
+	double					nrm1_prev;
 	double					*beta_prev;	// previous beta
 	double					*mu_prev;		// previous mu
-
-	/* interpolation */
-	bool					interp;		// interpolation was done or not
-	double					stepsize_intr;
-	double					*beta_intr;	// interpolated beta
-	double					*mu_intr;		// interpolated mu
 
 	/* cholesky factorization */
 	double					*chol;	// = chol(XA' * XA), where XA = X(A)
@@ -95,11 +94,10 @@ struct s_larsen {
 /* util.c */
 larsen		*larsen_alloc (const size_t n, const size_t p, const double *y, const double *x, const double lambda1, const double lambda2);
 void		larsen_free (larsen *l);
-double		*larsen_copy_beta_navie (const larsen *l);
-double		*larsen_copy_beta_elasticnet (const larsen *l);
-double		*larsen_copy_mu_navie (const larsen *l);
-double		*larsen_copy_mu_elasticnet (const larsen *l);
+double		*larsen_copy_beta (const larsen *l, bool scale);
+double		*larsen_copy_mu (const larsen *l, bool scale);
 void		larsen_set_lambda1 (larsen *l, double t);
+double		larsen_get_lambda1 (const larsen *l, bool scaling);
 
 /* data.c */
 double		*larsen_centering (const size_t size1, const size_t size2, double *x);
@@ -107,7 +105,8 @@ double		*larsen_normalizing (const size_t size1, const size_t size2, double *x);
 
 /* larsen.c */
 bool		larsen_regression_step (larsen *l);
-bool		larsen_interpolate (larsen *l);
+bool		larsen_does_need_interpolation (const larsen *l);
+//bool		larsen_interpolate (larsen *l);
 
 /* elasticnet.c */
 bool		larsen_elasticnet (larsen *l, int maxiter);

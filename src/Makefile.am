@@ -9,6 +9,7 @@ AM_CFLAGS =\
 lib_LTLIBRARIES = liblarsen.la
 
 liblarsen_la_SOURCES = \
+	linalg.c\
 	activeset.c\
 	data.c\
 	equiangular.c\
@@ -20,7 +21,7 @@ liblarsen_la_SOURCES = \
 
 liblarsen_la_CPPFLAGS = -I$(top_srcdir)/include
 
-liblarsen_la_LDFLAGS = -L$(top_srcdir)/src/linalg
+liblarsen_la_LDFLAGS =
 
-liblarsen_la_LIBADD = -llarsenlinalg
+liblarsen_la_LIBADD =
 

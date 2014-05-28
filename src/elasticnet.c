@@ -30,13 +30,11 @@ bool
 larsen_elasticnet (larsen *l, int maxiter)
 {
 	int		iter = 0;
-	double	lambda1 = (l->is_lasso) ? l->lambda1 : l->scale * l->lambda1;	// scale * lambda1
-	double	nrm1 = dasum_ (CINTP (l->p), l->beta, &ione);
+	double	lambda1 = larsen_get_lambda1 (l, true);
 
 	/* loop of elastic net regression */
-	while (nrm1 <= lambda1 && !l->stop_loop) {
+	while (l->nrm1 <= lambda1 && !l->stop_loop) {
 		if (!larsen_regression_step (l)) return false;
-		nrm1 = dasum_ (CINTP (l->p), l->beta, &ione);
 		if (++iter > maxiter) {
 			fprintf (stderr, "number of iterations reaches max tolerance.\nregression stopped.\n");
 			return false;
@@ -45,8 +43,7 @@ larsen_elasticnet (larsen *l, int maxiter)
 
 	/* when reached OLS but specified lambda1 is greater than |beta_ols|,
 	 * stop regression */
-	if (l->stop_loop && nrm1 < lambda1) return false;
+	if (l->stop_loop && l->nrm1 < lambda1) return false;
 
-	larsen_interpolate (l);
 	return true;
 }

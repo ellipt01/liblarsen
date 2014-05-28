@@ -5,6 +5,10 @@ if [ -e Makefile ]; then
 	make clean > /dev/null 2>&1
 fi
 
+echo "cleanworkspace"
+path=${0%/*}
+./"$path"/cleanworkspace
+
 echo "rm -rf autom4te.cache"
 rm -rf autom4te.cache
 
@@ -26,7 +30,7 @@ rm -f ltmain.sh stamp-h1 config.log config.h config.sub config.status config.gue
 echo "rm -f configure libtool bin/.dirstamp"
 rm -f configure libtool bin/.dirstamp
 
-for i in . src src/linalg include example test; do
+for i in . src include example test; do
 
 	echo "rm -f $i/Makefile"
 	rm -f $i/Makefile

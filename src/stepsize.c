@@ -10,15 +10,24 @@
 
 #include "larsen_private.h"
 
-/* activeset.c */
-extern int		*complementA (larsen *l);
+/* evaluate min = MIN_+ (a, b)
+ * if min <= 0, return false */
+static bool
+eval_minplus (const double a, const double b, double *min)
+{
+	if (a <= 0.) *min = b;
+	else if (b <= 0.) *min = a;
+	else *min = (a <= b) ? a : b;
 
-/* \hat{gamma} */
+	return (*min > 0.);
+}
+
+/* gamma_hat */
 static void
 calc_gamma_hat (larsen *l, int *index, int *column, double *val)
 {
 	int			minplus_idx = -1;
-	double		minplus = LARSEN_POSINF;
+	double		minplus = -1.;
 	int			*Ac = complementA (l);
 
 	if (l->sizeA == l->p) {
@@ -33,15 +42,12 @@ calc_gamma_hat (larsen *l, int *index, int *column, double *val)
 			int		j = Ac[i];
 			double	cj = l->c[j];
 			double	aj = a[j];
-			double	e0, e1, min;
-			e0 = (l->sup_c - cj) / (l->absA - aj);
-			e1 = (l->sup_c + cj) / (l->absA + aj);
+			double	eminus, eplus, min;
+			eminus = (l->sup_c - cj) / (l->absA - aj);
+			eplus = (l->sup_c + cj) / (l->absA + aj);
 
-			if (e0 <= 0.) e0 = LARSEN_POSINF;
-			if (e1 <= 0.) e1 = LARSEN_POSINF;
-			min = (e0 <= e1) ? e0 : e1;
-
-			if (min < minplus) {
+			if (!eval_minplus (eminus, eplus, &min)) continue;
+			if (minplus < 0. || min < minplus) {
 				minplus_idx = i;
 				minplus = min;
 			}
@@ -55,26 +61,26 @@ calc_gamma_hat (larsen *l, int *index, int *column, double *val)
 	return;
 }
 
-/* \tilde{gamma} */
+/* gamma_tilde */
 static void
 calc_gamma_tilde (larsen *l, int *index, int *column, double *val)
 {
 	int		minplus_idx = -1;
-	double	minplus = LARSEN_POSINF;
+	double	minplus = -1.;
 
 	if (l->sizeA > 0) {
 		int		i;
 		for (i = 0; i < l->sizeA; i++) {
 			int		j = l->A[i];
 			double	e = - l->beta[j] / l->w[i];
-			if (e <= 0.) e = LARSEN_POSINF;
-			if (e < minplus) {
+			if (e <= 0.) continue;
+			if (minplus < 0. || e < minplus) {
 				minplus_idx = i;
 				minplus = e;
 			}
 		}
 	}
-	*index = (minplus_idx >= 0) ? minplus_idx : -1;
+	*index = minplus_idx;
 	*column = (minplus_idx >= 0) ? l->A[minplus_idx] : -1;
 	*val = minplus;
 	return;
@@ -83,8 +89,13 @@ calc_gamma_tilde (larsen *l, int *index, int *column, double *val)
 static bool
 check_stepsize (const double stepsize)
 {
-	return (0 < stepsize && stepsize != LARSEN_POSINF);
+	return (stepsize > 0.);
 }
+
+enum {
+	GAMMA_HAT_SELECTED	= 1,
+	GAMMA_TILDE_SELECTED	= 2
+};
 
 /* Update stepsize and activeset operation l->oper.
  * If gamma_hat > gamma_tilde, the activeset operation on the next
@@ -101,19 +112,29 @@ update_stepsize (larsen *l)
 	int		gamma_tilde_col;
 	double	gamma_tilde;
 
+	int		gamma_status = 0;
+
+	l->stepsize = -1.;
 	l->oper.action = ACTIVESET_ACTION_NONE;
+	l->oper.index_of_A = -1;
+	l->oper.column_of_X = -1;
 
 	calc_gamma_hat (l, &gamma_hat_idx, &gamma_hat_col, &gamma_hat);
 	calc_gamma_tilde (l, &gamma_tilde_idx, &gamma_tilde_col, &gamma_tilde);
 
-	l->oper.index_of_A = -1;
-	l->oper.column_of_X = -1;
-	if (gamma_hat < gamma_tilde) {
+	if (gamma_hat <= 0. && gamma_tilde <= 0.) return false;
+	if (gamma_hat <= 0.) gamma_status = GAMMA_TILDE_SELECTED;
+	else if (gamma_tilde <= 0.) gamma_status = GAMMA_HAT_SELECTED;
+	else {
+		gamma_status = (gamma_tilde <= gamma_hat) ? GAMMA_TILDE_SELECTED : GAMMA_HAT_SELECTED;
+	}
+
+	if (gamma_status == GAMMA_HAT_SELECTED) {
 		l->oper.action = ACTIVESET_ACTION_ADD;
 		l->stepsize = gamma_hat;
 		if (gamma_hat_idx >= 0) l->oper.index_of_A = gamma_hat_idx;
 		if (gamma_hat_col >= 0) l->oper.column_of_X = gamma_hat_col;
-	} else {	// gamma_tilde <= gamma_hat
+	} else if (gamma_status == GAMMA_TILDE_SELECTED) {	// gamma_tilde <= gamma_hat
 		l->oper.action = ACTIVESET_ACTION_DROP;
 		l->stepsize = gamma_tilde;
 		if (gamma_tilde_idx >= 0) l->oper.index_of_A = gamma_tilde_idx;

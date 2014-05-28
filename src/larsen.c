@@ -11,25 +11,6 @@
 
 #include "larsen_private.h"
 
-/* active_set.c */
-extern bool	update_activeset (larsen *l);
-/* stepsize.c */
-extern bool	update_stepsize (larsen *l);
-/* equiangular.c */
-extern bool	update_equiangular (larsen *l);
-
-/* y(A) = alpha * w(A) + y(A) */
-static void
-larsen_awpy (larsen *l, double alpha, double *w, double *y)
-{
-	int		i;
-	for (i = 0; i < l->sizeA; i++) {
-		int		j = l->A[i];
-		y[j] += alpha * w[i];
-	}
-	return;
-}
-
 /* Calculate correlation between residual (y - X * beta) and predictors X' */
 static void
 update_correlations (larsen *l)
@@ -68,9 +49,8 @@ update_correlations (larsen *l)
 static void
 update_solutions (larsen *l)
 {
-	double		stepsize = (!l->interp) ? l->stepsize : l->stepsize_intr;
+	double		stepsize = l->stepsize;
 	double		*beta = (double *) malloc (l->p * sizeof (double));
-	double		*mu = (double *) malloc (l->n * sizeof (double));
 
 	/*
 	 *  in the case of l->interp == true, i.e.,
@@ -78,27 +58,17 @@ update_solutions (larsen *l)
 	 *  beta_intr = beta_prev + stepsize_intr * w,
 	 *  mu_intr = mu_prev + stepsize_intr * u
 	 */
-	if (!l->interp) {
-		dcopy_ (CINTP (l->p), l->beta, &ione, beta, &ione);
-		dcopy_ (CINTP (l->n), l->mu, &ione, mu, &ione);
-	} else {
-		dcopy_ (CINTP (l->p), l->beta_prev, &ione, beta, &ione);
-		dcopy_ (CINTP (l->n), l->mu_prev, &ione, mu, &ione);
-	}
-	larsen_awpy (l, stepsize, l->w, beta);			// beta(A) += stepsize * w(A)
-	daxpy_ (CINTP (l->n), &stepsize, l->u, &ione, mu, &ione);	// mu += stepsize * u
+	l->nrm1_prev = l->nrm1;
+	dcopy_ (CINTP (l->p), l->beta, &ione, l->beta_prev, &ione);
+	dcopy_ (CINTP (l->n), l->mu, &ione, l->mu_prev, &ione);
 
-	if (!l->interp) {
-		dcopy_ (CINTP (l->p), l->beta, &ione, l->beta_prev, &ione);
-		dcopy_ (CINTP (l->n), l->mu, &ione, l->mu_prev, &ione);
-		dcopy_ (CINTP (l->p), beta, &ione, l->beta, &ione);
-		dcopy_ (CINTP (l->n), mu, &ione, l->mu, &ione);
-	} else {
-		dcopy_ (CINTP (l->p), beta, &ione, l->beta_intr, &ione);
-		dcopy_ (CINTP (l->n), mu, &ione, l->mu_intr, &ione);
-	}
+	dcopy_ (CINTP (l->p), l->beta, &ione, beta, &ione);
+	larsen_awpy (l, stepsize, l->w, beta);			// beta(A) += stepsize * w(A)
+	dcopy_ (CINTP (l->p), beta, &ione, l->beta, &ione);
 	free (beta);
-	free (mu);
+
+	daxpy_ (CINTP (l->n), &stepsize, l->u, &ione, l->mu, &ione);	// mu += stepsize * u
+	l->nrm1 = dasum_ (CINTP (l->p), l->beta, &ione);
 
 	return;
 }
@@ -148,7 +118,6 @@ update_stop_loop_flag (larsen *l)
 bool
 larsen_regression_step (larsen *l)
 {
-	l->interp = false;
 	l->stop_loop = true;
 
 	update_correlations (l);
@@ -166,25 +135,10 @@ larsen_regression_step (larsen *l)
 	return true;
 }
 
-/* Interpolation
- * In the case of l->lambda1 < | beta | after larsen_regression_step (),
- * the solution corresponding to a designed lambda1 is obtained by the
- * following interpolation:
- * beta_intr = beta_prev + l->stepsize_intr * w
- * mu_intr = mu_prev + l->stepsize_intr * u
- * where l->stepsize_intr = l->absA * (l->lambda1 - | beta_prev |)
- */
+/* If l->nrm1_prev < lambda1 < l->nrm1, need interpolation */
 bool
-larsen_interpolate (larsen *l)
+larsen_does_need_interpolation (const larsen *l)
 {
-	double	lambda1 = (!l->is_lasso) ? l->scale * l->lambda1 : l->lambda1;	// scale * lambda1
-	double	nrm1_prev = dasum_ (CINTP (l->p), l->beta_prev, &ione);
-	double	nrm1 = dasum_ (CINTP (l->p), l->beta, &ione);
-	l->interp = false;
-	if (nrm1_prev <= lambda1 && lambda1 < nrm1) {
-		l->interp = true;
-		l->stepsize_intr = l->absA * (lambda1 - nrm1_prev);
-		update_solutions (l);
-	}
-	return l->interp;
+	double	lambda1 = larsen_get_lambda1 (l, true);
+	return (l->nrm1_prev <= lambda1 && lambda1 < l->nrm1);
 }

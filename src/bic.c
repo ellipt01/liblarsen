@@ -23,8 +23,8 @@ calc_rss (const larsen *l)
 {
 	double		rss;
 	double		*r = (double *) malloc (l->n * sizeof (double));
-	double		*beta = larsen_copy_beta_elasticnet (l);	// scale * beta
-	double		*mu = larsen_copy_mu_elasticnet (l);		// scale^2 * mu
+	double		*beta = larsen_copy_beta (l, true);	// scale * beta
+	double		*mu = larsen_copy_mu (l, true);		// scale^2 * mu
 	dcopy_ (CINTP (l->n), l->y, &ione, r, &ione);
 	daxpy_ (CINTP (l->n), &dmone, mu, &ione, r, &ione);	// r = - mu + r
 	rss = pow (dnrm2_ (CINTP (l->n), r, &ione), 2.);

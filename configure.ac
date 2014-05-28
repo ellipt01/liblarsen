@@ -57,7 +57,6 @@ AC_CONFIG_FILES([liblarsen.pc:liblarsen.pc.in])
 
 AC_CONFIG_FILES([Makefile
                  include/Makefile
-                 src/linalg/Makefile
                  src/Makefile
                  example/Makefile
                  test/Makefile])
