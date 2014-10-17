@@ -53,7 +53,7 @@ AC_CHECK_FUNCS([dpotrf_ dpotrs_])
 # pkgconfig
 LIBLARSEN_DESCRIPTION='C implementation of LARS-EN algorithm'
 AC_SUBST([LIBLARSEN_DESCRIPTION])
-AC_CONFIG_FILES([liblarsen.pc:liblarsen.pc.in])
+AC_CONFIG_FILES([liblarsen.pc:pkgconfig/liblarsen.pc.in])
 
 AC_CONFIG_FILES([Makefile
                  include/Makefile

@@ -9,11 +9,7 @@
 #include <stdlib.h>
 #include <larsen.h>
 
-#include "larsen_private.h"
-
-const int		ione  =  1;
-const double	dzero =  0.;
-const double	dmone = -1.;
+#include "private.h"
 
 /* y(A) = alpha * w(A) + y(A) */
 void
@@ -100,8 +96,8 @@ larsen_linalg_cholesky_svx (const size_t size, double *l, const size_t lda, doub
 	int		nrhs;
 	int		_lda;
 
-	if (!l) larsen_error ("larsen_linalg_cholesky_svx", "first matrix is empty.");
-	if (!b) larsen_error ("larsen_linalg_cholesky_svx", "second matrix is empty.");
+	if (!l) error_and_exit ("larsen_linalg_cholesky_svx", "first matrix is empty.", __FILE__, __LINE__);
+	if (!b) error_and_exit ("larsen_linalg_cholesky_svx", "second matrix is empty.", __FILE__, __LINE__);
 
 	uplo = 'U';
 	n = (int) size;
@@ -123,7 +119,7 @@ larsen_linalg_cholesky_insert (const size_t size, double **r, const int index, d
 	int			j;
 	double		*w;
 
-	if (index < 0 || size < index) larsen_error ("larsen_linalg_cholesky_insert", "index must be in [0, size].");
+	if (index < 0 || size < index) error_and_exit ("larsen_linalg_cholesky_insert", "index must be in [0, size].", __FILE__, __LINE__);
 
 	j = index + 1;
 
@@ -151,7 +147,7 @@ larsen_linalg_cholesky_delete (const size_t size, double **r, const int index)
 	int		j;
 	double	*w;
 
-	if (index < 0 || size <= index) larsen_error ("larsen_linalg_cholesky_delete", "index must be in [0, size).");
+	if (index < 0 || size <= index) error_and_exit ("larsen_linalg_cholesky_delete", "index must be in [0, size).", __FILE__, __LINE__);
 
 	j = index + 1;
 

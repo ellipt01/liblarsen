@@ -10,7 +10,11 @@
 #include <math.h>
 #include <larsen.h>
 
-#include "larsen_private.h"
+#include "private.h"
+
+extern int		larsen_linalg_cholesky_svx (const size_t size, double *l, const size_t lda, double *b);
+extern int		larsen_linalg_cholesky_insert (const size_t n, double **r, const int index, double *u);
+extern void	larsen_linalg_cholesky_delete (const size_t size, double **r, const int index);
 
 /* s = sign(c) */
 static double *
@@ -45,13 +49,13 @@ static double *
 xa_dot_y (larsen *l, double alpha, double *z)
 {
 	int		j;
-	double	*y = (double *) malloc (l->n * sizeof (double));
-	double	*zp = (double *) malloc (l->p * sizeof (double));
+	double	*y = (double *) malloc (l->lreg->x->m * sizeof (double));
+	double	*zp = (double *) malloc (l->lreg->x->n * sizeof (double));
 	/* zp(j) = z(j) for j in A, else = 0 for j not in A */
-	for (j = 0; j < l->p; j++) zp[j] = 0.;
+	for (j = 0; j < l->lreg->x->n; j++) zp[j] = 0.;
 	for (j = 0; j < l->sizeA; j++) zp[l->A[j]] = z[j];
 	/* y = X * zp = X(:, A) * z(A) + X(:, Ac) * 0 */
-	dgemv_ ("N", CINTP (l->n), CINTP (l->p), &alpha, l->x, CINTP (l->n), zp, &ione, &dzero, y, &ione);
+	dgemv_ ("N", &l->lreg->x->m, &l->lreg->x->n, &alpha, l->lreg->x->data, &l->lreg->x->m, zp, &ione, &dzero, y, &ione);
 	free (zp);
 
 	return y;
@@ -75,9 +79,9 @@ xa_transpose_dot_y (larsen *l, const double alpha, const double *z)
 	 */
 	/* The following is faster when l->sizeA is not huge */
 	for (j = 0; j < l->sizeA; j++) {
-		const double	*xaj = l->x + LARSEN_INDEX_OF_MATRIX (0, l->A[j], l->n);
+		const double	*xaj = l->lreg->x->data + l->A[j] * l->lreg->x->m;
 		/* y[j] = alpha * X(:, A[j])' * z */
-		y[j] = alpha * ddot_ (CINTP (l->n), xaj, &ione, z, &ione);
+		y[j] = alpha * ddot_ (&l->lreg->x->m, xaj, &ione, z, &ione);
 	}
 	return y;
 }
@@ -93,7 +97,7 @@ update_chol (larsen *l)
 		/*** insert a predictor ***/
 		int				j = l->oper.column_of_X;
 		double			*t = (double *) malloc (l->sizeA * sizeof (double));
-		const double	*xj = l->x + LARSEN_INDEX_OF_MATRIX (0, j, l->n);
+		const double	*xj = l->lreg->x->data + j * l->lreg->x->m;
 
 		/* t = scale^2 * X(:,A)' * X(:,j) */
 		t = xa_transpose_dot_y (l, l->scale2, xj);
@@ -112,7 +116,7 @@ update_chol (larsen *l)
 		 * However in the case of elastic net, because X(j)' * X(j) = 1,
 		 * t[l->oper.index_of_A] = scale^2 + lambda2 * scale^2 = 1,
 		 * but in the case of adaptive elastic net, the above != 1 */
-		if (!l->is_lasso) t[index] += l->lambda2 * l->scale2;
+		if (!l->lreg->is_regtype_lasso) t[index] += l->lreg->lambda2 * l->scale2;
 
 		info = larsen_linalg_cholesky_insert (l->sizeA - 1, &l->chol, index, t);
 		free (t);

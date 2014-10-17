@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <larsen.h>
 
-#include "larsen_private.h"
+#include "private.h"
 
 /*
  *  Evaluate lasso (l->lambda2 = 0) or elastic net (l->lambda2 != 0) estimator.
@@ -34,7 +34,7 @@ larsen_elasticnet (larsen *l, int maxiter)
 
 	/* loop of elastic net regression */
 	while (l->nrm1 <= lambda1 && !l->stop_loop) {
-		if (!larsen_regression_step (l)) return false;
+		if (!larsen_update_one_step (l)) return false;
 		if (++iter > maxiter) {
 			fprintf (stderr, "number of iterations reaches max tolerance.\nregression stopped.\n");
 			return false;

@@ -13,8 +13,8 @@
 #include <larsen.h>
 #include "example.h"
 
-char		fn[80] = "\0";
-size_t		skipheaders = 0;
+char		fnx[80] = "\0";
+char		fny[80] = "\0";
 double		lambda2 = 0.;
 double		start = 0.;
 double		stop = 100.;
@@ -53,13 +53,12 @@ read_params (int argc, char **argv)
 
 			switch (argv[i][1]) {
 
-				case 'f':
-					p = strrchr (argv[++i], ':');
-					if (p) {
-						strcpy (fn, argv[i]);
-						fn[strlen (argv[i]) - strlen (p)] = '\0';
-						skipheaders = atoi (++p);
-					} else strcpy (fn, argv[i]);
+				case 'y':
+					strcpy (fny, argv[++i]);
+				break;
+
+				case 'x':
+					strcpy (fnx, argv[++i]);
 				break;
 
 				case 'l':
@@ -83,7 +82,7 @@ read_params (int argc, char **argv)
 			}
 		}
 	}
-	if (strlen (fn) <= 1) {
+	if (strlen (fnx) <= 1 || strlen (fny) <= 1) {
 		fprintf (stderr, "ERROR: input file name is not specified.\n");
 		status = false;
 	}
@@ -108,7 +107,7 @@ void
 fprintf_params (void)
 {
 	fprintf (stderr, "###########################################################\n\n");
-	fprintf (stderr, "read file: \t\"%s\" (skip headers = %d)\n", fn, (int) skipheaders);
+	fprintf (stderr, "read file: \t\"%s : %s\" (skip headers = %d)\n", fnx, fny);
 	fprintf (stderr, "lambda1 :\t[%.2f : %.2f : %.2f]\n", start, dt, stop);
 	fprintf (stderr, "lambda2 :\t%.2f\n", lambda2);
 	fprintf (stderr, "maxiter :\t%d\n", maxiter);
@@ -119,24 +118,30 @@ fprintf_params (void)
 int
 main (int argc, char **argv)
 {
-	size_t		n;
-	size_t		p;
-	double		*y;
-	double		*x;
+	linregmodel	*lreg;
 
 	if (!read_params (argc, argv)) usage (argv[0]);
 	fprintf_params ();
 
-	read_data (fn, skipheaders, &n, &p, &y, &x);
+	{
+		mm_dense	*y;
+		mm_dense	*x;
+		mm_sparse	*d;
+		FILE		*fp;
 
-	larsen_centering (n, 1, y);
-	larsen_centering (n, p, x);
-	larsen_normalizing (n, p, x);
+		fp = fopen (fny, "r");
+		y = mm_real_fread (fp);
+		fclose (fp);
 
-	example_elasticnet (n, p, x, y, start, dt, stop, lambda2, gamma_bic, maxiter);
+		fp = fopen (fnx, "r");
+		x = mm_real_fread (fp);
+		fclose (fp);
 
-	free (y);
-	free (x);
+		d = mm_real_eye (MM_REAL_SPARSE, x->n);
+		lreg = linregmodel_new (y, true, x, true, lambda2, d, DO_CENTERING_Y | DO_STANDARDIZING_X);
+	}
+
+	example_elasticnet (lreg, start, dt, stop, gamma_bic, maxiter);
 
 	return EXIT_SUCCESS;
 }

@@ -2,6 +2,6 @@
 
 liblarsen_includedir = $(pkgincludedir)
 
-liblarsen_include_DATA = larsen.h
+liblarsen_include_DATA = mmio.h mmreal.h linregmodel.h larsen.h
 
 EXTRA_DIST = $(liblarsen_include_DATA)

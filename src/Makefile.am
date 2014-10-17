@@ -9,13 +9,17 @@ AM_CFLAGS =\
 lib_LTLIBRARIES = liblarsen.la
 
 liblarsen_la_SOURCES = \
+	private.c\
+	atomic.c\
+	mmio.c\
+	mmreal.c\
+	linregmodel.c\
 	linalg.c\
 	activeset.c\
-	data.c\
 	equiangular.c\
 	larsen.c\
 	stepsize.c\
-	utils.c\
+	update.c\
 	elasticnet.c\
 	bic.c
 

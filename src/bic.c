@@ -9,7 +9,7 @@
 #include <math.h>
 #include <larsen.h>
 
-#include "larsen_private.h"
+#include "private.h"
 
 /*
  *   Bayesian Information Criterion for L2 reguralized
@@ -22,13 +22,13 @@ static double
 calc_rss (const larsen *l)
 {
 	double		rss;
-	double		*r = (double *) malloc (l->n * sizeof (double));
+	double		*r = (double *) malloc (l->mu->nz * sizeof (double));
 	double		*beta = larsen_copy_beta (l, true);	// scale * beta
 	double		*mu = larsen_copy_mu (l, true);		// scale^2 * mu
-	dcopy_ (CINTP (l->n), l->y, &ione, r, &ione);
-	daxpy_ (CINTP (l->n), &dmone, mu, &ione, r, &ione);	// r = - mu + r
-	rss = pow (dnrm2_ (CINTP (l->n), r, &ione), 2.);
-	if (!l->is_lasso) rss += l->lambda2 * pow (dnrm2_ (CINTP (l->p), beta, &ione), 2.);
+	dcopy_ (&l->lreg->y->nz, l->lreg->y->data, &ione, r, &ione);
+	daxpy_ (&l->mu->nz, &dmone, mu, &ione, r, &ione);	// r = - mu + r
+	rss = pow (dnrm2_ (&l->mu->nz, r, &ione), 2.);
+	if (!l->lreg->is_regtype_lasso) rss += l->lreg->lambda2 * pow (dnrm2_ (&l->beta->nz, beta, &ione), 2.);
 	free (r);
 	free (beta);
 	free (mu);
@@ -58,9 +58,9 @@ larsen_eval_bic (const larsen *l, double gamma)
 {
 	double	rss = calc_rss (l);
 	double	df = calc_degree_of_freedom (l);
-	double	n = (double) l->n;
-	double	p = (double) l->p;
-	if (!l->is_lasso) n += p;
+	double	m = (double) l->lreg->x->m;
+	double	n = (double) l->lreg->x->n;
+	if (!l->lreg->is_regtype_lasso) m += n;
 
-	return log (rss) + df * (log (n) + 2. * gamma * log (p)) / n;
+	return log (rss) + df * (log (m) + 2. * gamma * log (n)) / m;
 }

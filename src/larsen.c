@@ -1,144 +1,196 @@
 /*
- * larsen.c
+ * utils.c
  *
  *  Created on: 2014/03/17
  *      Author: utsugi
  */
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <float.h>
 #include <larsen.h>
 
-#include "larsen_private.h"
+#include "private.h"
 
-/* Calculate correlation between residual (y - X * beta) and predictors X' */
-static void
-update_correlations (larsen *l)
+extern void	larsen_awpy (const larsen *l, double alpha, double *w, double *y);
+
+/* print an error message and exit */
+void
+larsen_error (const char * function_name, const char *error_msg)
 {
-	double	*r = (double *) malloc (l->n * sizeof (double));
-	dcopy_ (CINTP (l->n), l->y, &ione, r, &ione);
-	daxpy_ (CINTP (l->n), &dmone, l->mu, &ione, r, &ione);	// r = - mu + y
+	fprintf (stderr, "ERROR: %s: %s\n", function_name, error_msg);
+	exit (1);
+}
 
-	/*
-	 *  c = Z' * (b - Z * beta),  b = [y; 0], Z = scale * [X; sqrt(lambda2) * E]
-	 *  if lambda2 > 0 (scale != 1),
-	 *  c = scale * ( X' * (y - mu) - scale * lambda2 * beta )
-	 */
-	if (l->c) free (l->c);
-	l->c = (double *) malloc (l->p * sizeof (double));
-	dgemv_ ("T", CINTP (l->n), CINTP (l->p), &l->scale, l->x, CINTP (l->n), r, &ione, &dzero, l->c, &ione);
-	if (!l->is_lasso) {
-		double	alpha = - l->lambda2 * l->scale2;
-		daxpy_ (CINTP (l->p), &alpha, l->beta, &ione, l->c, &ione);
+static larsen *
+larsen_alloc (void)
+{
+	larsen	*l = (larsen *) malloc (sizeof (larsen));
+	l->c = NULL;
+	l->beta = NULL;
+	l->mu = NULL;
+	l->beta_prev = NULL;
+	l->mu_prev = NULL;
+	return l;
+}
+
+larsen *
+larsen_new (const linregmodel *lreg, const double *x, const double lambda1)
+{
+	larsen	*l;
+
+	if (!lreg) error_and_exit ("larsen_new", "linregmodel is empty.", __FILE__, __LINE__);
+	if (mm_real_is_sparse (lreg->x)) error_and_exit ("larsen_new", "sparse matrix is not supported.", __FILE__, __LINE__);
+	if (mm_real_is_symmetric (lreg->x)) error_and_exit ("larsen_new", "symmetric matrix is not supported.", __FILE__, __LINE__);
+	if (lambda1 < 0) error_and_exit ("larsen_new", "lambda1 must be >= 0.", __FILE__, __LINE__);
+
+	l = larsen_alloc ();
+
+	l->lreg = lreg;
+
+	l->stop_loop = false;
+
+	l->lambda1 = lambda1;
+
+	l->scale2 = (l->lreg->is_regtype_lasso) ? 1. : 1. / (1. + lreg->lambda2);
+	l->scale = (l->lreg->is_regtype_lasso) ? 1. : sqrt (l->scale2);
+
+	/* correlation */
+	l->sup_c = 0.;
+	l->c = NULL;
+
+	/* active set */
+	l->oper.action = ACTIVESET_ACTION_ADD;
+	l->oper.index_of_A = -1;
+	l->oper.column_of_X = -1;
+
+	l->sizeA = 0;
+	l->A = (int *) malloc (l->lreg->x->n * sizeof (int));
+
+	/* active set */
+	l->absA = 0.;
+	l->u = NULL;
+	l->w = NULL;
+
+	/* solution */
+	l->beta = mm_real_new (MM_REAL_DENSE, MM_REAL_GENERAL, l->lreg->x->n, 1, l->lreg->x->n);
+	l->beta->data = (double *) malloc (l->beta->nz * sizeof (double));
+	mm_real_set_all (l->beta, 0.);
+	l->mu = mm_real_new (MM_REAL_DENSE, MM_REAL_GENERAL, l->lreg->y->m, 1, l->lreg->y->nz);
+	l->mu->data = (double *) malloc (l->mu->nz * sizeof (double));
+	mm_real_set_all (l->mu, 0.);
+
+	/* backup of solution */
+	l->beta_prev = mm_real_new (MM_REAL_DENSE, MM_REAL_GENERAL, l->lreg->x->n, 1, l->lreg->x->n);
+	l->beta_prev->data = (double *) malloc (l->beta_prev->nz * sizeof (double));
+	l->mu_prev = mm_real_new (MM_REAL_DENSE, MM_REAL_GENERAL, l->lreg->y->m, 1, l->lreg->y->nz);
+	l->mu_prev->data = (double *) malloc (l->mu_prev->nz * sizeof (double));
+
+	/* cholesky factorization */
+	l->chol = NULL;
+
+	return l;
+}
+
+void
+larsen_free (larsen *l)
+{
+	if (l) {
+		if (l->c) free (l->c);
+		if (l->A) free (l->A);
+		if (l->u) free (l->u);
+		if (l->w) free (l->w);
+		if (l->beta) mm_real_free (l->beta);
+		if (l->mu) free (l->mu);
+		if (l->beta_prev) mm_real_free (l->beta_prev);
+		if (l->mu_prev) free (l->mu_prev);
+		if (l->chol) free (l->chol);
+		free (l);
 	}
-	free (r);
-
-	{
-		int		maxidx = idamax_ (CINTP (l->p), l->c, &ione) - 1;	// differ of fortran and C
-		if (l->sizeA == 0) {
-			l->oper.index_of_A = 0;
-			l->oper.column_of_X = maxidx;
-		}
-		l->sup_c = fabs (l->c[maxidx]);
-	}
-
 	return;
-}
-
-/* Update beta and mu. beta += stepsize * w, mu += stepsze * u */
-static void
-update_solutions (larsen *l)
-{
-	double		stepsize = l->stepsize;
-	double		*beta = (double *) malloc (l->p * sizeof (double));
-
-	/*
-	 *  in the case of l->interp == true, i.e.,
-	 *  to calculate interpolated solution,
-	 *  beta_intr = beta_prev + stepsize_intr * w,
-	 *  mu_intr = mu_prev + stepsize_intr * u
-	 */
-	l->nrm1_prev = l->nrm1;
-	dcopy_ (CINTP (l->p), l->beta, &ione, l->beta_prev, &ione);
-	dcopy_ (CINTP (l->n), l->mu, &ione, l->mu_prev, &ione);
-
-	dcopy_ (CINTP (l->p), l->beta, &ione, beta, &ione);
-	larsen_awpy (l, stepsize, l->w, beta);			// beta(A) += stepsize * w(A)
-	dcopy_ (CINTP (l->p), beta, &ione, l->beta, &ione);
-	free (beta);
-
-	daxpy_ (CINTP (l->n), &stepsize, l->u, &ione, l->mu, &ione);	// mu += stepsize * u
-	l->nrm1 = dasum_ (CINTP (l->p), l->beta, &ione);
-
-	return;
-}
-
-static void
-update_stop_loop_flag (larsen *l)
-{
-	int		size = l->sizeA;
-	int		n = (!l->is_lasso) ? l->p : LARSEN_MIN (l->n - 1, l->p);
-	if (l->oper.action == ACTIVESET_ACTION_DROP) size--;
-	l->stop_loop = (size >= n) ? true : false;
-	if (!l->stop_loop) l->stop_loop = (l->oper.column_of_X == -1);
-	return;
-}
-
-/* Progress one step of the LARS-EN algorithm
- * add / remove one variable (assigned by l->oper.column)
- * to / from the active set and update equiangular vector, stepsize,
- * and solution vectors. Also, stop_loop flag is modified.
- *
- * 1. Update correlation between residual (y - mu) and variables (X').
- *    In the case of A = {} (on first iteration or restarted), a variable
- *    which has largest correlation is selected as the active set item
- *    (l->oper.column_of_X is set to its index in X).
- *
- * 2. Add / remove one variable assigned by l->oper.column_of_X to / from the active set.
- *    When l->oper.action == ACTIVESET_ACTION_ADD (add a new item to active set),
- *    the value of l->oper.column_of_X is stored in l->A[l->oper.index_of_A]
- *    and when l->oper.action == ACTIVESET_ACTION_DROP (remove a item from active set)
- *    l->A[l->oper.index_of_A] ( == l->oper.column_of_X) is removed.
- *
- * 3. Update equi-angular vector and its relevant.
- *
- * 4. Update step size and l->oper (which specify the next operation to the active set).
- *    l->oper.action is updated according to whether gamma_hat < gamma_tilde or not.
- *    Case gamma_tilde < gamma_hat:
- *      l->oper.index_of_A  = argminplus_i ( gamma_tilde( A(i) ) )
- *      l->oper.column_of_X = argminplus_j ( gamma_tilde( X(j) ) )
- *    Case gamma_tilde > gamma_hat:
- *      l->oper.index_of_A  = argminplus_i ( gamma_hat( Ac(i) ) )
- *      l->oper.column_of_X = argminplus_j ( gamma_hat( X (j) ) )
- *
- * 5. Update solutions (beta and mu).
- *
- * 6. Update stop_loop flag. if it sets to true, loop of the regression should be terminated.
- */
-bool
-larsen_regression_step (larsen *l)
-{
-	l->stop_loop = true;
-
-	update_correlations (l);
-
-	if (!update_activeset (l)) return false;
-
-	if (!update_equiangular (l)) return false;
-
-	if (!update_stepsize (l)) return false;
-
-	update_solutions (l);
-
-	update_stop_loop_flag (l);
-
-	return true;
 }
 
 /* If l->nrm1_prev < lambda1 < l->nrm1, need interpolation */
-bool
+static bool
 larsen_does_need_interpolation (const larsen *l)
 {
 	double	lambda1 = larsen_get_lambda1 (l, true);
 	return (l->nrm1_prev <= lambda1 && lambda1 < l->nrm1);
+}
+
+/* return copy of navie solution: beta_navie = l->beta */
+static double *
+larsen_copy_beta_navie (const larsen *l)
+{
+	double	*beta = (double *) malloc (l->beta->nz * sizeof (double));
+
+	if (larsen_does_need_interpolation (l)) {
+		// interpolation of beta
+		double	stepsize = l->absA * (larsen_get_lambda1 (l, true) - l->nrm1_prev);
+		dcopy_ (&l->beta_prev->nz, l->beta_prev->data, &ione, beta, &ione);
+		larsen_awpy (l, stepsize, l->w, beta);	// beta(A) += stepsize * w(A)
+	} else {
+		dcopy_ (&l->beta->nz, l->beta->data, &ione, beta, &ione);
+	}
+	return beta;
+}
+
+/* return copy of elastic net solution: beta_elnet = beta_navie / scale */
+double *
+larsen_copy_beta (const larsen *l, bool scale)
+{
+	double	*beta = larsen_copy_beta_navie (l);
+	if (scale && !l->lreg->is_regtype_lasso) {
+		double	alpha = 1. / l->scale;
+		dscal_ (&l->beta->nz, &alpha, beta, &ione);
+	}
+	return beta;
+}
+
+/* return copy of navie solution: mu_navie = l->mu */
+static double *
+larsen_copy_mu_navie (const larsen *l)
+{
+//	size_t	n = l->n;
+	double	*mu = (double *) malloc (l->mu->nz * sizeof (double));
+
+	if (larsen_does_need_interpolation (l)) {
+		// interpolation of beta
+		double	stepsize = l->absA * (larsen_get_lambda1 (l, true) - l->nrm1_prev);
+		dcopy_ (&l->mu_prev->nz, l->mu_prev->data, &ione, mu, &ione);
+		daxpy_ (&l->mu->nz, &stepsize, l->u, &ione, mu, &ione);	// mu += stepsize * u
+	} else {
+		dcopy_ (&l->mu->nz, l->mu->data, &ione, mu, &ione);
+	}
+	return mu;
+}
+
+/* return copy of elastic net solution: mu_elnet = mu_navie / scale^2 */
+double *
+larsen_copy_mu (const larsen *l, bool scale)
+{
+	double	*mu = larsen_copy_mu_navie (l);
+	if (scale && !l->lreg->is_regtype_lasso) {
+		double	alpha = 1. / l->scale2;
+		dscal_ (&l->mu->nz, &alpha, mu, &ione);
+	}
+	return mu;
+}
+
+/* increment l->lambda1 */
+void
+larsen_set_lambda1 (larsen *l, double t)
+{
+	l->lambda1 = t;
+	return;
+}
+
+/* return l->lambda1 */
+double
+larsen_get_lambda1 (const larsen *l, bool scaling)
+{
+	double	lambda1 = l->lambda1;
+	if (scaling && !l->lreg->is_regtype_lasso) lambda1 *= l->scale;
+	return lambda1;
 }

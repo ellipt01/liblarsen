@@ -14,11 +14,11 @@
  * The value of extended BIC (Chen and Chen, 2008) are also calculated for each lambda1.
  */
 void
-example_elasticnet (const size_t n, const size_t p, const double *x, const double *y, double start, double dt, double stop, double lambda2, double gamma, int maxiter)
+example_elasticnet (const linregmodel *lreg, double start, double dt, double stop, double gamma, int maxiter)
 {
 	int			iter = 0;
 	double		t = start;
-	larsen		*l = larsen_alloc (n, p, y, x, t, lambda2);
+	larsen		*l = larsen_new (lreg, lreg->x->data, t);
 
 	if (l == NULL) return;
 

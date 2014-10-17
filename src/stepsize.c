@@ -8,7 +8,9 @@
 #include <stdlib.h>
 #include <larsen.h>
 
-#include "larsen_private.h"
+#include "private.h"
+
+extern int		*complementA (larsen *l);
 
 /* evaluate min = MIN_+ (a, b)
  * if min <= 0, return false */
@@ -30,15 +32,16 @@ calc_gamma_hat (larsen *l, int *index, int *column, double *val)
 	double		minplus = -1.;
 	int			*Ac = complementA (l);
 
-	if (l->sizeA == l->p) {
+	if (l->sizeA == l->lreg->x->n) {
 		minplus = l->sup_c / l->absA;
-	} else if (l->p > l->sizeA) {
-		int			i;		double		*a = (double *) malloc (l->p * sizeof (double));
+	} else if (l->lreg->x->n > l->sizeA) {
+		int			i;
+		double		*a = (double *) malloc (l->lreg->x->n * sizeof (double));
 		/* a = scale * X' * u */
-		dgemv_ ("T", CINTP (l->n), CINTP (l->p), &l->scale, l->x, CINTP (l->n), l->u, &ione, &dzero, a, &ione);
+		dgemv_ ("T", &l->lreg->x->m, &l->lreg->x->n, &l->scale, l->lreg->x->data, &l->lreg->x->m, l->u, &ione, &dzero, a, &ione);
 		/* If !l->is_lasso, a(A) must be a(A) += l->lambda2 * l->scale^2 * w.
 		 * But for the estimation of gamma_hat, a(A) are not referred. */
-		for (i = 0; i < l->p - l->sizeA; i++) {
+		for (i = 0; i < l->lreg->x->n - l->sizeA; i++) {
 			int		j = Ac[i];
 			double	cj = l->c[j];
 			double	aj = a[j];
@@ -72,7 +75,7 @@ calc_gamma_tilde (larsen *l, int *index, int *column, double *val)
 		int		i;
 		for (i = 0; i < l->sizeA; i++) {
 			int		j = l->A[i];
-			double	e = - l->beta[j] / l->w[i];
+			double	e = - l->beta->data[j] / l->w[i];
 			if (e <= 0.) continue;
 			if (minplus < 0. || e < minplus) {
 				minplus_idx = i;
